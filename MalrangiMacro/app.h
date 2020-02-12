@@ -1,6 +1,8 @@
 #pragma once
-#include "client_manage.h"
-#include "ipmanage.h"
+#include "cvwrap.h"
+#include "tesseract-binary-wrap.h"
+#include "client.h"
+#include "ip.h"
 
 namespace Bsp
 {
@@ -25,7 +27,7 @@ namespace Bsp
 		}
 
 	public:
-		void Play(
+		INT Play(
 			CONST CONF_INFO::ACCOUNT_INFO& AccountInfo)
 		{
 			for (int PlayCount = 0; PlayCount < 3; PlayCount++)
@@ -158,9 +160,10 @@ namespace Bsp
 				);
 				WriteLog(LOG_LEVEL::SUCCESS, "Urus raid has been complete.\n");
 
-				Sleep(1000);
-				srand(time(NULL));
-				imwrite(("C:\\" + to_string(rand() % 4243225) + ".jpg"), Cvw::Capture({ 978, 537, 1141, 561 }, 1));
+				Sleep(1200);
+				Mat ResultImage = Cvw::Capture({ 978, 537, 1141, 561 });
+				INT AcquiredMoney = stoi(Tsw::ImageToString(ResultImage));
+
 				MouseEvent({ 1259, 668 }, LEFT_CLICK);
 				try
 				{
@@ -177,7 +180,7 @@ namespace Bsp
 				/*** Επΐε ***/
 				if (2 == PlayCount)
 				{
-					return;
+					return AcquiredMoney;
 				}
 				else
 				{
@@ -676,7 +679,6 @@ namespace Bsp
 }
 
 
-
 namespace Crcp
 {
 	class CircularPlay
@@ -692,6 +694,7 @@ namespace Crcp
 		{
 			Bsp::UrusRaid Head;
 			INT SeqAccount = 0;
+			INT SumOfMoney = 0;
 
 			for each (const auto & AccountInfo in Conf.ArrAccount)
 			{
@@ -723,7 +726,7 @@ namespace Crcp
 					Exc::RemoveToolTip();
 					Exc::BreakParty();
 
-					Head.Play(AccountInfo);
+					SumOfMoney += Head.Play(AccountInfo);
 
 					Exc::ExitGame();
 				}
@@ -753,6 +756,9 @@ namespace Crcp
 
 				++SeqAccount;
 			}
+
+			WriteLog(LOG_LEVEL::SUCCESS, "SUM : %d", SumOfMoney);
+			Sleep(10000000);
 		}
 	};
 

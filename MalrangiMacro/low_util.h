@@ -210,31 +210,6 @@ TypingMessageWithClipboard(
 #include <ctime>
 #include <mutex>
 
-void SetConsoleTextColor(INT ColorValue)
-{
-	WORD wColor;
-	CONSOLE_SCREEN_BUFFER_INFO ConsoleScreenBufferInfo;
-	HANDLE hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (GetConsoleScreenBufferInfo(hStdOutput, &ConsoleScreenBufferInfo))
-	{
-		wColor = (ConsoleScreenBufferInfo.wAttributes & 0xF0) + (ColorValue & 0x0F);
-		SetConsoleTextAttribute(hStdOutput, wColor);
-	}
-}
-#define SetConsolePosition(_x, _y)	SetConsoleCursorPosition(hStdOutput, {_x, _y})
-
-
-string GetCurrentDateTimeString(
-	void)
-{
-	time_t Now = time(nullptr);
-	struct tm* TimeInfo;
-	CHAR Buf[0x40];
-	TimeInfo = localtime(&Now);
-
-	strftime(Buf, sizeof(Buf), "%X", TimeInfo);
-	return Buf;
-}
 string GetClassTypeId(
 	LPCSTR lpFunctionMacro)
 {
@@ -290,6 +265,29 @@ LPCSTR lpFileName;
 										}
 void VWriteLog(LOG_LEVEL LogLevel, LPCSTR lpFormat, ...)
 {
+	auto GetCurrentDateTimeString = [](void) -> string
+	{
+		time_t Now = time(nullptr);
+		struct tm* TimeInfo;
+		CHAR Buf[0x40];
+		TimeInfo = localtime(&Now);
+
+		strftime(Buf, sizeof(Buf), "%X", TimeInfo);
+		return Buf;
+	};
+	auto SetConsoleTextColor = [](INT ColorValue) -> void
+	{
+		WORD wColor;
+		CONSOLE_SCREEN_BUFFER_INFO ConsoleScreenBufferInfo;
+		HANDLE hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+		if (GetConsoleScreenBufferInfo(hStdOutput, &ConsoleScreenBufferInfo))
+		{
+			wColor = (ConsoleScreenBufferInfo.wAttributes & 0xF0) + (ColorValue & 0x0F);
+			SetConsoleTextAttribute(hStdOutput, wColor);
+		}
+	};
+#define SetConsolePosition(_x, _y)	SetConsoleCursorPosition(hStdOutput, {_x, _y})
+
 	cout << GetCurrentDateTimeString() << ", " << NumberOfLine << " [" << lpFileName << "] ";
 
 	va_list Args;

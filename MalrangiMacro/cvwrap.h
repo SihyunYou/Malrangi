@@ -1,5 +1,4 @@
 #pragma once
-
 #include "low_util.h"
 
 class CvWrappedException : public std::exception
@@ -98,6 +97,10 @@ typedef struct _Valloc
 	BOOL IsMatched;
 } Valloc;
 
+
+/****************************************************************************
+* Mat I/O
+****************************************************************************/
 namespace Cvw
 {
 	inline void Show(
@@ -164,22 +167,14 @@ namespace Cvw
 
 		return ConvertedImage;
 	}
-	inline void InRange(
-		InputArray src,
-		InputArray lowerb,
-		InputArray upperb,
-		OutputArray dst)
-	{
-		__try
-		{
-			inRange(src, lowerb, upperb, dst);
-		}
-		__except (EXCEPTION_EXECUTE_HANDLER)
-		{
-			throw IntegerDivisionByZeroException();
-		}
-	}
-	
+}
+
+
+/****************************************************************************
+* Mat Template Matching
+****************************************************************************/
+namespace Cvw
+{
 	__forceinline Valloc MatchTemplate(
 		Mat SourceImage,
 		Mat TargetImage,
@@ -267,5 +262,36 @@ namespace Cvw
 		}
 
 		return { SeqHighestMatchedTemplate, HighestValloc };
+	}
+}
+
+
+/****************************************************************************
+* Image Processing
+****************************************************************************/
+namespace Cvw
+{
+	inline void InRange(
+		InputArray src,
+		InputArray lowerb,
+		InputArray upperb,
+		OutputArray dst)
+	{
+		__try
+		{
+			inRange(src, lowerb, upperb, dst);
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+			throw IntegerDivisionByZeroException();
+		}
+	}
+
+	void ToBinary(Mat& SourceImage, INT Threshold)
+	{
+		Mat BinaryImage;
+		threshold(SourceImage, BinaryImage, Threshold, 255, 0);
+
+		SourceImage = BinaryImage;
 	}
 }
