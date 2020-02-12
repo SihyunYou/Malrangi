@@ -1,7 +1,5 @@
 #pragma once
-#include "exercise_act.h"
-#include "exercise_iwacc.h"
-#include "exercise_ewacc.h"
+#include "client_manage.h"
 #include "ipmanage.h"
 
 namespace Bsp
@@ -162,7 +160,7 @@ namespace Bsp
 
 				Sleep(1000);
 				srand(time(NULL));
-				imwrite(("C:\\" + to_string(rand() % 42432225) + ".jpg"), Cvw::Capture(CLIENT_ELEM::RECT_CLIENT4, 1));
+				imwrite(("C:\\" + to_string(rand() % 4243225) + ".jpg"), Cvw::Capture({ 978, 537, 1141, 561 }, 1));
 				MouseEvent({ 1259, 668 }, LEFT_CLICK);
 				try
 				{
@@ -184,6 +182,24 @@ namespace Bsp
 				else
 				{
 					KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 5000);
+					try
+					{
+						Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_CLIENT4, TargetImageNpcMashur, NONWORK, 45000, 256, 0.99);
+					}
+					catch (TimeOutException & cwe)
+					{
+						WriteLog(LOG_LEVEL::FAILURE, cwe.what());
+						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 5000);
+
+						try
+						{
+							Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_CLIENT4, TargetImageNpcMashur, NONWORK, 45000, 256, 0.99);
+						}
+						catch (TimeOutException & cwe)
+						{
+							throw;
+						}
+					}
 				}
 			}
 		}

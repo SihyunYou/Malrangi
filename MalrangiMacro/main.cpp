@@ -1,4 +1,3 @@
-#include "ipmanage.h"
 #include "app.h"
 
 int 
@@ -8,6 +7,23 @@ main(
 {
 	Sleep(2000);
 
-	unique_ptr<Crcp::CircularPlay> Player = make_unique<Crcp::UrusRaid>();
+	unique_ptr<Crcp::CircularPlay> Player;
+	CHAR Flag = 'U';
+
+	switch (Flag)
+	{
+	case 'U':
+		Player = make_unique<Crcp::UrusRaid>();
+		break;
+	
+	case 'Z':
+		Player = make_unique<Crcp::ZacumRaid>();
+		break;
+
+	case 'z':
+		Player = make_unique<Crcp::ZacumCalc>();
+		break;
+	}
+
 	Player->Play();
 }

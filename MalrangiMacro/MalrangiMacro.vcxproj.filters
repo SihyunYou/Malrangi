@@ -20,28 +20,19 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="exercise.h">
+    <ClInclude Include="ipmanage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cvwrap.h">
+    <ClInclude Include="app.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="client_manage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="low_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="exercise_act.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="exercise_iwacc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="exercise_ewacc.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ipmanage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="app.h">
+    <ClInclude Include="cvwrap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

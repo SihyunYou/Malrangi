@@ -161,10 +161,7 @@
   <ItemGroup>
     <ClInclude Include="app.h" />
     <ClInclude Include="cvwrap.h" />
-    <ClInclude Include="exercise.h" />
-    <ClInclude Include="exercise_act.h" />
-    <ClInclude Include="exercise_ewacc.h" />
-    <ClInclude Include="exercise_iwacc.h" />
+    <ClInclude Include="client_manage.h" />
     <ClInclude Include="ipmanage.h" />
     <ClInclude Include="low_util.h" />
   </ItemGroup>
