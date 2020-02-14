@@ -13,39 +13,42 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\wrap">
-      <UniqueIdentifier>{39620a75-ea97-4281-80c4-53bbf5268ae7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\application">
       <UniqueIdentifier>{49c7eb76-f74a-43b6-9a69-14f2ee540a9f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\management">
+    <Filter Include="Header Files\control">
       <UniqueIdentifier>{cddce19a-c6ff-4cf7-ba38-cbb76c82f82c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\kit">
+      <UniqueIdentifier>{39620a75-ea97-4281-80c4-53bbf5268ae7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="low_util.h">
-      <Filter>Header Files\wrap</Filter>
-    </ClInclude>
     <ClInclude Include="cvwrap.h">
-      <Filter>Header Files\wrap</Filter>
+      <Filter>Header Files\kit</Filter>
     </ClInclude>
     <ClInclude Include="tesseract-binary-wrap.h">
-      <Filter>Header Files\wrap</Filter>
+      <Filter>Header Files\kit</Filter>
     </ClInclude>
     <ClInclude Include="app.h">
       <Filter>Header Files\application</Filter>
     </ClInclude>
     <ClInclude Include="client.h">
-      <Filter>Header Files\management</Filter>
+      <Filter>Header Files\control</Filter>
     </ClInclude>
     <ClInclude Include="ip.h">
-      <Filter>Header Files\management</Filter>
+      <Filter>Header Files\control</Filter>
     </ClInclude>
+    <ClInclude Include="low_util.h">
+      <Filter>Header Files\kit</Filter>
+    </ClInclude>
+    <ClInclude Include="conf.h">
+      <Filter>Header Files\kit</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="entry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

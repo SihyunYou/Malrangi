@@ -155,10 +155,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="entry.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="app.h" />
+    <ClInclude Include="conf.h" />
     <ClInclude Include="cvwrap.h" />
     <ClInclude Include="client.h" />
     <ClInclude Include="ip.h" />

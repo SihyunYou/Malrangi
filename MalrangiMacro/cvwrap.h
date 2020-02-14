@@ -291,7 +291,14 @@ namespace Cvw
 	{
 		Mat BinaryImage;
 		threshold(SourceImage, BinaryImage, Threshold, 255, 0);
-
 		SourceImage = BinaryImage;
 	}
+	void Magnify(Mat& SourceImage, DOUBLE Percentage)
+	{
+		Mat Destination;
+		cv::resize(SourceImage, Destination, cv::Size(SourceImage.cols * Percentage, SourceImage.rows * Percentage), 0, 0, INTER_CUBIC);
+
+		SourceImage = Destination;
+	}
+
 }

@@ -6,6 +6,8 @@
 
 #pragma once
 #include "cvwrap.h"
+#include "conf.h"
+
 
 /****************************************************************************
 * Information of Client
@@ -50,171 +52,7 @@ CONST RECT CLIENT_ELEM::RECT_E3 = { 0, 0, 200, 70 };
 CONST RECT CLIENT_ELEM::RECT_I1 = { 0, 280, 100, 500 };
 
 
-/****************************************************************************
-* Configuration Reader
-****************************************************************************/
-typedef struct _CONF_INFO
-{
-	typedef struct _ACCOUNT_INFO
-	{
-		enum class ID_T
-		{
-			NEXON,
-			MAPLE,
-			NAVER
-		};
-		ID_T IdType;
-		string Id;
-		string Password;
-		string SecondPassword;
-		DWORD Sequence;
-		DWORD MainServer;
-		typedef struct _CHARACTER_SPECIALTY
-		{
-			BYTE Skill;
-			BYTE RequiredBuf1;
-			BYTE RequiredBuf2; // used on Zacum's being created
-		} CHARACTER_SPECIALTY;
-		vector<CHARACTER_SPECIALTY> VecCharacter;
-	} ACCOUNT_INFO;
-	array<ACCOUNT_INFO, 20> ArrAccount;
-	INT CountAccount = 0;
-	INT CountAllCharacters = 0;
 
-	typedef struct _KEYSET_INFO
-	{
-		BYTE SpecialTechnology;
-		BYTE Picking;
-		BYTE Inventory;
-		BYTE Potion;
-	}KEYSET_INFO;
-	KEYSET_INFO VirtualKeyset;
-
-	_CONF_INFO(void)
-	{
-		ifstream File;
-		CHAR Line[0x100];
-
-		File.open("conf\\account_info.conf");
-		if (File.is_open())
-		{
-			while (File.getline(Line, sizeof(Line)))
-			{
-				if (strlen(Line) == 0)
-				{
-					continue;
-				}
-
-				istringstream Stream(Line);
-				string SubLine;
-				_CONF_INFO::ACCOUNT_INFO::CHARACTER_SPECIALTY CharacterInfo;
-
-				Stream >> SubLine;
-				if ("//" == SubLine.substr(0, 2))
-				{
-					continue;
-				}
-				else if ("ACL" == SubLine)
-				{
-					Stream >> SubLine;
-					if ("NEXON" == SubLine)
-					{
-						ArrAccount[CountAccount].IdType = _CONF_INFO::ACCOUNT_INFO::ID_T::NEXON;
-					}
-					else if ("NAVER" == SubLine)
-					{
-						ArrAccount[CountAccount].IdType = _CONF_INFO::ACCOUNT_INFO::ID_T::NAVER;
-					}
-					else 
-					{
-						ArrAccount[CountAccount].IdType = _CONF_INFO::ACCOUNT_INFO::ID_T::MAPLE;
-					}
-
-					Stream >> SubLine;
-					ArrAccount[CountAccount].Id = SubLine;
-
-					Stream >> SubLine;
-					ArrAccount[CountAccount].Password = SubLine;
-
-					Stream >> SubLine;
-					ArrAccount[CountAccount].SecondPassword = SubLine;
-
-					Stream >> SubLine;
-					stringstream(SubLine) >> ArrAccount[CountAccount].Sequence;
-
-					++CountAccount;
-				}
-				else
-				{
-					CharacterInfo.Skill = SubLine[0];
-					cout << CharacterInfo.Skill << endl;
-					Stream >> SubLine;
-					CharacterInfo.RequiredBuf1 = (SubLine == "null" ? NULL : SubLine[0]);
-					
-					Stream >> SubLine;
-					CharacterInfo.RequiredBuf2 = (SubLine == "null" ? NULL : SubLine[0]);
-
-					ArrAccount[CountAccount - 1].VecCharacter.push_back(CharacterInfo);
-				}
-			}
-			File.close();
-		}
-
-		_CONF_INFO::ACCOUNT_INFO tmp;
-		for (int i = 0; i < CountAccount; i++)
-		{
-			for (int j = i + 1; j < CountAccount; j++)
-			{
-				if (ArrAccount[i].Id == ArrAccount[j].Id)
-				{
-					if (ArrAccount[i].Sequence > ArrAccount[j].Sequence)
-					{
-						tmp = ArrAccount[i];
-						ArrAccount[i] = ArrAccount[j];
-						ArrAccount[j] = tmp;
-					}
-				}
-			}
-		}
-
-		for each (auto & AccountInfo in ArrAccount)
-		{
-			CountAllCharacters += AccountInfo.VecCharacter.size();
-		}
-
-
-		File.open("conf\\key_setting_info.conf");
-		if (File.is_open())
-		{
-			File.getline(Line, sizeof(Line));
-
-			istringstream Stream(Line);
-			string SubLine;
-			auto GetVirtualKey = [](string Key) -> BYTE
-			{
-				if ("SPACE" == Key) return VK_SPACE;
-				else if ("CONTROL" == Key) return VK_CONTROL;
-				else if ("SHIFT" == Key) return VK_SHIFT;
-				else return Key[0];
-			};
-
-			Stream >> SubLine;
-			VirtualKeyset.Inventory = GetVirtualKey(SubLine);
-
-			Stream >> SubLine;
-			VirtualKeyset.SpecialTechnology = GetVirtualKey(SubLine);
-
-			Stream >> SubLine;
-			VirtualKeyset.Picking = GetVirtualKey(SubLine);
-
-			Stream >> SubLine;
-			VirtualKeyset.Potion = GetVirtualKey(SubLine);
-
-			File.close();
-		}
-	}
-}CONF_INFO;
-static CONST CONF_INFO Conf;
 
 
 /****************************************************************************
@@ -480,21 +318,63 @@ namespace Exc
 		KeybdEvent(VK_RETURN);
 	}
 	void LoginInInitialStage(
-		CONST CONF_INFO::ACCOUNT_INFO& AccountInfo)
+		CONST CONF_INFO::ACCOUNT_INFO& AccountInfo,
+		CONST CONF_INFO::ACCOUNT_INFO::MAPLEID_INFO& MapleIdInfo)
 	{
-		CLIENT_ELEM::SET_CLIENT_STDPOS();
-
-		MouseEvent({ 442, 296 }, LEFT_CLICK);
-		TypingMessageWithClipboard(AccountInfo.Id.c_str());
-		MouseEvent({ 442, 321 }, LEFT_CLICK);
-		TypingMessageWithClipboard(AccountInfo.Password.c_str());
-
-		KeybdEvent(VK_RETURN);
-		for (int i = 0; i < AccountInfo.Sequence; i++)
+		auto LoginNexonId = [&AccountInfo](BOOL IsBlank) -> void
 		{
-			KeybdEvent(VK_DOWN);
-		}
-		KeybdEvent(VK_RETURN);
+			MouseEvent({ 300, 296 }, LEFT_CLICK);
+			TypingMessageWithClipboard(AccountInfo.Id.c_str());
+			if (!IsBlank)
+			{
+				for (int i = 0; i < 20; i++)
+				{
+					KeybdEvent(VK_BACK, 250);
+				}
+				for (int i = 0; i < 40; i++)
+				{
+					KeybdEvent(VK_DELETE, 250);
+				}
+			}
+
+			MouseEvent({ 300, 321 }, LEFT_CLICK);
+			TypingMessageWithClipboard(AccountInfo.Password.c_str());
+			if (!IsBlank)
+			{
+				for (int i = 0; i < 20; i++)
+				{
+					KeybdEvent(VK_BACK, 250);
+				}
+				for (int i = 0; i < 40; i++)
+				{
+					KeybdEvent(VK_DELETE, 250);
+				}
+			}
+
+			KeybdEvent(VK_RETURN);
+		};
+		auto SelectMapldId = [&AccountInfo, &MapleIdInfo](void) -> void
+		{
+			DWORD SeqId = 0;
+			for each (auto & MapleId in AccountInfo.VecMapleId)
+			{
+				if (MapleId.Id == MapleIdInfo.Id)
+				{
+					break;
+				}
+				++SeqId;
+			}
+			
+			for (int i = 0; i < SeqId + 1; i++)
+			{
+				KeybdEvent(VK_DOWN);
+			}
+			KeybdEvent(VK_RETURN);
+		};
+		
+		CLIENT_ELEM::SET_CLIENT_STDPOS();
+		LoginNexonId(TRUE);
+		SelectMapldId();
 
 		try
 		{
@@ -505,25 +385,17 @@ namespace Exc
 			WriteLog(LOG_LEVEL::FAILURE, cwe.what());
 
 			KeybdEvent(VK_ESCAPE);
-			MouseEvent({ 442, 296 }, LEFT_CLICK);
-			for (int i = 0; i < 50; i++)
-			{
-				KeybdEvent(VK_BACK, 125);
-			}
-			TypingMessageWithClipboard(AccountInfo.Id.c_str());
-			MouseEvent({ 442, 321 }, LEFT_CLICK);
-			for (int i = 0; i < 50; i++)
-			{
-				KeybdEvent(VK_BACK, 125);
-			}
-			TypingMessageWithClipboard(AccountInfo.Password.c_str());
+			LoginNexonId(FALSE);
+			SelectMapldId();
 
-			KeybdEvent(VK_RETURN);
-			for (int i = 0; i < AccountInfo.Sequence; i++)
+			try
 			{
-				KeybdEvent(VK_DOWN);
+				Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_E2, CLIENT_ELEM::TARGETIMAGE_E2, NONWORK, 20000);
 			}
-			KeybdEvent(VK_RETURN);
+			catch (TimeOutException & cwe)
+			{
+				throw;
+			}
 		}
 
 		KeybdEvent(VK_RETURN);
@@ -541,13 +413,13 @@ namespace Exc
 		}
 	}
 	void EnterGame(
-		CONST CONF_INFO::ACCOUNT_INFO& AccountInfo)
+		CONST CONF_INFO::ACCOUNT_INFO::MAPLEID_INFO& MapleIdInfo)
 	{
 		KeybdEvent(VK_RETURN, 2500);
 		try
 		{
 			Cvw::MatchTemplate(Cvw::Capture(CLIENT_ELEM::RECT_CLIENT1), Cvw::Read("res\\button_1.jpg"));
-			Exc::UnlockSecondPassword(AccountInfo.SecondPassword);
+			Exc::UnlockSecondPassword(MapleIdInfo.SecondPassword);
 		}
 		catch (MatchFailedException & cwe)
 		{
@@ -585,6 +457,15 @@ namespace Exc
 		}
 	}
 
+	void ResetIngameWindow(
+		void)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			KeybdEvent(VK_ESCAPE);
+		}
+		MouseEvent({ 0, 0 }, LEFT_CLICK);
+	}
 	void ExitGame(
 		void)
 	{
