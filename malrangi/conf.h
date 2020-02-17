@@ -1,5 +1,6 @@
 #pragma once
 #include "low_util.h"
+#include <map>
 
 /****************************************************************************
 * Configuration Reader
@@ -18,15 +19,14 @@ typedef struct _CONF_INFO
 			{
 				BYTE Skill;
 				BYTE RequiredBuf1;
-				BYTE RequiredBuf2; // used on Zacum's being created
+				BYTE RequiredBuf2;
 			} CHARACTER_INFO;
-			vector<CHARACTER_INFO> VecCharacter;
+			vector<string> VecCharacterString;
 		}MAPLEID_INFO;
 		vector<MAPLEID_INFO> VecMapleId;
 	} ACCOUNT_INFO;
 	vector<ACCOUNT_INFO> VecAccount;
-	INT CountMapleIds = 0;
-	INT CountCharacters = 0;
+	map<string, ACCOUNT_INFO::MAPLEID_INFO::CHARACTER_INFO> MapCharacterInfo;
 
 	typedef struct _KEYSET_INFO
 	{
@@ -37,6 +37,7 @@ typedef struct _CONF_INFO
 	}KEYSET_INFO;
 	KEYSET_INFO VirtualKeyset;
 
+private:
 	_CONF_INFO(void)
 	{
 		ifstream File;
@@ -54,11 +55,15 @@ typedef struct _CONF_INFO
 
 				istringstream Stream(Line);
 				string SubLine;
-				
-				if(!strncmp("\t\t", Line, 2))
+
+				if (!strncmp("var", Line, 3))
 				{
+					string Lvalue = string(strchr(Line, ' ') + 1, strchr(Line, '=') - 1);
+					char* pdq = strchr(Line, '\"');
+					string Rvalue = string(pdq + 1, strchr(pdq + 1, '\"'));
 					ACCOUNT_INFO::MAPLEID_INFO::CHARACTER_INFO CharacterInfo;
-					
+					Stream = istringstream(Rvalue);
+
 					Stream >> SubLine;
 					CharacterInfo.Skill = SubLine[0];
 
@@ -67,11 +72,15 @@ typedef struct _CONF_INFO
 
 					Stream >> SubLine;
 					CharacterInfo.RequiredBuf2 = (SubLine == "null" ? NULL : SubLine[0]);
-
-					VecAccount[VecAccount.size() - 1].VecMapleId[VecAccount[VecAccount.size() - 1].VecMapleId.size() - 1].VecCharacter.push_back(CharacterInfo);
-					++CountCharacters;
+					
+					MapCharacterInfo[Lvalue] = CharacterInfo;
 				}
-				else if('\t' == Line[0])
+				if (!strncmp("\t\t", Line, 2))
+				{
+					Stream >> SubLine;
+					VecAccount[VecAccount.size() - 1].VecMapleId[VecAccount[VecAccount.size() - 1].VecMapleId.size() - 1].VecCharacterString.push_back(SubLine);
+				}
+				else if ('\t' == Line[0])
 				{
 					ACCOUNT_INFO::MAPLEID_INFO MapleIdInfo;
 
@@ -82,7 +91,6 @@ typedef struct _CONF_INFO
 					MapleIdInfo.SecondPassword = SubLine;
 
 					VecAccount[VecAccount.size() - 1].VecMapleId.push_back(MapleIdInfo);
-					++CountMapleIds;
 				}
 				else
 				{
@@ -109,9 +117,9 @@ typedef struct _CONF_INFO
 			string SubLine;
 			auto GetVirtualKey = [](string Key) -> BYTE
 			{
-				if ("SPACE" == Key) return VK_SPACE;
-				else if ("CONTROL" == Key) return VK_CONTROL;
-				else if ("SHIFT" == Key) return VK_SHIFT;
+				if ("space" == Key) return VK_SPACE;
+				else if ("control" == Key) return VK_CONTROL;
+				else if ("shift" == Key) return VK_SHIFT;
 				else return Key[0];
 			};
 
@@ -130,5 +138,29 @@ typedef struct _CONF_INFO
 			File.close();
 		}
 	}
+	~_CONF_INFO()
+	{
+		;
+	}
+
+public:
+	static _CONF_INFO* GetInstance(void)
+	{
+		if (nullptr == Instance)
+		{
+			Instance = new _CONF_INFO();
+		}
+		return Instance;
+	}
+	void Destroy(void)
+	{
+		if (nullptr != Instance)
+		{
+			delete Instance;
+			Instance = nullptr;
+		}
+	}
+	private:
+		static _CONF_INFO* Instance;
 }CONF_INFO;
-static CONST CONF_INFO Conf;
+CONF_INFO* CONF_INFO::Instance = nullptr;

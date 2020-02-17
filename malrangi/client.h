@@ -243,7 +243,7 @@ namespace Exc
 				},
 				180000);
 		}
-		catch (CvWrappedException & cwe)
+		catch (MatchFailedException & cwe)
 		{
 			throw;
 		}
@@ -285,12 +285,12 @@ namespace Exc
 			case '8':
 			case '9':
 			case '0':
+				MouseEvent({ 0, 0 }, LEFT_CLICK, 300);
 				Cvw::ClickMatchedTemplate(
 					Cvw::Capture(CLIENT_ELEM::RECT_CLIENT4, 0),
 					Cvw::Read(string("res\\button_") + Character + ".jpg"),
 					LEFT_CLICK,
 					{ 5, 5 });
-				MouseEvent({ 0, 0 }, LEFT_CLICK);
 				break;
 
 			case '!':
@@ -324,33 +324,33 @@ namespace Exc
 		auto LoginNexonId = [&AccountInfo](BOOL IsBlank) -> void
 		{
 			MouseEvent({ 300, 296 }, LEFT_CLICK);
+			if (!IsBlank)
+			{
+				for (int i = 0; i < 150; i++)
+				{
+					KeybdEvent(VK_BACK, 20);
+				}
+				for (int i = 0; i < 150; i++)
+				{
+					KeybdEvent(VK_DELETE, 20);
+				}
+			}
 			TypingMessageWithClipboard(AccountInfo.Id.c_str());
-			if (!IsBlank)
-			{
-				for (int i = 0; i < 20; i++)
-				{
-					KeybdEvent(VK_BACK, 250);
-				}
-				for (int i = 0; i < 40; i++)
-				{
-					KeybdEvent(VK_DELETE, 250);
-				}
-			}
-
+			
 			MouseEvent({ 300, 321 }, LEFT_CLICK);
-			TypingMessageWithClipboard(AccountInfo.Password.c_str());
 			if (!IsBlank)
 			{
-				for (int i = 0; i < 20; i++)
+				for (int i = 0; i < 150; i++)
 				{
-					KeybdEvent(VK_BACK, 250);
+					KeybdEvent(VK_BACK, 20);
 				}
-				for (int i = 0; i < 40; i++)
+				for (int i = 0; i < 150; i++)
 				{
-					KeybdEvent(VK_DELETE, 250);
+					KeybdEvent(VK_DELETE, 20);
 				}
 			}
-
+			TypingMessageWithClipboard(AccountInfo.Password.c_str());
+			
 			KeybdEvent(VK_RETURN);
 		};
 		auto SelectMapldId = [&AccountInfo, &MapleIdInfo](void) -> void
@@ -371,7 +371,7 @@ namespace Exc
 			}
 			KeybdEvent(VK_RETURN);
 		};
-		
+	
 		CLIENT_ELEM::SET_CLIENT_STDPOS();
 		LoginNexonId(TRUE);
 		SelectMapldId();
@@ -380,7 +380,7 @@ namespace Exc
 		{
 			Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_E2, CLIENT_ELEM::TARGETIMAGE_E2, NONWORK, 20000);
 		}
-		catch (TimeOutException & cwe)
+		catch (MatchFailedException & cwe)
 		{
 			WriteLog(LOG_LEVEL::FAILURE, cwe.what());
 
@@ -392,7 +392,7 @@ namespace Exc
 			{
 				Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_E2, CLIENT_ELEM::TARGETIMAGE_E2, NONWORK, 20000);
 			}
-			catch (TimeOutException & cwe)
+			catch (MatchFailedException & cwe)
 			{
 				throw;
 			}
@@ -407,15 +407,13 @@ namespace Exc
 		}
 		catch (CvWrappedException & cwe)
 		{
-			WriteLog(LOG_LEVEL::FAILURE, cwe.what());
-
 			throw;
 		}
 	}
 	void EnterGame(
 		CONST CONF_INFO::ACCOUNT_INFO::MAPLEID_INFO& MapleIdInfo)
 	{
-		KeybdEvent(VK_RETURN, 2500);
+		KeybdEvent(VK_RETURN, 1000);
 		try
 		{
 			Cvw::MatchTemplate(Cvw::Capture(CLIENT_ELEM::RECT_CLIENT1), Cvw::Read("res\\button_1.jpg"));
@@ -443,6 +441,11 @@ namespace Exc
 
 			throw;
 		}
+
+		// Remove tooltips
+		MouseEvent({ 902, 337 }, LEFT_CLICK);
+		KeybdEvent(VK_ESCAPE);
+		KeybdEvent(VK_ESCAPE);
 	}
 	void SelectCharacter(
 		UINT Sequence)
@@ -457,14 +460,18 @@ namespace Exc
 		}
 	}
 
-	void ResetIngameWindow(
+	void RemoveAllIngameWindow(
 		void)
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < 4; i++)
+		{
+			KeybdEvent(VK_RETURN);
+		}
+		for (int i = 0; i < 4; i++)
 		{
 			KeybdEvent(VK_ESCAPE);
 		}
-		MouseEvent({ 0, 0 }, LEFT_CLICK);
+		MouseEvent({ 64, 64 }, LEFT_CLICK);
 	}
 	void ExitGame(
 		void)
@@ -491,13 +498,6 @@ namespace Exc
 		KeybdEvent(VK_ESCAPE);
 		KeybdEvent(VK_RETURN);
 		Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_E1, CLIENT_ELEM::TARGETIMAGE_E1, NONWORK, 30000);
-	}
-	void RemoveToolTip(
-		void)
-	{
-		MouseEvent({ 902, 337 }, LEFT_CLICK);
-		KeybdEvent(VK_ESCAPE);
-		KeybdEvent(VK_ESCAPE);
 	}
 	void MakeParty(
 		void)

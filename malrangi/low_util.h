@@ -288,6 +288,7 @@ void VWriteLog(LOG_LEVEL LogLevel, LPCSTR lpFormat, ...)
 	};
 #define SetConsolePosition(_x, _y)	SetConsoleCursorPosition(hStdOutput, {_x, _y})
 
+	SetConsoleTextColor(2);
 	cout << GetCurrentDateTimeString() << ", " << NumberOfLine << " [" << lpFileName << "] ";
 
 	va_list Args;
@@ -309,7 +310,6 @@ void VWriteLog(LOG_LEVEL LogLevel, LPCSTR lpFormat, ...)
 		break;
 	}
 	vprintf(lpFormat, Args);
-	SetConsoleTextColor(2);
 
 	va_end(Args);
 }

@@ -1,2 +1,2 @@
 # Malrangi
-Auto utilities for MapleStory
+Auto utilities for KMS

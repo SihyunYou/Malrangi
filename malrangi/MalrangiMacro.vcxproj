@@ -151,7 +151,7 @@
       <AdditionalDependencies>opencv_world420.lib;opencv_world420d.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\opencv\build\x64\vc15\lib</AdditionalLibraryDirectories>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
-      <OutputFile>$(OutDir)\MalrangiMacro.exe</OutputFile>
+      <OutputFile>$(SolutionDir)\MalrangiMacro.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

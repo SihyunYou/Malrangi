@@ -5,7 +5,7 @@ class CvWrappedException : public std::exception
 {
 public:
 	CvWrappedException::CvWrappedException(void) :
-		Message(__CLASSNAME__ + "\n") {}
+		Message(__CLASSNAME__) {}
 	explicit CvWrappedException::CvWrappedException(const char* Message) :
 		Message(Message) {}
 	explicit CvWrappedException::CvWrappedException(string Message) :
@@ -24,7 +24,7 @@ class IntegerDivisionByZeroException : public CvWrappedException
 {
 public:
 	IntegerDivisionByZeroException::IntegerDivisionByZeroException(void) :
-		CvWrappedException(__CLASSNAME__ + "Integer division by zero.\n") {}
+		CvWrappedException(__CLASSNAME__ + "Integer division by zero.") {}
 	virtual const char* IntegerDivisionByZeroException::what(void) const throw()
 	{
 		return Message.c_str();
@@ -34,7 +34,7 @@ class OutOfIndexException : public CvWrappedException
 {
 public:
 	OutOfIndexException::OutOfIndexException(void) :
-		CvWrappedException(__CLASSNAME__ + "Out of index.\n") {}
+		CvWrappedException(__CLASSNAME__ + "Out of index.") {}
 	virtual const char* OutOfIndexException::what(void) const throw()
 	{
 		return Message.c_str();
@@ -45,7 +45,7 @@ class EmptyMatException : public CvWrappedException
 public:
 	EmptyMatException::EmptyMatException(void) :
 		CvWrappedException(__CLASSNAME__ + "Mat image is empty. It seems that imread function fails to " \
-			"read a file or your handle does not allow you to get bitmap pointer because of a memory leak.\n") {}
+			"read a file or your handle does not allow you to get bitmap pointer because of a memory leak.") {}
 	virtual const char* EmptyMatException::what(void) const throw()
 	{
 		return Message.c_str();
@@ -65,16 +65,6 @@ public:
 		;
 	}
 	virtual const char* MatchFailedException::what(void) const throw()
-	{
-		return Message.c_str();
-	}
-};
-class TimeOutException : public CvWrappedException
-{
-public:
-	TimeOutException::TimeOutException(void) :
-		CvWrappedException(__CLASSNAME__ + "\n") {}
-	virtual const char* TimeOutException::what(void) const throw()
 	{
 		return Message.c_str();
 	}
@@ -238,7 +228,7 @@ namespace Cvw
 			SumOfIdleTime += IdleTime;
 		}
 
-		throw TimeOutException();
+		throw MatchFailedException();
 	}
 	template<SIZE_T ArrSize>
 	pair<SIZE_T, Valloc> GetHighestMatchedTemplate(
