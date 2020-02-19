@@ -156,10 +156,10 @@ KeybdEventContinuedWithSubKey(
 		}
 	}
 	KeybdEventDown(bVirtualKey);
-	for (int i = 0; i < dwMilliseconds / 50; ++i)
+	for (int i = 0; i < dwMilliseconds / 32; ++i)
 	{
 		KeybdEventDown(bSubVirtualKey);
-		Sleep(50);
+		Sleep(32);
 	}
 	KeybdEventUp(bSubVirtualKey);
 	KeybdEventUp(bVirtualKey);

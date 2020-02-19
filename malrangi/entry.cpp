@@ -26,26 +26,36 @@ main(
 #ifndef USING_IPRENEWER
 	WriteLog(LOG_LEVEL::WARNING, 
 		"This program does not support ip renewal. (Flag USING_IPRENEWER is not defined.) \
-		The number of accounts written in conf file more than 5 is ignored and this program will be terminated.");
+		The number of accounts written in conf file more than 5 is ignored and this program will be terminated itself.\n");
 #endif
 	INT SeqMapleId = 0;
+	BOOL IsExgameExceptional = FALSE;
 	BOOL IsIngameExceptional = FALSE;
 
 #define LEAVE_LOG(cwe, a, b)		WriteLog(LOG_LEVEL::CRITICAL, ((string(cwe.what()) + "(" + a + "/" + b + ")\n").c_str()))
 #define LEAVE_LOG(cwe, a, b, c)	WriteLog(LOG_LEVEL::CRITICAL, ((string(cwe.what()) + "(" + a + "/" + b + "/" + c + ")\n").c_str()))
-	for each (const auto & AccountInfo in Conf->VecAccount)
+	for each (const auto & NexonAccountInfo in Conf->VecNexonAccount)
 	{
-		for each (const auto & MapleIdInfo in AccountInfo.VecMapleId)
+		for each (const auto & MapleIdInfo in NexonAccountInfo.VecMapleId)
 		{
 #if defined(ZACUM_RAID) || defined(ZACUM_CALC)
-			if (0 == MapleIdInfo.VecCharacterString.size())
+			bool IsPlayValid = false;
+			for each(const auto& ServerInfo in MapleIdInfo.VecServer)
+			{
+				if (ServerInfo.VecCharacter.size() > 0)
+				{
+					IsPlayValid = true;
+					break;
+				}
+			}
+			if (!IsPlayValid)
 			{
 				continue;
 			}
 #endif
 
-			/*** LOGIN ***/
-			if (!IsIngameExceptional)
+		LOGIN:
+			if (!IsIngameExceptional && !IsExgameExceptional)
 			{
 				if (SeqMapleId % 4 == 0)
 				{
@@ -59,11 +69,11 @@ main(
 #endif			
 					try
 					{
-						Exc::BootClient();
+						ClientApi::BootClient();
 					}
-					catch (CvWrappedException & cwe)
+					catch (ClientApi::ClientException & ce)
 					{
-						LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id);
+						LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
 
 						goto EXIT_ROUTINE;
 					}
@@ -85,162 +95,218 @@ main(
 
 				try
 				{
-					Exc::BootClient();
+					ClientApi::BootClient();
 				}
-				catch (CvWrappedException & cwe)
+				catch (ClientApi::ClientException & ce)
 				{
-					LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id);
+					LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
 
 					goto EXIT_ROUTINE;
 				}
 			}
 
+			IsExgameExceptional = FALSE;
 			try
 			{
-				Exc::LoginInInitialStage(AccountInfo, MapleIdInfo);
+				ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 			}
-			catch (CvWrappedException & cwe)
+			catch (ClientApi::ClientException & ce)
 			{
-				LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id);
+				LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
 
+				IsExgameExceptional = TRUE;
 				goto LOGOUT;
 			}
-#ifdef URUS_RAID
-			Exc::SelectCharacter(1);
-#endif
-#if defined(ZACUM_RAID) || defined(ZACUM_CALC)
-			Exc::SelectCharacter(2);
-#endif
 
 
-			/*** INGAME ***/
-			IsIngameExceptional = FALSE;
-#ifdef URUS_RAID
-			for (int CountPlay = 0; CountPlay < 3; CountPlay++)
+			for each (const auto & ServerInfo in MapleIdInfo.VecServer)
 			{
+				if (0 == ServerInfo.VecCharacter.size())
+				{
+					continue;
+				}
+
 				try
 				{
-					Exc::EnterGame(MapleIdInfo);
+					ClientApi::SelectServer(ServerInfo);
 				}
-				catch (CvWrappedException & cwe)
+				catch (ClientApi::ClientException& ce)
 				{
-					LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id);
+					LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
+
+					IsExgameExceptional = TRUE;
+					goto LOGOUT;
+				}
+
+#ifdef URUS_RAID
+				ClientApi::SelectCharacter(1);
+#endif
+#if defined(ZACUM_RAID) || defined(ZACUM_CALC)
+				ClientApi::SelectCharacter(2);
+#endif
+
+				IsIngameExceptional = FALSE;
+#ifdef URUS_RAID
+				try
+				{
+					ClientApi::EnterGame(MapleIdInfo);
+				}
+				catch (ClientApi::ServerDisconnectedException & ce)
+				{
+					LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
+
+					goto ABNORMAL_LOGOUT;
+				}
+				catch (ClientApi::ClientException &ce)
+				{
+					LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
 
 					IsIngameExceptional = TRUE;
 					break;
 				}
 				
+
+				/****************************************************************************
+				* APPLICATION
+				****************************************************************************/
 				try
 				{
-					if (0 == CountPlay)
-					{
-						Exc::BreakParty();
-					}
-					Worker.Play(AccountInfo);
+					ClientApi::BreakParty();
+					Worker.Play(NexonAccountInfo);
 				}
-				catch (CvWrappedException & cwe)
+				catch (BasePlay::AppException & ae)
 				{
-					LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id);
+					LEAVE_LOG(ae, NexonAccountInfo.Id, MapleIdInfo.Id);
 
-					Exc::RemoveAllIngameWindow();
+					ClientApi::RemoveAllIngameWindows();
 				}
 
+
+				/****************************************************************************
+				* I1 -> E3
+				****************************************************************************/
 				try
 				{
-					Exc::ExitGame();
+					ClientApi::ExitGame();
 				}
-				catch (CvWrappedException & cwe)
+				catch (ClientApi::ClientException & ce)
 				{
-					LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id);
+					LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
 
 					IsIngameExceptional = TRUE;
 					break;
 				}
-			}
+
+				
 #endif
 #if defined(ZACUM_RAID) || defined(ZACUM_CALC)
-			for each (auto & CharacterString in MapleIdInfo.VecCharacterString)
-			{
-				try
+				for each (auto & CharacterInfo in ServerInfo.VecCharacter)
 				{
-					Exc::EnterGame(MapleIdInfo);
-				}
-				catch (CvWrappedException & cwe)
-				{
-					LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id, CharacterString);
+					try
+					{
+						ClientApi::EnterGame(MapleIdInfo);
+					}
+					catch (ClientApi::ServerDisconnectedException & ce)
+					{
+						LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
 
-					IsIngameExceptional = TRUE;
-					break;
-				}
+						goto ABNORMAL_LOGOUT;
+					}
+					catch (ClientApi::ClientException & ce)
+					{
+						LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
 
-				try
-				{
+						IsIngameExceptional = TRUE;
+						break;
+					}
+
+					try
+					{
 #ifdef ZACUM_RAID
-					Exc::MakeParty();
-					Worker.Play(Conf->MapCharacterInfo[CharacterString], FALSE);
+						ClientApi::MakeParty();
+						Worker.Play(CharacterInfo, FALSE);
 #endif
 #ifdef ZACUM_CALC
-					Worker.Play(MapleIdInfo);
+						Worker.Play(MapleIdInfo);
 #endif
-				}
-				catch (CvWrappedException & cwe)
-				{
-					LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id, CharacterString);
+					}
+					catch (BasePlay::AppException & ae)
+					{
+						LEAVE_LOG(ae, NexonAccountInfo.Id, MapleIdInfo.Id);
 
-					Exc::RemoveAllIngameWindow();
+						ClientApi::RemoveAllIngameWindows();
+					}
+
+
+					try
+					{
+						ClientApi::ExitGame();
+					}
+					catch (ClientApi::ClientException & ce)
+					{
+						LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
+
+						IsIngameExceptional = TRUE;
+						break;
+					}
+
+					KeybdEvent(VK_RIGHT);
 				}
+#endif
 
 				try
 				{
-					Exc::ExitGame();
+					ClientApi::ExitCharacterWindow();
 				}
-				catch (CvWrappedException & cwe)
+				catch (ClientApi::ClientException & ce)
 				{
-					LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id, CharacterString);
+					LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
 
-					IsIngameExceptional = TRUE;
+					IsExgameExceptional = TRUE;
 					break;
 				}
-
-				KeybdEvent(VK_RIGHT);
 			}
-#endif
 
 
-			/*** LOGOUT / TERMINATION ***/
 		LOGOUT:
-			if (!IsIngameExceptional)
+			if (!IsIngameExceptional && !IsExgameExceptional)
 			{
 				if (SeqMapleId % 4 == 3)
 				{
-					Exc::TerminateClient();
+					ClientApi::TerminateClient();
 				}
 				else
 				{
 					try
 					{
-						Exc::Logout();
+						ClientApi::Logout();
 					}
-					catch (CvWrappedException & cwe)
+					catch (ClientApi::ClientException & ce)
 					{
-						LEAVE_LOG(cwe, AccountInfo.Id, MapleIdInfo.Id);
+						LEAVE_LOG(ce, NexonAccountInfo.Id, MapleIdInfo.Id);
 
-						IsIngameExceptional = TRUE;
+						IsExgameExceptional = TRUE;
 						goto LOGOUT;
 					}
 				}
 			}
 			else
 			{
-				Exc::TerminateClient();
+				ClientApi::TerminateClient();
+			}
+
+			if (FALSE)
+			{
+			ABNORMAL_LOGOUT:
+				KeybdEvent(VK_RETURN);
 			}
 
 			++SeqMapleId;
 		}
 	}
-	WriteLog(LOG_LEVEL::INFO, "ALL ROUTINES HAVE BEEN SUCCESSFULLY COMPLETE.\n")
-	
-	EXIT_ROUTINE:
+
+	WriteLog(LOG_LEVEL::INFO, "ALL ROUTINES HAVE BEEN SUCCESSFULLY COMPLETE.\n");
+EXIT_ROUTINE:
 	Conf->Destroy();
 
 	Sleep(10000000);

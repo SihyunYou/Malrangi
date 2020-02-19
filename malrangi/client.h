@@ -9,11 +9,9 @@
 #include "conf.h"
 
 
-/****************************************************************************
-* Information of Client
-****************************************************************************/
-typedef struct _CLIENT_ELEM
+class ClientApi
 {
+public:
 #define HWND_MAPLESTORY (::FindWindow(NULL, TEXT("MapleStory")))
 	static void SET_CLIENT_STDPOS(void);
 	static CONST RECT RECT_CLIENT1;
@@ -26,100 +24,8 @@ typedef struct _CLIENT_ELEM
 	static CONST RECT RECT_E2;
 	static CONST RECT RECT_E3;
 	static CONST RECT RECT_I1;
-}CLIENT_ELEM;
-void CLIENT_ELEM::SET_CLIENT_STDPOS(void)
-{
-	SetWindowPos(GetConsoleWindow(),
-		0,
-		1362, 0,
-		0, 0,
-		SWP_NOSIZE | SWP_NOZORDER);
-	SetWindowPos(HWND_MAPLESTORY,
-		HWND_TOP,
-		-3, -26,
-		0, 0,
-		SWP_NOSIZE);
-}
-CONST RECT CLIENT_ELEM::RECT_CLIENT1 = { 0, 0, 800, 600 };
-CONST RECT CLIENT_ELEM::RECT_CLIENT4 = { 0, 0, 1366, 768 };
-CONST Mat CLIENT_ELEM::TARGETIMAGE_E1 = Cvw::Read("res\\initial_logo.jpg");
-CONST Mat CLIENT_ELEM::TARGETIMAGE_E2 = Cvw::Read("res\\world-channel_select.jpg");
-CONST Mat CLIENT_ELEM::TARGETIMAGE_E3 = Cvw::Read("res\\character_select.jpg");
-CONST Mat CLIENT_ELEM::TARGETIMAGE_I1 = Cvw::Read("res\\button_mileage.jpg");
-CONST RECT CLIENT_ELEM::RECT_E1 = { 700, 0, 850, 100 };
-CONST RECT CLIENT_ELEM::RECT_E2 = { 30, 0, 190, 50 };
-CONST RECT CLIENT_ELEM::RECT_E3 = { 0, 0, 200, 70 };
-CONST RECT CLIENT_ELEM::RECT_I1 = { 0, 280, 100, 500 };
 
-
-
-
-
-/****************************************************************************
-* Character's Act Control
-****************************************************************************/
-namespace Exc
-{
-	enum class JUMP_TYPE
-	{
-		CYGNUS,
-		DEMON,
-		NOVA,
-		V_MATRIX,
-		ZERO,
-		WIZARD,
-	};
-	void Jump(
-		JUMP_TYPE JumpType,
-		DWORD MillisecondsRestTime = 1000)
-	{
-		switch (JumpType)
-		{
-		case JUMP_TYPE::DEMON:
-			KeybdEvent(VK_MENU, 60);
-			KeybdEvent(VK_UP, 60);
-			KeybdEvent(VK_UP, 2500);
-			break;
-
-		case JUMP_TYPE::CYGNUS:
-			KeybdEvent(VK_MENU, 60);
-
-			KeybdEventDown(VK_UP);
-			KeybdEvent(VK_MENU, 60);
-			KeybdEventUp(VK_UP);
-			break;
-
-		case JUMP_TYPE::NOVA:
-			KeybdEvent('C', 2000);
-			break;
-
-		case JUMP_TYPE::V_MATRIX:
-			KeybdEvent('L', 180);
-			break;
-
-		case JUMP_TYPE::ZERO:
-			KeybdEventDown(VK_UP);
-			KeybdEvent('F', 100);
-			KeybdEventUp(VK_UP);
-			break;
-
-		case JUMP_TYPE::WIZARD:
-			KeybdEventDown(VK_UP);
-			KeybdEvent(VK_SHIFT, 100);
-			KeybdEventUp(VK_UP);
-			break;
-		}
-		Sleep(MillisecondsRestTime);
-	}
-	void DownJump(
-		DWORD MilliSecondsRestTime = 1000)
-	{
-		keybd_event(VK_DOWN, MapVirtualKey(VK_DOWN, 0), 0, 0);
-		KeybdEvent(VK_MENU, MilliSecondsRestTime);
-		keybd_event(VK_DOWN, MapVirtualKey(VK_DOWN, 0), KEYEVENTF_KEYUP, 0);
-	}
-
-
+public:
 	class MinimapRecognizer
 	{
 	public:
@@ -220,336 +126,555 @@ namespace Exc
 	private:
 		RECT RectMinimap;
 	};
-}
 
 
-/****************************************************************************
-* External Game Client Control
-****************************************************************************/
-namespace Exc
+	class ClientException : public std::exception
+	{
+	public:
+		ClientException(void) :
+			Message(__CLASSNAME__) {}
+		explicit ClientException(const char* Message) :
+			Message(Message) {}
+		explicit ClientException(string Message) :
+			Message(Message) {}
+		virtual ~ClientException() throw () {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+
+	protected:
+		std::string Message;
+	};
+
+
+	/****************************************************************************
+	* Exceptions
+	****************************************************************************/
+	class BootFailedException : public ClientException
+	{
+	public:
+		BootFailedException(void) :
+			ClientException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class ServerDisconnectedException : public ClientException
+	{
+	public:
+		ServerDisconnectedException(void) :
+			ClientException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class NexonLoginFailedException : public ClientException
+	{
+	public:
+		NexonLoginFailedException(void) :
+			ClientException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class MapleLoginFailedException : public ClientException
+	{
+	public:
+		MapleLoginFailedException(void) :
+			ClientException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class GameEntryException : public ClientException
+	{
+	public:
+		GameEntryException(void) :
+			ClientException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class GameExitException : public ClientException
+	{
+	public:
+		GameExitException(void) :
+			ClientException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class UnhandledException : public ClientException
+	{
+	public:
+		UnhandledException(void) :
+			ClientException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+
+
+
+	/****************************************************************************
+	* External Client Control
+	****************************************************************************/
+	static void BootClient(void);
+	static void Login(
+		const CONF_INFO::NEXONAC_INFO&,
+		const CONF_INFO::NEXONAC_INFO::MAPLEID_INFO&);
+	static void SelectServer(
+		const CONF_INFO::NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO&);
+	static void SelectCharacter(unsigned int);
+	static void UnlockSecondPassword(
+		const string&);
+	static void ExitCharacterWindow(void);
+	static void Logout(void);
+	static void TerminateClient(void);
+
+
+	/****************************************************************************
+	* Internal Game Window Control
+	****************************************************************************/
+	static void EnterGame(
+		const CONF_INFO::NEXONAC_INFO::MAPLEID_INFO&);
+	enum class JUMP_T
+	{
+		CYGNUS,
+		DEMON,
+		NOVA,
+		V_MATRIX,
+		ZERO,
+		WIZARD,
+	};
+	static void Jump(
+		JUMP_T,
+		DWORD);
+	static void DownJump(
+		DWORD);
+	static void MakeParty(void);
+	static void BreakParty(void);
+	static void MoveServer(bool);
+	static void RemoveAllIngameWindows(void);
+	static void ExitGame(void);
+};
+
+void ClientApi::SET_CLIENT_STDPOS(void)
 {
-	void BootClient(
-		void)
-	{
-		ShellExecute(NULL, TEXT("open"), TEXT("C:\\Nexon\\Maple\\MapleStory.exe"), TEXT("GameLaunching"), NULL, SW_SHOW);
-		try
-		{
-			Cvw::DoUntilMatchingTemplate(
-				CLIENT_ELEM::RECT_E1,
-				CLIENT_ELEM::TARGETIMAGE_E1,
-				[]()
-				{
-					CLIENT_ELEM::SET_CLIENT_STDPOS();
-				},
-				180000);
-		}
-		catch (MatchFailedException & cwe)
-		{
-			throw;
-		}
-	}
-	void TerminateClient(
-		void)
-	{
-		DWORD ProcessId;
-		GetWindowThreadProcessId(HWND_MAPLESTORY, &ProcessId);
-		HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, ProcessId);
-		if (hProcess)
-		{
-			TerminateProcess(hProcess, -1);
-			CloseHandle(hProcess);
-		}
-	}
+	SetWindowPos(GetConsoleWindow(),
+		0,
+		1362, 0,
+		0, 0,
+		SWP_NOSIZE | SWP_NOZORDER);
+	SetWindowPos(HWND_MAPLESTORY,
+		HWND_TOP,
+		-3, -26,
+		0, 0,
+		SWP_NOSIZE);
 }
+CONST RECT ClientApi::RECT_CLIENT1 = { 0, 0, 800, 600 };
+CONST RECT ClientApi::RECT_CLIENT4 = { 0, 0, 1366, 768 };
+CONST Mat ClientApi::TARGETIMAGE_E1 = Cvw::Read("res\\initial_logo.jpg");
+CONST Mat ClientApi::TARGETIMAGE_E2 = Cvw::Read("res\\world-channel_select.jpg");
+CONST Mat ClientApi::TARGETIMAGE_E3 = Cvw::Read("res\\character_select.jpg");
+CONST Mat ClientApi::TARGETIMAGE_I1 = Cvw::Read("res\\button_mileage.jpg");
+CONST RECT ClientApi::RECT_E1 = { 700, 0, 850, 100 };
+CONST RECT ClientApi::RECT_E2 = { 30, 0, 190, 50 };
+CONST RECT ClientApi::RECT_E3 = { 0, 0, 200, 70 };
+CONST RECT ClientApi::RECT_I1 = { 0, 280, 100, 500 };
 
-
-/****************************************************************************
-* Internal Game Window Control
-****************************************************************************/
-namespace Exc
+void ClientApi::BootClient(
+	void)
 {
-	void UnlockSecondPassword(
-		string lpPw)
+	ShellExecute(NULL, TEXT("open"), TEXT("C:\\Nexon\\Maple\\MapleStory.exe"), TEXT("GameLaunching"), NULL, SW_SHOW);
+	try
 	{
-		for each (auto Character in lpPw)
-		{
-			switch (Character)
-			{
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9':
-			case '0':
-				MouseEvent({ 0, 0 }, LEFT_CLICK, 300);
-				Cvw::ClickMatchedTemplate(
-					Cvw::Capture(CLIENT_ELEM::RECT_CLIENT4, 0),
-					Cvw::Read(string("res\\button_") + Character + ".jpg"),
-					LEFT_CLICK,
-					{ 5, 5 });
-				break;
-
-			case '!':
-				KeybdEventWithSubKey('1', VK_SHIFT, 300); break;
-			case '@':
-				KeybdEventWithSubKey('2', VK_SHIFT, 300); break;
-			case '#':
-				KeybdEventWithSubKey('3', VK_SHIFT, 300); break;
-			case '$':
-				KeybdEventWithSubKey('4', VK_SHIFT, 300); break;
-			case '%':
-				KeybdEventWithSubKey('5', VK_SHIFT, 300); break;
-			case '^':
-				KeybdEventWithSubKey('6', VK_SHIFT, 300); break;
-			case '&':
-				KeybdEventWithSubKey('7', VK_SHIFT, 300); break;
-			case '*':
-				KeybdEventWithSubKey('8', VK_SHIFT, 300); break;
-			case '(':
-				KeybdEventWithSubKey('9', VK_SHIFT, 300); break;
-			case ')':
-				KeybdEventWithSubKey('0', VK_SHIFT, 300); break;
-			}
-		}
-		KeybdEvent(VK_RETURN);
-	}
-	void LoginInInitialStage(
-		CONST CONF_INFO::ACCOUNT_INFO& AccountInfo,
-		CONST CONF_INFO::ACCOUNT_INFO::MAPLEID_INFO& MapleIdInfo)
-	{
-		auto LoginNexonId = [&AccountInfo](BOOL IsBlank) -> void
-		{
-			MouseEvent({ 300, 296 }, LEFT_CLICK);
-			if (!IsBlank)
-			{
-				for (int i = 0; i < 150; i++)
-				{
-					KeybdEvent(VK_BACK, 20);
-				}
-				for (int i = 0; i < 150; i++)
-				{
-					KeybdEvent(VK_DELETE, 20);
-				}
-			}
-			TypingMessageWithClipboard(AccountInfo.Id.c_str());
-			
-			MouseEvent({ 300, 321 }, LEFT_CLICK);
-			if (!IsBlank)
-			{
-				for (int i = 0; i < 150; i++)
-				{
-					KeybdEvent(VK_BACK, 20);
-				}
-				for (int i = 0; i < 150; i++)
-				{
-					KeybdEvent(VK_DELETE, 20);
-				}
-			}
-			TypingMessageWithClipboard(AccountInfo.Password.c_str());
-			
-			KeybdEvent(VK_RETURN);
-		};
-		auto SelectMapldId = [&AccountInfo, &MapleIdInfo](void) -> void
-		{
-			DWORD SeqId = 0;
-			for each (auto & MapleId in AccountInfo.VecMapleId)
-			{
-				if (MapleId.Id == MapleIdInfo.Id)
-				{
-					break;
-				}
-				++SeqId;
-			}
-			
-			for (int i = 0; i < SeqId + 1; i++)
-			{
-				KeybdEvent(VK_DOWN);
-			}
-			KeybdEvent(VK_RETURN);
-		};
-	
-		CLIENT_ELEM::SET_CLIENT_STDPOS();
-		LoginNexonId(TRUE);
-		SelectMapldId();
-
-		try
-		{
-			Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_E2, CLIENT_ELEM::TARGETIMAGE_E2, NONWORK, 20000);
-		}
-		catch (MatchFailedException & cwe)
-		{
-			WriteLog(LOG_LEVEL::FAILURE, cwe.what());
-
-			KeybdEvent(VK_ESCAPE);
-			LoginNexonId(FALSE);
-			SelectMapldId();
-
-			try
-			{
-				Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_E2, CLIENT_ELEM::TARGETIMAGE_E2, NONWORK, 20000);
-			}
-			catch (MatchFailedException & cwe)
-			{
-				throw;
-			}
-		}
-
-		KeybdEvent(VK_RETURN);
-		KeybdEvent(VK_RETURN);
-
-		try
-		{
-			Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_E3, CLIENT_ELEM::TARGETIMAGE_E3, NONWORK, 60000);
-		}
-		catch (CvWrappedException & cwe)
-		{
-			throw;
-		}
-	}
-	void EnterGame(
-		CONST CONF_INFO::ACCOUNT_INFO::MAPLEID_INFO& MapleIdInfo)
-	{
-		KeybdEvent(VK_RETURN, 1000);
-		try
-		{
-			Cvw::MatchTemplate(Cvw::Capture(CLIENT_ELEM::RECT_CLIENT1), Cvw::Read("res\\button_1.jpg"));
-			Exc::UnlockSecondPassword(MapleIdInfo.SecondPassword);
-		}
-		catch (MatchFailedException & cwe)
-		{
-			;
-		}
-
-		try
-		{
-			Cvw::DoUntilMatchingTemplate(
-				CLIENT_ELEM::RECT_I1,
-				CLIENT_ELEM::TARGETIMAGE_I1,
-				[]()
-				{
-					CLIENT_ELEM::SET_CLIENT_STDPOS();
-				},
-				90000);
-		}
-		catch (CvWrappedException & cwe)
-		{
-			WriteLog(LOG_LEVEL::FAILURE, cwe.what());
-
-			throw;
-		}
-
-		// Remove tooltips
-		MouseEvent({ 902, 337 }, LEFT_CLICK);
-		KeybdEvent(VK_ESCAPE);
-		KeybdEvent(VK_ESCAPE);
-	}
-	void SelectCharacter(
-		UINT Sequence)
-	{
-		for (int i = 0; i < 46; i++)
-		{
-			KeybdEvent(VK_LEFT, 120);
-		}
-		for (int i = 0; i < Sequence - 1; i++)
-		{
-			KeybdEvent(VK_RIGHT, 240);
-		}
-	}
-
-	void RemoveAllIngameWindow(
-		void)
-	{
-		for (int i = 0; i < 4; i++)
-		{
-			KeybdEvent(VK_RETURN);
-		}
-		for (int i = 0; i < 4; i++)
-		{
-			KeybdEvent(VK_ESCAPE);
-		}
-		MouseEvent({ 64, 64 }, LEFT_CLICK);
-	}
-	void ExitGame(
-		void)
-	{
-		KeybdEvent(VK_ESCAPE);
-		KeybdEvent(VK_UP);
-		KeybdEvent(VK_RETURN);
-		KeybdEvent(VK_RETURN);
 		Cvw::DoUntilMatchingTemplate(
-			CLIENT_ELEM::RECT_E3,
-			CLIENT_ELEM::TARGETIMAGE_E3,
+			ClientApi::RECT_E1,
+			ClientApi::TARGETIMAGE_E1,
 			[]()
 			{
-				CLIENT_ELEM::SET_CLIENT_STDPOS();
+				ClientApi::SET_CLIENT_STDPOS();
+			},
+			180000);
+	}
+	catch (MatchFailedException & cwe)
+	{
+		throw ClientApi::ClientException("BootFailedException");
+	}
+}
+void ClientApi::TerminateClient(
+	void)
+{
+	DWORD ProcessId;
+	GetWindowThreadProcessId(HWND_MAPLESTORY, &ProcessId);
+	HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, ProcessId);
+	if (hProcess)
+	{
+		TerminateProcess(hProcess, -1);
+		CloseHandle(hProcess);
+	}
+}
+void ClientApi::Login(
+	CONST CONF_INFO::NEXONAC_INFO& AccountInfo,
+	CONST CONF_INFO::NEXONAC_INFO::MAPLEID_INFO& MapleIdInfo)
+{
+	auto WriteString = [](const string& s) -> void
+	{
+		for (int i = 0; i < s.length(); i++)
+		{
+			KeybdEvent(s[i], 0x80);
+		}
+	};
+	static Mat TargetImageMapleIdSelectWindow = Cvw::Read("res//");
+	BOOL IsNexonLoginExceptional = FALSE;
+	
+	ClientApi::SET_CLIENT_STDPOS();
+
+	/*** 넥슨아이디 로그인 ***/
+	LOGIN_NEXON:
+	if (IsNexonLoginExceptional)
+	{
+		for (int i = 0; i < 150; i++)
+		{
+			KeybdEvent(VK_BACK, 20);
+		}
+		for (int i = 0; i < 150; i++)
+		{
+			KeybdEvent(VK_DELETE, 20);
+		}
+	}
+	WriteString(AccountInfo.Id);
+	KeybdEvent(VK_TAB);
+	if (IsNexonLoginExceptional)
+	{
+		for (int i = 0; i < 150; i++)
+		{
+			KeybdEvent(VK_BACK, 20);
+		}
+		for (int i = 0; i < 150; i++)
+		{
+			KeybdEvent(VK_DELETE, 20);
+		}
+	}
+	WriteString(AccountInfo.Password);
+	KeybdEvent(VK_RETURN, 0x400);
+
+	try
+	{
+		Cvw::MatchTemplate(Cvw::Capture({}), TargetImageMapleIdSelectWindow);
+	}
+	catch (MatchFailedException& ce)
+	{
+		if (!IsNexonLoginExceptional)
+		{
+			IsNexonLoginExceptional = TRUE;
+			goto LOGIN_NEXON;
+		}
+		throw ClientApi::ClientException("NexonLoginFailedException");
+	}
+
+
+	/*** 메이플 아이디 로그인 ***/
+	DWORD SeqId = 0;
+	for each (auto & MapleId in AccountInfo.VecMapleId)
+	{
+		if (MapleId.Id == MapleIdInfo.Id)
+		{
+			break;
+		}
+		++SeqId;
+	}
+	for (int i = 0; i < SeqId + 1; i++)
+	{
+		KeybdEvent(VK_DOWN);
+	}
+	KeybdEvent(VK_RETURN);
+
+	try
+	{
+		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, 15000);
+	}
+	catch (MatchFailedException & cwe)
+	{
+		throw ClientApi::ClientException("MapleLoginFailedException");
+	}
+}
+void ClientApi::SelectServer(
+	const CONF_INFO::NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO& ServerInfo)
+{
+	;
+}
+void ClientApi::UnlockSecondPassword(
+	const string& lpPw)
+{
+	for each (auto Character in lpPw)
+	{
+		switch (Character)
+		{
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+		case '0':
+			MouseEvent({ 0, 0 }, LEFT_CLICK, 300);
+			Cvw::ClickMatchedTemplate(
+				Cvw::Capture(ClientApi::RECT_CLIENT4, 0),
+				Cvw::Read(string("res\\button_") + Character + ".jpg"),
+				LEFT_CLICK,
+				{ 5, 5 });
+			break;
+
+		case '!':
+			KeybdEventWithSubKey('1', VK_SHIFT, 300); break;
+		case '@':
+			KeybdEventWithSubKey('2', VK_SHIFT, 300); break;
+		case '#':
+			KeybdEventWithSubKey('3', VK_SHIFT, 300); break;
+		case '$':
+			KeybdEventWithSubKey('4', VK_SHIFT, 300); break;
+		case '%':
+			KeybdEventWithSubKey('5', VK_SHIFT, 300); break;
+		case '^':
+			KeybdEventWithSubKey('6', VK_SHIFT, 300); break;
+		case '&':
+			KeybdEventWithSubKey('7', VK_SHIFT, 300); break;
+		case '*':
+			KeybdEventWithSubKey('8', VK_SHIFT, 300); break;
+		case '(':
+			KeybdEventWithSubKey('9', VK_SHIFT, 300); break;
+		case ')':
+			KeybdEventWithSubKey('0', VK_SHIFT, 300); break;
+		}
+	}
+	KeybdEvent(VK_RETURN);
+}
+void ClientApi::EnterGame(
+	CONST CONF_INFO::NEXONAC_INFO::MAPLEID_INFO& MapleIdInfo)
+{
+	KeybdEvent(VK_RETURN, 0x400);
+	try
+	{
+		Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), Cvw::Read("res\\button_1.jpg"));
+		ClientApi::UnlockSecondPassword(MapleIdInfo.SecondPassword);
+	}
+	catch (MatchFailedException & cwe)
+	{
+		; // Second-password unrequired
+	}
+
+	try
+	{
+		Cvw::DoUntilMatchingTemplate(
+			ClientApi::RECT_I1,
+			ClientApi::TARGETIMAGE_I1,
+			[]()
+			{
+				ClientApi::SET_CLIENT_STDPOS();
+			},
+			60000);
+	}
+	catch (MatchFailedException & cwe)
+	{
+		try
+		{
+			Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), ClientApi::TARGETIMAGE_E1);
+			throw ClientApi::ServerDisconnectedException();
+		}
+		catch (MatchFailedException & mfe)
+		{
+			throw ClientApi::ClientException("GameEntryFailedException");
+		}
+	}
+
+	// Remove tooltips
+	MouseEvent({ 902, 337 }, LEFT_CLICK);
+	KeybdEvent(VK_ESCAPE);
+	KeybdEvent(VK_ESCAPE);
+}
+void ClientApi::SelectCharacter(
+	unsigned int Seq)
+{
+	for (int i = 0; i < 46; i++)
+	{
+		KeybdEvent(VK_LEFT, 120);
+	}
+	for (int i = 0; i < Seq - 1; i++)
+	{
+		KeybdEvent(VK_RIGHT, 240);
+	}
+}
+void ClientApi::RemoveAllIngameWindows(
+	void)
+{
+	for (int i = 0; i < 4; i++)
+	{
+		KeybdEvent(VK_RETURN);
+	}
+	for (int i = 0; i < 4; i++)
+	{
+		KeybdEvent(VK_ESCAPE);
+	}
+	MouseEvent({ 64, 64 }, LEFT_CLICK);
+}
+void ClientApi::ExitGame(
+	void)
+{
+	KeybdEvent(VK_ESCAPE);
+	KeybdEvent(VK_UP);
+	KeybdEvent(VK_RETURN);
+	KeybdEvent(VK_RETURN);
+
+	try
+	{
+		Cvw::DoUntilMatchingTemplate(
+			ClientApi::RECT_E3,
+			ClientApi::TARGETIMAGE_E3,
+			[]()
+			{
+				ClientApi::SET_CLIENT_STDPOS();
 			},
 			30000);
 	}
-	void Logout(
-		void)
+	catch (MatchFailedException & mfe)
 	{
-		KeybdEvent(VK_ESCAPE);
-		Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_E2, CLIENT_ELEM::TARGETIMAGE_E2, NONWORK, 30000);
-
-		KeybdEvent(VK_ESCAPE);
-		KeybdEvent(VK_RETURN);
-		Cvw::DoUntilMatchingTemplate(CLIENT_ELEM::RECT_E1, CLIENT_ELEM::TARGETIMAGE_E1, NONWORK, 30000);
-	}
-	void MakeParty(
-		void)
-	{
-		KeybdEvent(VK_OEM_4);
-		MouseEvent({ 0, 0 }, LEFT_CLICK);
-
-		Mat SourceImage = Cvw::Capture(CLIENT_ELEM::RECT_CLIENT4);
-		static array<Mat, 2> ArrTargetImage = { Cvw::Read("res\\button_make.jpg"), Cvw::Read("res\\button_break.jpg") };
-		auto TemplateInfo = Cvw::GetHighestMatchedTemplate(SourceImage, ArrTargetImage);
-
-		if (0 == TemplateInfo.first)
+		try
 		{
-			MouseEvent(TemplateInfo.second.MaximumLocation, LEFT_CLICK);
-			KeybdEvent(VK_RETURN);
+			Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), ClientApi::TARGETIMAGE_E1);
+			throw ClientApi::ServerDisconnectedException();
 		}
-		KeybdEvent(VK_OEM_4);
-	}
-	void BreakParty(
-		void)
-	{
-		KeybdEvent(VK_OEM_4);
-		MouseEvent({ 0, 0 }, LEFT_CLICK);
-
-		Mat SourceImage = Cvw::Capture(CLIENT_ELEM::RECT_CLIENT4);
-		static array<Mat, 2> ArrTargetImage = { Cvw::Read("res\\button_make.jpg"), Cvw::Read("res\\button_break.jpg") };
-		auto TemplateInfo = Cvw::GetHighestMatchedTemplate(SourceImage, ArrTargetImage);
-
-		if (1 == TemplateInfo.first)
+		catch (MatchFailedException & mfe)
 		{
-			MouseEvent(TemplateInfo.second.MaximumLocation, LEFT_CLICK);
+			throw ClientApi::GameExitException();
 		}
-		KeybdEvent(VK_OEM_4);
-	}
-	void MoveServerNext(
-		DWORD dwMilliSeconds = 5000)
-	{
-		KeybdEvent(VK_ESCAPE, 400);
-		KeybdEvent(VK_RETURN, 400);
-		KeybdEvent(VK_RIGHT, 400);
-		KeybdEvent(VK_RETURN, 400);
-		Sleep(dwMilliSeconds);
-	}
-	void MoveServerBack(
-		DWORD dwMilliSeconds = 5000)
-	{
-		KeybdEvent(VK_ESCAPE, 400);
-		KeybdEvent(VK_RETURN, 400);
-		KeybdEvent(VK_LEFT, 400);
-		KeybdEvent(VK_RETURN, 400);
-		Sleep(dwMilliSeconds);
 	}
 }
-namespace EXC = Exc;
+void ClientApi::Logout(
+	void)
+{
+	KeybdEvent(VK_ESCAPE);
+	KeybdEvent(VK_RETURN);
+	try
+	{
+		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E1, ClientApi::TARGETIMAGE_E1, NONWORK, 30000);
+	}
+	catch (MatchFailedException & mfe)
+	{
+		throw;
+	}
+}
+void ClientApi::ExitCharacterWindow(void)
+{
+	KeybdEvent(VK_ESCAPE);
+	try
+	{
+		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, 30000);
+	}
+	catch (MatchFailedException & mfe)
+	{
+		throw;
+	}
+}
+void ClientApi::MakeParty(
+	void)
+{
+	KeybdEvent(VK_OEM_4);
+	MouseEvent({ 0, 0 }, LEFT_CLICK);
 
+	Mat SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
+	static array<Mat, 2> ArrTargetImage = { Cvw::Read("res\\button_make.jpg"), Cvw::Read("res\\button_break.jpg") };
+	auto TemplateInfo = Cvw::GetHighestMatchedTemplate(SourceImage, ArrTargetImage);
+
+	if (0 == TemplateInfo.first)
+	{
+		MouseEvent(TemplateInfo.second.MaximumLocation, LEFT_CLICK);
+		KeybdEvent(VK_RETURN);
+	}
+	KeybdEvent(VK_OEM_4);
+}
+void ClientApi::BreakParty(
+	void)
+{
+	KeybdEvent(VK_OEM_4);
+	MouseEvent({ 0, 0 }, LEFT_CLICK);
+
+	Mat SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
+	static array<Mat, 2> ArrTargetImage = { Cvw::Read("res\\button_make.jpg"), Cvw::Read("res\\button_break.jpg") };
+	auto TemplateInfo = Cvw::GetHighestMatchedTemplate(SourceImage, ArrTargetImage);
+
+	if (1 == TemplateInfo.first)
+	{
+		MouseEvent(TemplateInfo.second.MaximumLocation, LEFT_CLICK);
+	}
+	KeybdEvent(VK_OEM_4);
+}
+void ClientApi::MoveServer(
+	bool IsForward)
+{
+	KeybdEvent(VK_ESCAPE, 400);
+	KeybdEvent(VK_RETURN, 400);
+	KeybdEvent(IsForward ? VK_RIGHT : VK_LEFT, 400);
+	KeybdEvent(VK_RETURN, 1000);
+}
+void ClientApi::Jump(
+	JUMP_T JumpType,
+	DWORD MillisecondsRestTime = 0x400)
+{
+	switch (JumpType)
+	{
+	case JUMP_T::DEMON:
+		KeybdEvent(VK_MENU, 60);
+		KeybdEvent(VK_UP, 60);
+		KeybdEvent(VK_UP, 2500);
+		break;
+
+	case JUMP_T::CYGNUS:
+		KeybdEvent(VK_MENU, 60);
+
+		KeybdEventDown(VK_UP);
+		KeybdEvent(VK_MENU, 60);
+		KeybdEventUp(VK_UP);
+		break;
+
+	case JUMP_T::NOVA:
+		KeybdEvent('C', 2000);
+		break;
+
+	case JUMP_T::V_MATRIX:
+		KeybdEvent('L', 180);
+		break;
+
+	case JUMP_T::ZERO:
+		KeybdEventDown(VK_UP);
+		KeybdEvent('F', 100);
+		KeybdEventUp(VK_UP);
+		break;
+
+	case JUMP_T::WIZARD:
+		KeybdEventDown(VK_UP);
+		KeybdEvent(VK_SHIFT, 100);
+		KeybdEventUp(VK_UP);
+		break;
+	}
+	Sleep(MillisecondsRestTime);
+}
+void ClientApi::DownJump(
+	DWORD MilliSecondsRestTime = 0x400)
+{
+	keybd_event(VK_DOWN, MapVirtualKey(VK_DOWN, 0), 0, 0);
+	KeybdEvent(VK_MENU, MilliSecondsRestTime);
+	keybd_event(VK_DOWN, MapVirtualKey(VK_DOWN, 0), KEYEVENTF_KEYUP, 0);
+}

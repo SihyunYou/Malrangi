@@ -225,6 +225,7 @@ namespace Cvw
 				Func();
 				Sleep(IdleTime);
 			}
+
 			SumOfIdleTime += IdleTime;
 		}
 
