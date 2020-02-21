@@ -1,143 +1,21 @@
-/****************************************************************************
-*
-* exercise.h -- Macro Applications Optimized to Maple
-*
-****************************************************************************/
-
 #pragma once
 #include "cvwrap.h"
-#include "conf.h"
+#include "client_api.h"
+#include "ip.h"
 
-
-class ClientApi
+class BasePlay
 {
 public:
-#define HWND_MAPLESTORY (::FindWindow(NULL, TEXT("MapleStory")))
-	static void SET_CLIENT_STDPOS(void);
-	static CONST RECT RECT_CLIENT1;
-	static CONST RECT RECT_CLIENT4;
-	static CONST Mat TARGETIMAGE_E1;
-	static CONST Mat TARGETIMAGE_E2;
-	static CONST Mat TARGETIMAGE_E3;
-	static CONST Mat TARGETIMAGE_I1;
-	static CONST RECT RECT_E1;
-	static CONST RECT RECT_E2;
-	static CONST RECT RECT_E3;
-	static CONST RECT RECT_I1;
-
-public:
-	class MinimapRecognizer
+	class AppException : public std::exception
 	{
 	public:
-		class CharacterNotFoundException : public CvWrappedException
-		{
-		public:
-			CharacterNotFoundException::CharacterNotFoundException(void) :
-				CvWrappedException(__CLASSNAME__ + "A specified object cannot be recognized in the minimap.\n") {}
-			virtual const char* CharacterNotFoundException::what(void)
-			{
-				return Message.c_str();
-			}
-		};
-
-	public:
-		MinimapRecognizer::MinimapRecognizer(
-			RECT RectMinimap) :
-			RectMinimap(RectMinimap)
-		{
-			;
-		}
-		MinimapRecognizer operator=(
-			RECT RectMinimap)
-		{
-			return MinimapRecognizer(RectMinimap);
-		}
-
-	protected:
-		enum class OBJECT
-		{
-			YELLOW,
-			RED,
-		};
-
-	public:
-		void MoveToRelativeCriteria(
-			INT MinimapRelativeCriteria)
-		{
-			auto GetCurrentMiniMapPosition = [this](MinimapRecognizer::OBJECT ObjectToGet) ->INT
-			{
-				try
-				{
-					Mat SourceMiniMapImage = Cvw::Capture(RectMinimap, IMREAD_COLOR);
-					//Cvw::Show(SourceMiniMapImage);
-					Mat Mask;
-					if (OBJECT::YELLOW == ObjectToGet)
-					{
-						Cvw::InRange(SourceMiniMapImage, Scalar(20, 235, 245), Scalar(40, 245, 255), Mask);
-					}
-					//Cvw::Show(Mask);
-					for (int y = 0; y < Mask.rows; ++y)
-					{
-						for (int x = 0; x < Mask.cols; ++x)
-						{
-							if (Mask.at<BYTE>(y, x) == 255)
-							{
-								return x;
-							}
-						}
-					}
-				}
-				catch (EmptyMatException & cwexception)
-				{
-					throw;
-				}
-				catch (IntegerDivisionByZeroException & cwexception)
-				{
-					throw;
-				}
-
-				throw MinimapRecognizer::CharacterNotFoundException();
-			};
-			INT RelativeDistance = GetCurrentMiniMapPosition(OBJECT::YELLOW) - MinimapRelativeCriteria;
-
-			if (RelativeDistance < 0)
-			{
-
-				KeybdEventDown(VK_RIGHT);
-				while (RelativeDistance <= 0)
-				{
-					std::cout << GetCurrentMiniMapPosition(OBJECT::YELLOW) << endl;
-					RelativeDistance = GetCurrentMiniMapPosition(OBJECT::YELLOW) - MinimapRelativeCriteria + 2;
-				}
-				KeybdEventUp(VK_RIGHT);
-			}
-			else if (RelativeDistance > 0)
-			{
-				KeybdEventDown(VK_LEFT);
-				while (RelativeDistance >= 0)
-				{
-					std::cout << GetCurrentMiniMapPosition(OBJECT::YELLOW) << endl;
-					RelativeDistance = GetCurrentMiniMapPosition(OBJECT::YELLOW) - MinimapRelativeCriteria - 2;
-				}
-				KeybdEventUp(VK_LEFT);
-			}
-		}
-
-	private:
-		RECT RectMinimap;
-	};
-
-
-	class ClientException : public std::exception
-	{
-	public:
-		ClientException(void) :
+		AppException(void) :
 			Message(__CLASSNAME__) {}
-		explicit ClientException(const char* Message) :
+		explicit AppException(const char* Message) :
 			Message(Message) {}
-		explicit ClientException(string Message) :
+		explicit AppException(string Message) :
 			Message(Message) {}
-		virtual ~ClientException() throw () {}
+		virtual ~AppException() throw () {}
 		virtual const char* what(void) const throw()
 		{
 			return Message.c_str();
@@ -147,534 +25,722 @@ public:
 		std::string Message;
 	};
 
-
-	/****************************************************************************
-	* Exceptions
-	****************************************************************************/
-	class BootFailedException : public ClientException
-	{
-	public:
-		BootFailedException(void) :
-			ClientException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class ServerDisconnectedException : public ClientException
-	{
-	public:
-		ServerDisconnectedException(void) :
-			ClientException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class NexonLoginFailedException : public ClientException
-	{
-	public:
-		NexonLoginFailedException(void) :
-			ClientException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class MapleLoginFailedException : public ClientException
-	{
-	public:
-		MapleLoginFailedException(void) :
-			ClientException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class GameEntryException : public ClientException
-	{
-	public:
-		GameEntryException(void) :
-			ClientException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class GameExitException : public ClientException
-	{
-	public:
-		GameExitException(void) :
-			ClientException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class UnhandledException : public ClientException
-	{
-	public:
-		UnhandledException(void) :
-			ClientException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-
-
-
-	/****************************************************************************
-	* External Client Control
-	****************************************************************************/
-	static void BootClient(void);
-	static void Login(
-		const CONF_INFO::NEXONAC_INFO&,
-		const CONF_INFO::NEXONAC_INFO::MAPLEID_INFO&);
-	static void SelectServer(
-		const CONF_INFO::NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO&);
-	static void SelectCharacter(unsigned int);
-	static void UnlockSecondPassword(
-		const string&);
-	static void ExitCharacterWindow(void);
-	static void Logout(void);
-	static void TerminateClient(void);
-
-
-	/****************************************************************************
-	* Internal Game Window Control
-	****************************************************************************/
-	static void EnterGame(
-		const CONF_INFO::NEXONAC_INFO::MAPLEID_INFO&);
-	enum class JUMP_T
-	{
-		CYGNUS,
-		DEMON,
-		NOVA,
-		V_MATRIX,
-		ZERO,
-		WIZARD,
-	};
-	static void Jump(
-		JUMP_T,
-		DWORD);
-	static void DownJump(
-		DWORD);
-	static void MakeParty(void);
-	static void BreakParty(void);
-	static void MoveServer(bool);
-	static void RemoveAllIngameWindows(void);
-	static void ExitGame(void);
+protected:
+	Mat SourceImage;
+	RECT NewRectClient;
 };
 
-void ClientApi::SET_CLIENT_STDPOS(void)
+class UrusRaid : protected BasePlay
 {
-	SetWindowPos(GetConsoleWindow(),
-		0,
-		1362, 0,
-		0, 0,
-		SWP_NOSIZE | SWP_NOZORDER);
-	SetWindowPos(HWND_MAPLESTORY,
-		HWND_TOP,
-		-3, -26,
-		0, 0,
-		SWP_NOSIZE);
-}
-CONST RECT ClientApi::RECT_CLIENT1 = { 0, 0, 800, 600 };
-CONST RECT ClientApi::RECT_CLIENT4 = { 0, 0, 1366, 768 };
-CONST Mat ClientApi::TARGETIMAGE_E1 = Cvw::Read("res\\initial_logo.jpg");
-CONST Mat ClientApi::TARGETIMAGE_E2 = Cvw::Read("res\\world-channel_select.jpg");
-CONST Mat ClientApi::TARGETIMAGE_E3 = Cvw::Read("res\\character_select.jpg");
-CONST Mat ClientApi::TARGETIMAGE_I1 = Cvw::Read("res\\button_mileage.jpg");
-CONST RECT ClientApi::RECT_E1 = { 700, 0, 850, 100 };
-CONST RECT ClientApi::RECT_E2 = { 30, 0, 190, 50 };
-CONST RECT ClientApi::RECT_E3 = { 0, 0, 200, 70 };
-CONST RECT ClientApi::RECT_I1 = { 0, 280, 100, 500 };
+public:
+	void Play(void)
+	{
+		static Mat TargetImageBackgroundUrus(Cvw::Read(TARGET_DIR "background_urus.jpg"));
+		static Mat TargetImageNpcMashur(Cvw::Read(TARGET_DIR "npc_mashur.jpg"));
+		static Mat TargetImageButtonReady(Cvw::Read(TARGET_DIR "button_ready.jpg"));
+		static Mat TargetImageUnitInUrusBattleMap(Cvw::Read(TARGET_DIR "unit_in_urus_battle_map.jpg"));
+		static Mat TargetImageButtonEnter(Cvw::Read(TARGET_DIR "button_enter.jpg"));
 
-void ClientApi::BootClient(
-	void)
-{
-	ShellExecute(NULL, TEXT("open"), TEXT("C:\\Nexon\\Maple\\MapleStory.exe"), TEXT("GameLaunching"), NULL, SW_SHOW);
-	try
-	{
-		Cvw::DoUntilMatchingTemplate(
-			ClientApi::RECT_E1,
-			ClientApi::TARGETIMAGE_E1,
-			[]()
-			{
-				ClientApi::SET_CLIENT_STDPOS();
-			},
-			180000);
-	}
-	catch (MatchFailedException & cwe)
-	{
-		throw ClientApi::ClientException("BootFailedException");
-	}
-}
-void ClientApi::TerminateClient(
-	void)
-{
-	DWORD ProcessId;
-	GetWindowThreadProcessId(HWND_MAPLESTORY, &ProcessId);
-	HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, ProcessId);
-	if (hProcess)
-	{
-		TerminateProcess(hProcess, -1);
-		CloseHandle(hProcess);
-	}
-}
-void ClientApi::Login(
-	CONST CONF_INFO::NEXONAC_INFO& AccountInfo,
-	CONST CONF_INFO::NEXONAC_INFO::MAPLEID_INFO& MapleIdInfo)
-{
-	auto WriteString = [](const string& s) -> void
-	{
-		for (int i = 0; i < s.length(); i++)
+		for (int CountPlay = 0; CountPlay < 3; CountPlay++)
 		{
-			KeybdEvent(s[i], 0x80);
+			/*** 우르스 맵 입장 ***/
+			try
+			{
+				Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageNpcMashur, LEFT_CLICK, { 10, 30 });
+			}
+			catch (MatchFailedException)
+			{
+				throw AppException("NpcMashurNotFound1");
+			}
+
+			MouseEvent({ 440, 684 }, LEFT_CLICK);
+			MouseEvent({ 487, 745 }, LEFT_CLICK);
+			MouseEvent({ 820, 754 }, LEFT_CLICK);
+			try
+			{
+				Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageButtonReady, LEFT_CLICK);
+			}
+			catch (MatchFailedException)
+			{
+				throw AppException("ButtonReadyNotFound");
+			}
+
+			NewRectClient = ClientApi::RECT_CLIENT4;
+			NewRectClient.left += 100;
+			NewRectClient.right -= 700;
+			NewRectClient.bottom -= 500;
+			try
+			{
+				Cvw::DoUntilMatchingTemplate(
+					NewRectClient,
+					TargetImageUnitInUrusBattleMap,
+					[](void) -> void
+					{
+						MouseEvent({ 640, 429 }, LEFT_CLICK, 0x80);
+						KeybdEvent('E', 0x80);
+					},
+					600000);
+			}
+			catch (MatchFailedException)
+			{
+				throw;
+			}
+
+
+			/*** 전투 중 ***/
+			MouseEvent({ 897, 133 }, LEFT_CLICK);
+
+			BYTE CurrentDirectionKey, LastDirectionKey = NULL;
+			INT CountNullOfCurrentDirection = 0;
+			NewRectClient = ClientApi::RECT_CLIENT4;
+			NewRectClient.left += 900;
+			NewRectClient.top += 530;
+
+			try
+			{
+				Cvw::DoUntilMatchingTemplate(
+					NewRectClient,
+					TargetImageButtonEnter,
+					[&](void) -> void
+					{
+						INT Score = 0;
+						RECT NewRect = ClientApi::RECT_CLIENT4;
+						NewRect.top += 156;
+						NewRect.bottom -= 100;
+						Mat SourceImage = Cvw::Capture(NewRect, 1);
+						Mat MaskImage;
+
+						try
+						{
+							Cvw::InRange(SourceImage, Scalar(242, 30, 195), Scalar(255, 60, 205), MaskImage);
+							//Cvw::Show(Mask);
+						}
+						catch (IntegerDivisionByZeroException & cwe)
+						{
+							throw;
+						}
+
+						for (int y = 0; y < MaskImage.rows; ++y)
+						{
+							for (int x = 0; x < MaskImage.cols; ++x)
+							{
+								if (MaskImage.at<BYTE>(y, x) == 255)
+								{
+									if (x < 600)
+									{
+										--Score;
+									}
+									else if (x > 764)
+									{
+										++Score;
+									}
+								}
+							}
+						}
+
+						if (Score >= -2 && Score <= 2)
+						{
+							CurrentDirectionKey = NULL;
+						}
+						else
+						{
+							LastDirectionKey = CurrentDirectionKey = (Score < 0) ? VK_LEFT : VK_RIGHT;
+						}
+
+						if (CountNullOfCurrentDirection > 20 && CurrentDirectionKey == NULL)
+						{
+							LastDirectionKey = (LastDirectionKey == VK_LEFT) ? VK_RIGHT : VK_LEFT;
+							CountNullOfCurrentDirection = 0;
+						}
+
+						if (NULL == LastDirectionKey && NULL == CurrentDirectionKey)
+						{
+							KeybdEventContinued(VK_LEFT, 250);
+							KeybdEvent('E', 250);
+							KeybdEventContinued(VK_RIGHT, 250);
+							KeybdEvent('E', 250);
+						}
+						else if (NULL != LastDirectionKey && NULL == CurrentDirectionKey)
+						{
+							KeybdEventContinued(LastDirectionKey, 250);
+							KeybdEvent('E', 250);
+
+							++CountNullOfCurrentDirection;
+						}
+						else // NULL != CurrentDirectionKey
+						{
+							KeybdEventContinued(CurrentDirectionKey, 250);
+							KeybdEvent('E', 250);
+
+							CountNullOfCurrentDirection = 0;
+						}
+					},
+					1000000,
+					0);
+			}
+			catch (MatchFailedException)
+			{
+				throw AppException("BattleTimeoutException");
+			}
+			Sleep(0x400);
+			Cvw::Save(Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
+
+
+			/*** 퇴장 ***/
+			MouseEvent({ 1259, 668 }, LEFT_CLICK);
+			try
+			{
+				Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageBackgroundUrus, NONWORK, 45000, 0x100, 0.99);
+			}
+			catch (MatchFailedException)
+			{
+				throw AppException("UrusExitException");
+			}
+			
+			Sleep(0x200);
+			if (2 > CountPlay)
+			{
+				KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 4000);
+				try
+				{
+					Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMashur, NONWORK, 30000);
+				}
+				catch (MatchFailedException)
+				{
+					throw AppException("NpcMashurNotFound2");
+				}
+			}
 		}
+	}
+};
+
+class Zacum : protected BasePlay
+{
+public:
+	Zacum(void) :
+		TargetImageScluptureInDoorThroughZacum(Cvw::Read(TARGET_DIR "sclpture_in_door_through_zacum.jpg")),
+		TargetImageNpcAdobis(Cvw::Read(TARGET_DIR "npc_adobis.jpg"))
+	{
+		;
+	}
+
+public:
+	enum LEVEL_OF_DIFFICULTY
+	{
+		EASY = 0,
+		NORMAL,
+		CHAOS
 	};
-	static Mat TargetImageMapleIdSelectWindow = Cvw::Read("res//");
-	BOOL IsNexonLoginExceptional = FALSE;
+
+protected:
+	void MoveFromZ1ToZ2(LEVEL_OF_DIFFICULTY Level) /*** `자쿰으로 통하는 문` -> `자쿰의 제단 입구(이지/노말/카오스)` 이동 ***/
+	{
+		KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 2500);
+		for (int i = 0; i < (int)Level; i++)
+		{
+			KeybdEvent(VK_DOWN, 600);
+		}
+		KeybdEvent(VK_RETURN);
+
+		try
+		{
+			Cvw::DoUntilMatchingTemplate(RECT{ 950, 500, 1050, 600 }, TargetImageNpcAdobis, NONWORK, 10000);
+		}
+		catch (MatchFailedException & cwe)
+		{
+			WriteLog(LOG_LEVEL::FAILURE, cwe.what());
+
+			KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 2500);
+			for (int i = 0; i < (int)Level; i++)
+			{
+				KeybdEvent(VK_DOWN, 600);
+			}
+			KeybdEvent(VK_RETURN);
+
+			try
+			{
+				Cvw::DoUntilMatchingTemplate(RECT{ 950, 500, 1050, 600 }, TargetImageNpcAdobis, NONWORK, 10000);
+			}
+			catch (MatchFailedException & cwe)
+			{
+				throw;
+			}
+		}
+	}
+	void MoveFromZ2ToZ1(void) /*** `자쿰의 제단 입구` -> `자쿰으로 통하는 문` 이동 ***/
+	{
+		KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 2000);
+		Sleep(800);
+
+		try
+		{
+			Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageScluptureInDoorThroughZacum, NONWORK, 10000);
+		}
+		catch (MatchFailedException & cwe)
+		{
+			WriteLog(LOG_LEVEL::FAILURE, cwe.what());
+
+			KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 2000);
+			Sleep(800);
+
+			try
+			{
+				Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageScluptureInDoorThroughZacum, NONWORK, 10000);
+			}
+			catch (MatchFailedException & cwe)
+			{
+				throw;
+			}
+		}
+	}
+	void GetEyeOfFire(void)
+	{
+		MouseEvent({ 820, 563 }, LEFT_CLICK, 600);
+		KeybdEvent(VK_DOWN, 400);
+		KeybdEvent(VK_DOWN, 400);
+		KeybdEvent(VK_RETURN, 400);
+		KeybdEvent(VK_DOWN, 400);
+		KeybdEvent(VK_RETURN, 400);
+		KeybdEvent(VK_RETURN, 400);
+		KeybdEvent(VK_RETURN, 400);
+		KeybdEvent(VK_RETURN, 400);
+	}
+
+protected:
+	Mat TargetImageScluptureInDoorThroughZacum;
+	Mat TargetImageNpcAdobis;
+};
+class ZacumRaid : public Zacum
+{
+public:
+	ZacumRaid(void) :
+		TargetImageEyeOfFire(Cvw::Read(TARGET_DIR "eye_of_fire.jpg")),
+		TargetImageInventoryBar(Cvw::Read(TARGET_DIR "inventory_bar.jpg")),
+		TargetImageButtonExpandingInventory(Cvw::Read(TARGET_DIR "button_expanding_inventory.jpg")),
+		TargetImageUnitInAlterOfZacum(Cvw::Read(TARGET_DIR "unit_in_alter_of_zacum.jpg")),
+		TargetImageCrystalOfBoss(Cvw::Read(TARGET_DIR "crystal_of_boss.jpg"))
+	{
+		;
+	}
+
+public:
+	void MoveFromZ2ToZ3(void)
+	{
+		MouseEvent({ 1000, 544 }, LEFT_CLICK, 600);
+		KeybdEvent(VK_RETURN);
+
+		try
+		{
+			Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageUnitInAlterOfZacum, NONWORK, 10000);
+		}
+		catch (MatchFailedException & cwe)
+		{
+			WriteLog(LOG_LEVEL::FAILURE, cwe.what());
+
+			ClientApi::MakeParty();
+			MouseEvent({ 1000, 544 }, LEFT_CLICK, 600);
+			KeybdEvent(VK_RETURN);
+
+			try
+			{
+				Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageUnitInAlterOfZacum, NONWORK, 10000);
+			}
+			catch (MatchFailedException & cwe)
+			{
+				throw;
+			}
+		}
+	}
+
+
+public:
+	void Play(
+		CONST CONF_INFO::NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO::CHARACTER_INFO& CharacterSpecialty,
+		BOOL IsReady)
+	{
+		/*** 자쿰의 제단 입장 전 준비 ***/
+		if (!IsReady)
+		{
+			MoveFromZ2ToZ1();
+			GetEyeOfFire();
+			MoveFromZ1ToZ2(LEVEL_OF_DIFFICULTY::NORMAL);
+		}
+		MoveFromZ2ToZ3();
+
 	
-	ClientApi::SET_CLIENT_STDPOS();
-
-	/*** 넥슨아이디 로그인 ***/
-	LOGIN_NEXON:
-	if (IsNexonLoginExceptional)
-	{
-		for (int i = 0; i < 150; i++)
+		/*** 자쿰의 제단 입장 ***/
+		KeybdEventContinued(VK_RIGHT, 1000);
+		if (CharacterSpecialty.RequiredBuf1 != NULL)
 		{
-			KeybdEvent(VK_BACK, 20);
+			KeybdEvent(CharacterSpecialty.RequiredBuf1, 1000);
 		}
-		for (int i = 0; i < 150; i++)
-		{
-			KeybdEvent(VK_DELETE, 20);
-		}
-	}
-	WriteString(AccountInfo.Id);
-	KeybdEvent(VK_TAB);
-	if (IsNexonLoginExceptional)
-	{
-		for (int i = 0; i < 150; i++)
-		{
-			KeybdEvent(VK_BACK, 20);
-		}
-		for (int i = 0; i < 150; i++)
-		{
-			KeybdEvent(VK_DELETE, 20);
-		}
-	}
-	WriteString(AccountInfo.Password);
-	KeybdEvent(VK_RETURN, 0x400);
+	
 
-	try
-	{
-		Cvw::MatchTemplate(Cvw::Capture({}), TargetImageMapleIdSelectWindow);
-	}
-	catch (MatchFailedException& ce)
-	{
-		if (!IsNexonLoginExceptional)
-		{
-			IsNexonLoginExceptional = TRUE;
-			goto LOGIN_NEXON;
-		}
-		throw ClientApi::ClientException("NexonLoginFailedException");
-	}
-
-
-	/*** 메이플 아이디 로그인 ***/
-	DWORD SeqId = 0;
-	for each (auto & MapleId in AccountInfo.VecMapleId)
-	{
-		if (MapleId.Id == MapleIdInfo.Id)
-		{
-			break;
-		}
-		++SeqId;
-	}
-	for (int i = 0; i < SeqId + 1; i++)
-	{
-		KeybdEvent(VK_DOWN);
-	}
-	KeybdEvent(VK_RETURN);
-
-	try
-	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, 15000);
-	}
-	catch (MatchFailedException & cwe)
-	{
-		throw ClientApi::ClientException("MapleLoginFailedException");
-	}
-}
-void ClientApi::SelectServer(
-	const CONF_INFO::NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO& ServerInfo)
-{
-	;
-}
-void ClientApi::UnlockSecondPassword(
-	const string& lpPw)
-{
-	for each (auto Character in lpPw)
-	{
-		switch (Character)
-		{
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		case '0':
-			MouseEvent({ 0, 0 }, LEFT_CLICK, 300);
-			Cvw::ClickMatchedTemplate(
-				Cvw::Capture(ClientApi::RECT_CLIENT4, 0),
-				Cvw::Read(string("res\\button_") + Character + ".jpg"),
-				LEFT_CLICK,
-				{ 5, 5 });
-			break;
-
-		case '!':
-			KeybdEventWithSubKey('1', VK_SHIFT, 300); break;
-		case '@':
-			KeybdEventWithSubKey('2', VK_SHIFT, 300); break;
-		case '#':
-			KeybdEventWithSubKey('3', VK_SHIFT, 300); break;
-		case '$':
-			KeybdEventWithSubKey('4', VK_SHIFT, 300); break;
-		case '%':
-			KeybdEventWithSubKey('5', VK_SHIFT, 300); break;
-		case '^':
-			KeybdEventWithSubKey('6', VK_SHIFT, 300); break;
-		case '&':
-			KeybdEventWithSubKey('7', VK_SHIFT, 300); break;
-		case '*':
-			KeybdEventWithSubKey('8', VK_SHIFT, 300); break;
-		case '(':
-			KeybdEventWithSubKey('9', VK_SHIFT, 300); break;
-		case ')':
-			KeybdEventWithSubKey('0', VK_SHIFT, 300); break;
-		}
-	}
-	KeybdEvent(VK_RETURN);
-}
-void ClientApi::EnterGame(
-	CONST CONF_INFO::NEXONAC_INFO::MAPLEID_INFO& MapleIdInfo)
-{
-	KeybdEvent(VK_RETURN, 0x400);
-	try
-	{
-		Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), Cvw::Read("res\\button_1.jpg"));
-		ClientApi::UnlockSecondPassword(MapleIdInfo.SecondPassword);
-	}
-	catch (MatchFailedException & cwe)
-	{
-		; // Second-password unrequired
-	}
-
-	try
-	{
-		Cvw::DoUntilMatchingTemplate(
-			ClientApi::RECT_I1,
-			ClientApi::TARGETIMAGE_I1,
-			[]()
-			{
-				ClientApi::SET_CLIENT_STDPOS();
-			},
-			60000);
-	}
-	catch (MatchFailedException & cwe)
-	{
+		/*** 불의 눈 던지기 ***/
+		CONF_INFO::KEYSET_INFO& KeysetInfo = CONF_INFO::GetInstance()->VirtualKeyset;
+		KeybdEvent(KeysetInfo.Inventory);
 		try
 		{
-			Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), ClientApi::TARGETIMAGE_E1);
-			throw ClientApi::ServerDisconnectedException();
+			SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
+			Cvw::ClickMatchedTemplate(SourceImage, TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
+			MouseEvent({ 25, 50 }, LEFT_CLICK);
 		}
-		catch (MatchFailedException & mfe)
+		catch (MatchFailedException & cwe)
 		{
-			throw ClientApi::ClientException("GameEntryFailedException");
+			SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
+			Cvw::ClickMatchedTemplate(SourceImage, TargetImageInventoryBar, LEFT_CLICK, { 40 * 2, 40 }, 600);
+			Cvw::ClickMatchedTemplate(SourceImage, TargetImageButtonExpandingInventory, LEFT_CLICK, { 6, 6 }, 600);
+
+			SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
+			Cvw::ClickMatchedTemplate(SourceImage, TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
+			MouseEvent({ 25, 50 }, LEFT_CLICK);
 		}
+
+		KeybdEvent(KeysetInfo.Inventory, 3600);
+
+
+		/*** 쿰돌이 ***/
+		if (CharacterSpecialty.RequiredBuf2 != NULL)
+		{
+			KeybdEvent(CharacterSpecialty.RequiredBuf2, 1000);
+		}
+		Cvw::DoUntilMatchingTemplate(
+			ClientApi::RECT_CLIENT4,
+			TargetImageCrystalOfBoss,
+			[CharacterSpecialty]()
+			{
+				KeybdEventDown(CharacterSpecialty.Skill);
+				MouseEvent({ 800, 294 }, LEFT_CLICK, 0);
+			},
+			36000,
+			50);
+		KeybdEventUp(CharacterSpecialty.Skill);
+
+
+		/*** 줍기 ***/
+		KeybdEventContinuedWithSubKey(VK_LEFT, KeysetInfo.Picking, 2000);
+		KeybdEventContinuedWithSubKey(VK_RIGHT, KeysetInfo.Picking, 5000);
 	}
 
-	// Remove tooltips
-	MouseEvent({ 902, 337 }, LEFT_CLICK);
-	KeybdEvent(VK_ESCAPE);
-	KeybdEvent(VK_ESCAPE);
-}
-void ClientApi::SelectCharacter(
-	unsigned int Seq)
+private:
+	Mat TargetImageEyeOfFire;
+	Mat TargetImageInventoryBar;
+	Mat TargetImageButtonExpandingInventory;
+	Mat TargetImageUnitInAlterOfZacum;
+	Mat TargetImageCrystalOfBoss;
+};
+class ZacumCalc : public Zacum
 {
-	for (int i = 0; i < 46; i++)
+public:
+	ZacumCalc(void) :
+		TargetImageButtonMeisterVill(Cvw::Read(TARGET_DIR "button_meistervill.jpg")),
+		TargetImageMinimapMarkMeisterVill(Cvw::Read(TARGET_DIR "minimap_mark_meistervill.jpg")),
+		TargetImageItemCrystal(Cvw::Read(TARGET_DIR "item_crystal_of_boss.jpg")),
+		TargetImageNpcMsBrainy(Cvw::Read(TARGET_DIR "npc_msbrainy.jpg")),
+		TargetImageItem100lv(Cvw::Read(TARGET_DIR "item_100lv.jpg")),
+		TargetImageItem110lv(Cvw::Read(TARGET_DIR "item_110lv.jpg")),
+		TargetImageItemCube(Cvw::Read(TARGET_DIR "item_cube.jpg"))
 	{
-		KeybdEvent(VK_LEFT, 120);
+		;
 	}
-	for (int i = 0; i < Seq - 1; i++)
+
+public:
+	void Play(
+		CONST CONF_INFO::NEXONAC_INFO::MAPLEID_INFO& MapleIdInfo)
 	{
-		KeybdEvent(VK_RIGHT, 240);
-	}
-}
-void ClientApi::RemoveAllIngameWindows(
-	void)
-{
-	for (int i = 0; i < 4; i++)
-	{
+		MoveFromZ2ToZ1();
+		GetEyeOfFire();
+		MoveFromZ1ToZ2(LEVEL_OF_DIFFICULTY::CHAOS);
+
+		/*** `자쿰의 제단 입구(카오스) -> `마이스터 빌` 이동 ***/
+		CONF_INFO::KEYSET_INFO& KeysetInfo = CONF_INFO::GetInstance()->VirtualKeyset;
+		KeybdEvent(KeysetInfo.SpecialTechnology);
+		try
+		{
+			Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageButtonMeisterVill, LEFT_CLICK, { 5, 2 });
+		}
+		catch (MatchFailedException & cwe)
+		{
+			throw;
+		}
+
 		KeybdEvent(VK_RETURN);
-	}
-	for (int i = 0; i < 4; i++)
-	{
+		try
+		{
+			Cvw::DoUntilMatchingTemplate({ 0, 0, 64, 64 }, TargetImageMinimapMarkMeisterVill, NONWORK, 30000);
+		}
+		catch (MatchFailedException & cwe)
+		{
+			throw;
+		}
+
+		WAIT_UNTIL_STABLE;
+		KeybdEvent(KeysetInfo.SpecialTechnology);
+
+
+		/*** `마이스터 빌` -> `자유시장` 이동 ***/
+		ClientApi::DownJump(1500);
+		ClientApi::DownJump(1500);
+		KeybdEventContinued(VK_LEFT, 1000);
+		WAIT_UNTIL_STABLE;
+		KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 2600);
+		try
+		{ 
+			Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMsBrainy, NONWORK, 15000);
+		}
+		catch (MatchFailedException & cwe)
+		{
+			throw;
+		}
+
+
+		/*** 아이템 팔기(콜렉터) ***/
+		MouseEvent({ 980, 334 }, LEFT_CLICK); 
+		
+		// 장비창
+		for (int i = 0; i < 40; i++)
+		{
+			MouseEvent({ 735, 279 }, RIGHT_CLICK, 300);
+		}
+
+		// 기타창
+		INT CountCrystal;
+		NewRectClient = ClientApi::RECT_CLIENT4;
+		NewRectClient.top += 220;
+		NewRectClient.left += 710;
+
+		MouseEvent({ 818, 244 }, LEFT_CLICK);
+		for(CountCrystal = 0; CountCrystal < 30; CountCrystal++)
+		{
+			try
+			{
+				Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItemCrystal, RIGHT_CLICK, { NewRectClient.left + 80, NewRectClient.top });
+			}
+			catch (MatchFailedException & cwe)
+			{
+				break;
+			}
+
+			KeybdEvent(VK_RETURN);
+		}
 		KeybdEvent(VK_ESCAPE);
-	}
-	MouseEvent({ 64, 64 }, LEFT_CLICK);
-}
-void ClientApi::ExitGame(
-	void)
-{
-	KeybdEvent(VK_ESCAPE);
-	KeybdEvent(VK_UP);
-	KeybdEvent(VK_RETURN);
-	KeybdEvent(VK_RETURN);
 
-	try
-	{
-		Cvw::DoUntilMatchingTemplate(
-			ClientApi::RECT_E3,
-			ClientApi::TARGETIMAGE_E3,
-			[]()
+
+		/*** 창고에 아이템 넣기  ***/
+		if (0 < CountCrystal)
+		{
+			MouseEvent({ 310, 334 }, LEFT_CLICK);
+			ClientApi::UnlockSecondPassword(MapleIdInfo.SecondPassword);
+
+			// 장비템 넣기(아쿠아틱 + 응축)
+			NewRectClient = ClientApi::RECT_CLIENT4;
+			NewRectClient.top += 270;
+			NewRectClient.left += 690;
+
+			for (int i = 0; i < 8; i++)
 			{
-				ClientApi::SET_CLIENT_STDPOS();
-			},
-			30000);
-	}
-	catch (MatchFailedException & mfe)
-	{
+				try
+				{
+					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItem100lv, LEFT_CLICK, { NewRectClient.left, NewRectClient.top });
+				}
+				catch (MatchFailedException & cwe)
+				{
+					break;
+				}
+
+				MouseEvent({ 810, 204 }, LEFT_CLICK);
+				KeybdEvent(VK_RETURN);
+				KeybdEvent(VK_RETURN);
+				KeybdEvent(VK_RETURN);
+			}
+
+			for (int i = 0; i < 8; i++)
+			{
+				try
+				{
+					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient),TargetImageItem110lv,LEFT_CLICK,{ NewRectClient.left, NewRectClient.top });
+				}
+				catch (MatchFailedException & cwe)
+				{
+					break;
+				}
+
+				MouseEvent({ 810, 204 }, LEFT_CLICK);
+				KeybdEvent(VK_RETURN);
+				KeybdEvent(VK_RETURN);
+				KeybdEvent(VK_RETURN);
+			}
+
+			// 소비템 넣기(수큐)
+			MouseEvent({ 740, 264 }, LEFT_CLICK);
+			for (int i = 0; i < 3; i++)
+			{
+				try
+				{
+					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient),TargetImageItemCube,LEFT_CLICK,{ NewRectClient.left, NewRectClient.top });
+				}
+				catch (MatchFailedException & cwe)
+				{
+					break;
+				}
+
+				MouseEvent({ 810, 204 }, LEFT_CLICK);
+				KeybdEvent(VK_RETURN);
+				KeybdEvent(VK_RETURN);
+				KeybdEvent(VK_RETURN);
+			}
+
+			// 돈 넣기
+			MouseEvent({ 715, 574 }, LEFT_CLICK);
+			KeybdEvent(VK_RETURN);
+
+			// 창고 창 닫기
+			MouseEvent({ 640, 204 }, LEFT_CLICK);
+		}
+
+
+		/*** `자유시장` -> `마이스터 빌` -> `자쿰의 제단 입구(카오스)` 이동 ***/
+	RETURN_TO_Z2:
+		KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
 		try
 		{
-			Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), ClientApi::TARGETIMAGE_E1);
-			throw ClientApi::ServerDisconnectedException();
+			Cvw::DoUntilMatchingTemplate({ 0, 0, 64, 64 }, TargetImageMinimapMarkMeisterVill, NONWORK, 20000);
 		}
-		catch (MatchFailedException & mfe)
+		catch (MatchFailedException & cwe)
 		{
-			throw ClientApi::GameExitException();
+			throw;
 		}
-	}
-}
-void ClientApi::Logout(
-	void)
-{
-	KeybdEvent(VK_ESCAPE);
-	KeybdEvent(VK_RETURN);
-	try
-	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E1, ClientApi::TARGETIMAGE_E1, NONWORK, 30000);
-	}
-	catch (MatchFailedException & mfe)
-	{
-		throw;
-	}
-}
-void ClientApi::ExitCharacterWindow(void)
-{
-	KeybdEvent(VK_ESCAPE);
-	try
-	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, 30000);
-	}
-	catch (MatchFailedException & mfe)
-	{
-		throw;
-	}
-}
-void ClientApi::MakeParty(
-	void)
-{
-	KeybdEvent(VK_OEM_4);
-	MouseEvent({ 0, 0 }, LEFT_CLICK);
 
-	Mat SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
-	static array<Mat, 2> ArrTargetImage = { Cvw::Read("res\\button_make.jpg"), Cvw::Read("res\\button_break.jpg") };
-	auto TemplateInfo = Cvw::GetHighestMatchedTemplate(SourceImage, ArrTargetImage);
+		WAIT_UNTIL_STABLE;
+		ClientApi::MoveServer(true);
+		try
+		{
+			Cvw::DoUntilMatchingTemplate({ 0, 0, 64, 64 }, TargetImageMinimapMarkMeisterVill, NONWORK, 20000);
+		}
+		catch (MatchFailedException & cwe)
+		{
+			throw;
+		}
 
-	if (0 == TemplateInfo.first)
+		WAIT_UNTIL_STABLE;
+		try
+		{
+			Cvw::DoUntilMatchingTemplate(
+				RECT{ 950, 500, 1050, 600 }, 
+				TargetImageNpcAdobis, 
+				[](void) -> void
+				{
+					KeybdEvent(VK_UP, 0x80);
+				},
+				20000);
+		}
+		catch (MatchFailedException & cwe)
+		{
+			throw;
+		}
+
+		WAIT_UNTIL_STABLE;
+	}
+
+private:
+	Mat TargetImageButtonMeisterVill;
+	Mat TargetImageMinimapMarkMeisterVill;
+	Mat TargetImageNpcMsBrainy;
+	Mat TargetImageItemCrystal;
+	Mat TargetImageItem100lv;
+	Mat TargetImageItem110lv;
+	Mat TargetImageItemCube;
+};
+class ZacumAndUrus : public Zacum
+{
+public:
+	ZacumAndUrus() :
+		TargetImagePictureUrusDimensionalMirror(Cvw::Read(TARGET_DIR "picture_urus_dimensional_mirror.jpg")),
+		TargetImageMinimapMarkElnas(Cvw::Read(TARGET_DIR "minimap_mark_elnas.jpg")),
+		TargetImageBackgroundUrus(Cvw::Read(TARGET_DIR "background_urus.jpg")),
+		TargetImageNpcRene(Cvw::Read(TARGET_DIR "npc_rene.jpg"))
 	{
-		MouseEvent(TemplateInfo.second.MaximumLocation, LEFT_CLICK);
+		;
+	}
+
+public:
+	void MoveFromZ2ToUrus(void)
+	{
+		MoveFromZ2ToZ1();
+
+		MouseEvent({ 820, 544 }, LEFT_CLICK);
+		KeybdEvent(VK_DOWN);
+		KeybdEvent(VK_DOWN);
+		KeybdEvent(VK_DOWN);
 		KeybdEvent(VK_RETURN);
+		KeybdEvent(VK_RETURN);
+		KeybdEvent(VK_RETURN);
+
+		try
+		{
+			Cvw::DoUntilMatchingTemplate({ 0, 0, 64, 64 }, TargetImageMinimapMarkElnas, NONWORK, 30000);
+		}
+		catch (MatchFailedException & cwe)
+		{
+			throw;
+		}
+
+		WAIT_UNTIL_STABLE;
+		MouseEvent({ 58, 168 }, LEFT_CLICK);
+		MouseEvent({ 566, 376 }, LEFT_CLICK);
+		SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
+		Cvw::ClickMatchedTemplate(SourceImage, TargetImagePictureUrusDimensionalMirror, LEFT_CLICK);
+		MouseEvent({ 690, 596 }, LEFT_CLICK);
+
+		try
+		{
+			Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageBackgroundUrus, NONWORK, 30000);
+		}
+		catch (CvWrappedException & cwe)
+		{
+			throw;
+		}
+
+		WAIT_UNTIL_STABLE;
 	}
-	KeybdEvent(VK_OEM_4);
-}
-void ClientApi::BreakParty(
-	void)
-{
-	KeybdEvent(VK_OEM_4);
-	MouseEvent({ 0, 0 }, LEFT_CLICK);
-
-	Mat SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
-	static array<Mat, 2> ArrTargetImage = { Cvw::Read("res\\button_make.jpg"), Cvw::Read("res\\button_break.jpg") };
-	auto TemplateInfo = Cvw::GetHighestMatchedTemplate(SourceImage, ArrTargetImage);
-
-	if (1 == TemplateInfo.first)
+	void MoveFromUrusToZ2(void)
 	{
-		MouseEvent(TemplateInfo.second.MaximumLocation, LEFT_CLICK);
+		KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 2000);
+		Sleep(3000);
+
+		ClientApi::MinimapRecognizer Recognizer({ 10, 64, 260, 160 }); // `엘나스` 미니맵
+	RETRY:
+		Recognizer.MoveToRelativeCriteria(185);
+		Sleep(2000);
+		ClientApi::Jump(ClientApi::JUMP_T::DEMON);
+		ClientApi::DownJump(1000);
+		KeybdEvent(VK_UP, 3000);
+
+		try
+		{
+			Cvw::DoUntilMatchingTemplate({ 500, 0, 650, 150 }, TargetImageNpcRene, NONWORK, 5000);
+		}
+		catch (MatchFailedException & cwe)
+		{
+			KeybdEventContinued(VK_LEFT, 7000);
+			goto RETRY;
+		}
+
+		MouseEvent({ 482, 566 }, LEFT_CLICK);
+		KeybdEvent(VK_RETURN);
+		KeybdEvent(VK_RETURN, 3000);
+
+		Recognizer = RECT{ 10, 54, 190, 120 }; // `자쿰의 제단 입장` 미니맵
+		Recognizer.MoveToRelativeCriteria(142);
+		Sleep(1000);
+
+		GetEyeOfFire();
+		MoveFromZ1ToZ2(Zacum::LEVEL_OF_DIFFICULTY::NORMAL);
 	}
-	KeybdEvent(VK_OEM_4);
-}
-void ClientApi::MoveServer(
-	bool IsForward)
-{
-	KeybdEvent(VK_ESCAPE, 400);
-	KeybdEvent(VK_RETURN, 400);
-	KeybdEvent(IsForward ? VK_RIGHT : VK_LEFT, 400);
-	KeybdEvent(VK_RETURN, 1000);
-}
-void ClientApi::Jump(
-	JUMP_T JumpType,
-	DWORD MillisecondsRestTime = 0x400)
-{
-	switch (JumpType)
-	{
-	case JUMP_T::DEMON:
-		KeybdEvent(VK_MENU, 60);
-		KeybdEvent(VK_UP, 60);
-		KeybdEvent(VK_UP, 2500);
-		break;
 
-	case JUMP_T::CYGNUS:
-		KeybdEvent(VK_MENU, 60);
-
-		KeybdEventDown(VK_UP);
-		KeybdEvent(VK_MENU, 60);
-		KeybdEventUp(VK_UP);
-		break;
-
-	case JUMP_T::NOVA:
-		KeybdEvent('C', 2000);
-		break;
-
-	case JUMP_T::V_MATRIX:
-		KeybdEvent('L', 180);
-		break;
-
-	case JUMP_T::ZERO:
-		KeybdEventDown(VK_UP);
-		KeybdEvent('F', 100);
-		KeybdEventUp(VK_UP);
-		break;
-
-	case JUMP_T::WIZARD:
-		KeybdEventDown(VK_UP);
-		KeybdEvent(VK_SHIFT, 100);
-		KeybdEventUp(VK_UP);
-		break;
-	}
-	Sleep(MillisecondsRestTime);
-}
-void ClientApi::DownJump(
-	DWORD MilliSecondsRestTime = 0x400)
-{
-	keybd_event(VK_DOWN, MapVirtualKey(VK_DOWN, 0), 0, 0);
-	KeybdEvent(VK_MENU, MilliSecondsRestTime);
-	keybd_event(VK_DOWN, MapVirtualKey(VK_DOWN, 0), KEYEVENTF_KEYUP, 0);
-}
+private:
+	Mat TargetImagePictureUrusDimensionalMirror;
+	Mat TargetImageMinimapMarkElnas;
+	Mat TargetImageBackgroundUrus;
+	Mat TargetImageNpcRene;
+};

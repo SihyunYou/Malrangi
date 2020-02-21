@@ -13,10 +13,17 @@
 #include <conio.h>
 #include <string>
 #include <array>
+#include <map>
 #include <vector>
 #include <exception>
 
 using namespace std;
+
+#define CONF_FILENAME			"userdata.conf"
+#define IPMANAGER_FILENAME	"ip_renewer.js"
+#define TARGET_DIR				"target//"
+#define SNAP_DIR					"snap//"
+
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -24,7 +31,7 @@ using namespace std;
 
 using namespace cv;
 
-#define INTERVAL_MOUSEEVENT		(1000)
+#define INTERVAL_MOUSEEVENT		(0x400)
 #define INTERVAL						(750)
 
 /****************************************************************************
@@ -78,7 +85,15 @@ MouseEvent(
 	}
 }
 
-
+VOID
+WINAPI
+DoubleClick(
+	_In_ CONST Point Coordinate,
+	_In_ DWORD dwMilliseconds = INTERVAL_MOUSEEVENT)
+{
+	MouseEvent(Coordinate, LEFT_CLICK, 0x40);
+	MouseEvent(Coordinate, LEFT_CLICK, dwMilliseconds);
+}
 
 /****************************************************************************                                                                   
 * Keyboard Event Util
@@ -165,43 +180,6 @@ KeybdEventContinuedWithSubKey(
 	KeybdEventUp(bVirtualKey);
 }
 
-int CopyTextToClipboard(LPCSTR ap_string)
-{
-	int string_length = strlen(ap_string) + 1;
-	// 클리보드로 문자열을 복사하기 위하여 메모리를 할당한다.
-	// 클립보드에는 핸들을 넣는 형식이라서 HeapAlloc 함수 사용이 블가능하다.
-	HANDLE h_data = ::GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, string_length);
-	// 할당된 메모리에 문자열을 복사하기 위해서 사용 가능한 주소를 얻는다.
-	char* p_data = (char*)::GlobalLock(h_data);
-	if (NULL != p_data) {
-		// 할당된 메모리 영역에 삽입할 문자열을 복사한다.
-		memcpy(p_data, ap_string, string_length);
-		// 문자열을 복사하기 위해서 Lock 했던 메모리를 해제한다. 
-		::GlobalUnlock(h_data);
-		if (::OpenClipboard(NULL)) {
-			// 클립보드를 연다. 
-			::EmptyClipboard();
-			// 클립보드에 저장된 기존 문자열을 삭제한다. 
-			::SetClipboardData(CF_TEXT, h_data);
-			// 클립보드로 문자열을 복사한다. 
-			::CloseClipboard(); // 클립보드를 닫는다.
-		}
-	}
-	return 0;
-}
-VOID
-TypingMessageWithClipboard(
-	LPCSTR Message)
-{
-	CopyTextToClipboard(Message);
-	KeybdEventWithSubKey('V', VK_CONTROL);
-}
-
-/****************************************************************************
-* Screen Util
-****************************************************************************/
-
-
 
 /****************************************************************************
 * Log Util
@@ -250,7 +228,7 @@ enum LOG_LEVEL
 	WARNING = YELLOW,
 	CRITICAL = RED,
 	SUCCESS = LIGHT_CYAN,
-	FAILURE = LIGHT_RED,
+	FAILURE = LIGHT_RED
 };
 
 mutex MutexLocker;

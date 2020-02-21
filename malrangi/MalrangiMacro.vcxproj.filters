@@ -16,11 +16,14 @@
     <Filter Include="Header Files\application">
       <UniqueIdentifier>{49c7eb76-f74a-43b6-9a69-14f2ee540a9f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\control">
-      <UniqueIdentifier>{cddce19a-c6ff-4cf7-ba38-cbb76c82f82c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\kit">
       <UniqueIdentifier>{39620a75-ea97-4281-80c4-53bbf5268ae7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\api">
+      <UniqueIdentifier>{cddce19a-c6ff-4cf7-ba38-cbb76c82f82c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\conf">
+      <UniqueIdentifier>{ec999aab-3092-49c7-a136-03fa2a3e1386}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -30,20 +33,26 @@
     <ClInclude Include="tesseract-binary-wrap.h">
       <Filter>Header Files\kit</Filter>
     </ClInclude>
-    <ClInclude Include="app.h">
-      <Filter>Header Files\application</Filter>
-    </ClInclude>
-    <ClInclude Include="client.h">
-      <Filter>Header Files\control</Filter>
-    </ClInclude>
-    <ClInclude Include="ip.h">
-      <Filter>Header Files\control</Filter>
-    </ClInclude>
     <ClInclude Include="low_util.h">
       <Filter>Header Files\kit</Filter>
     </ClInclude>
-    <ClInclude Include="conf.h">
-      <Filter>Header Files\kit</Filter>
+    <ClInclude Include="ip.h">
+      <Filter>Header Files\application</Filter>
+    </ClInclude>
+    <ClInclude Include="report_kakao.h">
+      <Filter>Header Files\application</Filter>
+    </ClInclude>
+    <ClInclude Include="logging.h">
+      <Filter>Header Files\application</Filter>
+    </ClInclude>
+    <ClInclude Include="client_api.h">
+      <Filter>Header Files\api</Filter>
+    </ClInclude>
+    <ClInclude Include="client.h">
+      <Filter>Header Files\application</Filter>
+    </ClInclude>
+    <ClInclude Include="user.h">
+      <Filter>Header Files\conf</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

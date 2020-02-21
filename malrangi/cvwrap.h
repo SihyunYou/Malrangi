@@ -111,6 +111,12 @@ namespace Cvw
 		}
 		return Image;
 	}
+	void Save(
+		const Mat& Image)
+	{
+		static int Seq = 0;
+		imwrite(SNAP_DIR + to_string(++Seq) + ".png", Image);
+	}
 	Mat Capture(
 		CONST RECT Area,
 		INT Flag = IMREAD_GRAYSCALE)

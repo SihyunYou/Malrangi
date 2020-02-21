@@ -1,6 +1,5 @@
 #pragma once
 #include "low_util.h"
-#include <map>
 
 /****************************************************************************
 * Configuration Reader
@@ -17,9 +16,11 @@ typedef struct _CONF_INFO
 			string SecondPassword;
 			typedef struct _SERVER_INFO
 			{
+				string ServerName;
 				Point CoorServer;
 				typedef struct _CHARACTER_INFO
 				{
+					string CharacterType;
 					BYTE Skill;
 					BYTE RequiredBuf1;
 					BYTE RequiredBuf2;
@@ -49,32 +50,23 @@ private:
 	{
 		ifstream File;
 		CHAR Line[0x100];
+		const string ServerNames[] = {"스카니아", "베라", "루나", "제니스", "크로아", "유니온", "엘리시움", "이노시스", "레드", "오로라", "아케인", "노바"};
 
-		const string ServerNames[] =
-		{
-			"skania",
-			"vera"
-		};
 		for(int i = 0; i < sizeof(ServerNames) / sizeof(string); i++)
 		{
-			MapServerInfo[ServerNames[i]].CoorServer = { 100, 100 };
+			MapServerInfo[ServerNames[i]].ServerName = ServerNames[i];
+			MapServerInfo[ServerNames[i]].CoorServer = { 745, 68 + i * 32 };
 		}
 
-		File.open("conf\\userdata.conf");
+		File.open(CONF_FILENAME);
 		if (File.is_open())
 		{
-			NEXONAC_INFO NexonAccountInfo;
-			NEXONAC_INFO::MAPLEID_INFO MapleIdInfo;
-			NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO ServerInfo;
-			NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO::CHARACTER_INFO CharacterInfo;
-
 			while (File.getline(Line, sizeof(Line)))
 			{
 				if (strlen(Line) == 0)
 				{
 					continue;
 				}
-
 				istringstream Stream(Line);
 				string SubLine;
 
@@ -85,6 +77,8 @@ private:
 					string Rvalue = string(pdq + 1, strchr(pdq + 1, '\"'));
 				
 					Stream = istringstream(Rvalue);
+					NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO::CHARACTER_INFO CharacterInfo;
+					CharacterInfo.CharacterType = Lvalue;
 
 					Stream >> SubLine;
 					CharacterInfo.Skill = SubLine[0];
@@ -99,8 +93,6 @@ private:
 				}
 				else if (!strncmp("vk.", Line, 3))
 				{
-					string Lvalue = string(Line + 3, strchr(Line, '=') - 1);
-					string Rvalue = string(strchr(Line, '=') + 1);
 					auto GetVirtualKey = [](string Key) -> BYTE
 					{
 						if ("space" == Key) return VK_SPACE;
@@ -109,6 +101,8 @@ private:
 						else if ("[" == Key) return VK_OEM_4;
 						else return Key[0];
 					};
+					string Lvalue = string(Line + 3, strchr(Line, '=') - 1);
+					string Rvalue = string(strchr(Line, '=') + 2);
 
 					if ("inv" == Lvalue)
 					{
@@ -135,7 +129,8 @@ private:
 				{
 					Stream >> SubLine;
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].
-						VecServer[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].VecCharacter.push_back(MapCharacterInfo[SubLine]);
+						VecServer[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].VecServer.size() - 1].
+						VecCharacter.push_back(MapCharacterInfo[SubLine]);
 				}
 				else if (!strncmp("\t\t", Line, 2))
 				{
@@ -145,6 +140,8 @@ private:
 				}
 				else if ('\t' == Line[0])
 				{
+					NEXONAC_INFO::MAPLEID_INFO MapleIdInfo;
+
 					Stream >> SubLine;
 					MapleIdInfo.Id = SubLine;
 
@@ -155,6 +152,8 @@ private:
 				}
 				else
 				{
+					NEXONAC_INFO NexonAccountInfo;
+
 					Stream >> SubLine;
 					NexonAccountInfo.Id = SubLine;
 
@@ -171,6 +170,7 @@ private:
 	{
 		;
 	}
+
 
 public:
 	static _CONF_INFO* GetInstance(void)

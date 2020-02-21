@@ -151,19 +151,21 @@
       <AdditionalDependencies>opencv_world420.lib;opencv_world420d.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\opencv\build\x64\vc15\lib</AdditionalLibraryDirectories>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
-      <OutputFile>$(SolutionDir)\MalrangiMacro.exe</OutputFile>
+      <OutputFile>$(SolutionDir)malrangi.exe</OutputFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="entry.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="app.h" />
-    <ClInclude Include="conf.h" />
-    <ClInclude Include="cvwrap.h" />
     <ClInclude Include="client.h" />
+    <ClInclude Include="user.h" />
+    <ClInclude Include="cvwrap.h" />
+    <ClInclude Include="client_api.h" />
     <ClInclude Include="ip.h" />
+    <ClInclude Include="logging.h" />
     <ClInclude Include="low_util.h" />
+    <ClInclude Include="report_kakao.h" />
     <ClInclude Include="tesseract-binary-wrap.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
