@@ -1,6 +1,6 @@
 #include "urus.h"
 #include "zacum.h"
-#include "ip.h"
+#include "ipmanage.h"
 #include "log.h"
 #include "report.h"
 
@@ -19,6 +19,7 @@ main(
 
 	try
 	{
+		USERCONF& UserInfo = *(USERCONF::GetInstance());
 #if defined(URUS_RAID)
 		UrusRaid Worker;
 #elif defined(ZACUM_RAID)
@@ -26,9 +27,9 @@ main(
 #elif defined(ZACUM_CALC)
 		ZacumCalc Worker;
 #endif
-		USERCONF& UserManager = *(USERCONF::GetInstance());
 #ifdef USING_IPRENEWER
-		IPCONF IpManager;
+		IPCONF& IpInfo = *(IPCONF::GetInstance());  
+		IpManage IpManager;
 #else
 		WriteLog(LOG_LEVEL::WARNING,
 			"This program does not support ip renewal. (Flag USING_IPRENEWER is not defined.)"
@@ -45,7 +46,7 @@ main(
 				(Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
 		};
 
-		for each (const auto& NexonAccountInfo in UserManager.VecNexonAccount)
+		for each (const auto& NexonAccountInfo in UserInfo.VecNexonAccount)
 		{
 			for each (const auto & MapleIdInfo in NexonAccountInfo.VecMapleId)
 			{
@@ -74,7 +75,7 @@ main(
 					if (SeqMapleId % 4 == 0)
 					{
 	#ifdef USING_IPRENEWER
-						IpManager.Renew();
+						IpManager.Renew(IpInfo.InternetInfo);
 	#else
 						if (SeqMapleId > 3)
 						{
@@ -98,7 +99,7 @@ main(
 					if (SeqMapleId % 4 == 0)
 					{
 	#ifdef USING_IPRENEWER
-						IpManager.Renew();
+						IpManager.Renew(IpInfo.InternetInfo);
 	#else
 						if (SeqMapleId > 3)
 						{
@@ -344,7 +345,8 @@ main(
 
 		WriteLog(LOG_LEVEL::INFO, "ALL ROUTINES HAVE BEEN SUCCESSFULLY COMPLETE.\n");
 	EXIT_ROUTINE:
-		UserManager.Destroy();
+		UserInfo.Destroy();
+		IpInfo.Destroy();
 	}
 	catch (MalrangiException & cwe)
 	{

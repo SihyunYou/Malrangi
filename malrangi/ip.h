@@ -4,6 +4,21 @@
 class IPCONF
 {
 public:
+	typedef struct _INTERNET_INFO
+	{
+		struct _WANMAC_ADDR
+		{
+			int HADDR5;
+			int HADDR6;
+		};
+		_WANMAC_ADDR MacAddr;
+		bool IsIpValid;
+	}INTERNET_INFO;
+	typedef INTERNET_INFO::_WANMAC_ADDR WANMAC_ADDR;
+
+	INTERNET_INFO InternetInfo;
+
+private:
 	IPCONF()
 	{
 		ifstream File;
@@ -12,29 +27,39 @@ public:
 		{
 			if (File.peek() == std::ifstream::traits_type::eof())
 			{
-				IsIpValid = false;
+				InternetInfo.IsIpValid = false;
 			}
 			else
 			{
-				File >> CurrentHADDR6;
-				IsIpValid = (CurrentHADDR6 >= 9) ? true : false;
+				File >> InternetInfo.MacAddr.HADDR6;
+				InternetInfo.IsIpValid = (InternetInfo.MacAddr.HADDR6 >= 9) ? true : false;
 			}
 			File.close();
 		}
 		else
 		{
-			IsIpValid = false;
+			InternetInfo.IsIpValid = false;
 		}
 	}
-	void Renew(void)
-	{
-		ShellExecuteA(NULL, "open", IPMANAGER_PATH, to_string(++CurrentHADDR6).c_str(), NULL, SW_SHOW);
 
-		ofstream File.open(IPCONF_PATH, ios::out | ios::trunc);
-		File << CurrentHADDR6;
-		File.close();
-	}
 public:
-	int CurrentHADDR6;
-	bool IsIpValid;
+	static IPCONF* GetInstance(void)
+	{
+		if (nullptr == Instance)
+		{
+			Instance = new IPCONF();
+		}
+		return Instance;
+	}
+	void Destroy(void)
+	{
+		if (nullptr != Instance)
+		{
+			delete Instance;
+			Instance = nullptr;
+		}
+	}
+private:
+	static IPCONF* Instance;
 };
+IPCONF* IPCONF::Instance = nullptr;

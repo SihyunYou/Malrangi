@@ -34,14 +34,6 @@ public:
 		};
 		vector<struct _MAPLEID_INFO> VecMapleId;
 	} NEXONAC_INFO;
-	typedef NEXONAC_INFO::_MAPLEID_INFO MAPLEID_INFO;
-	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO SERVER_INFO;
-	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO::_CHARACTER_INFO CHARACTER_INFO;
-	
-	vector<NEXONAC_INFO> VecNexonAccount;
-	map<string, SERVER_INFO> MapServerInfo;
-	map<string, CHARACTER_INFO> MapCharacterInfo;
-
 	typedef struct _KEYSET_INFO
 	{
 		BYTE SpecialTechnology;
@@ -50,6 +42,13 @@ public:
 		BYTE Potion;
 		BYTE Party;
 	}KEYSET_INFO;
+	typedef NEXONAC_INFO::_MAPLEID_INFO MAPLEID_INFO;
+	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO SERVER_INFO;
+	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO::_CHARACTER_INFO CHARACTER_INFO;
+	
+	vector<NEXONAC_INFO> VecNexonAccount;
+	map<string, SERVER_INFO> MapServerInfo;
+	map<string, CHARACTER_INFO> MapCharacterInfo;
 	KEYSET_INFO VirtualKeyset;
 
 private:
