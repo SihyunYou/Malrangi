@@ -1,70 +1,60 @@
 #pragma once
-#include "low_util.h"
+#include "malexc.h"
+#include "winevent.h"
+#include <filesystem>
+#include <opencv2/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
-class CvWrappedException : public std::exception
-{
-public:
-	CvWrappedException::CvWrappedException(void) :
-		Message(__CLASSNAME__) {}
-	explicit CvWrappedException::CvWrappedException(const char* Message) :
-		Message(Message) {}
-	explicit CvWrappedException::CvWrappedException(string Message) :
-		Message(Message) {}
-	virtual CvWrappedException::~CvWrappedException() throw () {}
-	virtual const char* CvWrappedException::what(void) const throw()
-	{
-		return Message.c_str();
-	}
 
-protected:
-	std::string Message;
-};
+using namespace cv;
 
-class IntegerDivisionByZeroException : public CvWrappedException
+class IntegerDivisionByZeroException : public MalrangiException
 {
 public:
-	IntegerDivisionByZeroException::IntegerDivisionByZeroException(void) :
-		CvWrappedException(__CLASSNAME__ + "Integer division by zero.") {}
-	virtual const char* IntegerDivisionByZeroException::what(void) const throw()
+	IntegerDivisionByZeroException(void) :
+		MalrangiException(__CLASSNAME__) {}
+	virtual const char* what(void) const throw()
 	{
 		return Message.c_str();
 	}
 };
-class OutOfIndexException : public CvWrappedException
+class OutOfIndexException : public MalrangiException
 {
 public:
-	OutOfIndexException::OutOfIndexException(void) :
-		CvWrappedException(__CLASSNAME__ + "Out of index.") {}
-	virtual const char* OutOfIndexException::what(void) const throw()
+	OutOfIndexException(void) :
+		MalrangiException(__CLASSNAME__) {}
+	virtual const char* what(void) const throw()
 	{
 		return Message.c_str();
 	}
 };
-class EmptyMatException : public CvWrappedException
+class EmptyMatException : public MalrangiException
 {
 public:
-	EmptyMatException::EmptyMatException(void) :
-		CvWrappedException(__CLASSNAME__ + "Mat image is empty. It seems that imread function fails to " \
-			"read a file or your handle does not allow you to get bitmap pointer because of a memory leak.") {}
-	virtual const char* EmptyMatException::what(void) const throw()
+	EmptyMatException() :
+		MalrangiException(__CLASSNAME__) {}
+	virtual const char* what(void) const throw()
 	{
 		return Message.c_str();
 	}
 };
-class MatchFailedException : public CvWrappedException
+class MatchFailedException : public MalrangiException
 {
 public:
-	MatchFailedException(void) :
-		CvWrappedException()
+	MatchFailedException() :
+		MalrangiException(__CLASSNAME__) {}
+	virtual const char* what(void) const throw()
 	{
-		;
+		return Message.c_str();
 	}
-	MatchFailedException::MatchFailedException(string MatchFileName) :
-		CvWrappedException(__CLASSNAME__ + "Template matching is failed. File to match : " + MatchFileName + "\n") 
-	{
-		;
-	}
-	virtual const char* MatchFailedException::what(void) const throw()
+};
+class MatchSuccessedException : public MalrangiException
+{
+public:
+	MatchSuccessedException() :
+		MalrangiException(__CLASSNAME__) {}
+	virtual const char* what(void) const throw()
 	{
 		return Message.c_str();
 	}
@@ -73,20 +63,13 @@ public:
 typedef struct _Valloc
 {
 	_Valloc::_Valloc(void) :
-		MinimumValue(0), MaximumValue(0), MinimumLocation(0, 0), MaximumLocation(0, 0) {}
-	_Valloc::_Valloc(DOUBLE MinimumValue, DOUBLE MaximumValue, cv::Point MinimumLocation, cv::Point MaximumLocation) :
-		MinimumValue(this->MinimumValue),
-		MaximumValue(this->MaximumValue),
-		MinimumLocation(this->MinimumLocation),
-		MaximumLocation(this->MaximumLocation) {}
+		Value(0), Location(0, 0) {}
+	_Valloc::_Valloc(double Value, Point Location) :
+		Value(Value), Location(Location) {}
 
-	DOUBLE MinimumValue;
-	DOUBLE MaximumValue;
-	Point MinimumLocation;
-	Point MaximumLocation;
-	BOOL IsMatched;
+	double Value;
+	Point Location;
 } Valloc;
-
 
 /****************************************************************************
 * Mat I/O
@@ -111,14 +94,9 @@ namespace Cvw
 		}
 		return Image;
 	}
-	void Save(
-		const Mat& Image)
-	{
-		static int Seq = 0;
-		imwrite(SNAP_DIR + to_string(++Seq) + ".png", Image);
-	}
+	
 	Mat Capture(
-		CONST RECT Area,
+		const RECT Area,
 		INT Flag = IMREAD_GRAYSCALE)
 	{
 		HBITMAP hBitmap;
@@ -163,6 +141,16 @@ namespace Cvw
 
 		return ConvertedImage;
 	}
+
+
+	void Write(
+		string DirectoryName,
+		string FileName,
+		const Mat& Image)
+	{
+		CreateDirectoryA(DirectoryName.c_str(), NULL);
+		imwrite(DirectoryName + "//" + FileName, Image);
+	}
 }
 
 
@@ -180,19 +168,38 @@ namespace Cvw
 		Valloc MatchInfo;
 		cv::matchTemplate(SourceImage, TargetImage, ResultImage, TM_CCOEFF_NORMED);
 		cv::minMaxLoc(ResultImage,
-			&MatchInfo.MinimumValue,
-			&MatchInfo.MaximumValue,
-			&MatchInfo.MinimumLocation,
-			&MatchInfo.MaximumLocation);
-	//	Cvw::Show(SourceImage);
-	//	cout << MatchInfo.MaximumValue << endl;
-		if (MatchInfo.MaximumValue < Threshold)
+			nullptr,
+			&MatchInfo.Value,
+			nullptr,
+			&MatchInfo.Location);
+
+		if (MatchInfo.Value < Threshold)
 		{
 			throw MatchFailedException();
 		}
 		return MatchInfo;
 	}
-	__forceinline Point ClickMatchedTemplate(
+	__forceinline Valloc UnmatchTemplate(
+		Mat SourceImage,
+		Mat TargetImage,
+		DOUBLE Threshold = 0.9)
+	{
+		Mat ResultImage;
+		Valloc MatchInfo;
+		cv::matchTemplate(SourceImage, TargetImage, ResultImage, TM_CCOEFF_NORMED);
+		cv::minMaxLoc(ResultImage,
+			nullptr,
+			&MatchInfo.Value,
+			nullptr,
+			&MatchInfo.Location);
+
+		if (MatchInfo.Value > Threshold)
+		{
+			throw MatchSuccessedException();
+		}
+		return MatchInfo;
+	}
+	__forceinline Valloc ClickMatchedTemplate(
 		Mat SourceImage,
 		Mat TargetImage,
 		CHAR Flag,
@@ -200,10 +207,11 @@ namespace Cvw
 		DWORD MilliSeconds = INTERVAL_MOUSEEVENT,
 		DOUBLE Threshold = 0.9)
 	{
-		Point Location = MatchTemplate(SourceImage, TargetImage, Threshold).MaximumLocation;
-		MouseEvent(Location + AdjustmentValue, Flag, MilliSeconds);
+		Valloc MatchInfo = MatchTemplate(SourceImage, TargetImage, Threshold);
+		Point PositionToClick = MatchInfo.Location + AdjustmentValue;
+		MouseEvent(PositionToClick.x, PositionToClick.y, Flag, MilliSeconds);
 
-		return Location;
+		return MatchInfo;
 	}
 #define NONWORK					[](void) -> void {;}
 	template <class LAMBDA>
@@ -220,7 +228,7 @@ namespace Cvw
 		{
 			try
 			{
-				Point LocationTemplate = Cvw::MatchTemplate(Cvw::Capture(Area), TargetImage, Threshold).MaximumLocation;
+				Point LocationTemplate = Cvw::MatchTemplate(Cvw::Capture(Area), TargetImage, Threshold).Location;
 				Func();
 				Sleep(IdleTime);
 
@@ -240,7 +248,7 @@ namespace Cvw
 	template<SIZE_T ArrSize>
 	pair<SIZE_T, Valloc> GetHighestMatchedTemplate(
 		Mat SourceImage,
-		array<Mat, ArrSize>& ArrTargetImage)
+		const array<Mat, ArrSize>& ArrTargetImage)
 	{
 		Valloc HighestValloc;
 		SIZE_T CountArrTargetImage = 0;
@@ -249,7 +257,7 @@ namespace Cvw
 		for each (auto & TargetImage in ArrTargetImage)
 		{
 			Valloc CurrentValloc = Cvw::MatchTemplate(SourceImage, TargetImage, 0);
-			if (CurrentValloc.MaximumValue > HighestValloc.MaximumValue)
+			if (CurrentValloc.Value > HighestValloc.Value)
 			{
 				HighestValloc = CurrentValloc;
 				SeqHighestMatchedTemplate = CountArrTargetImage;

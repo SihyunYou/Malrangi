@@ -142,6 +142,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -158,15 +159,18 @@
     <ClCompile Include="entry.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="client.h" />
+    <ClInclude Include="malexc.h" />
+    <ClInclude Include="pathenv.h" />
+    <ClInclude Include="urus.h" />
     <ClInclude Include="user.h" />
     <ClInclude Include="cvwrap.h" />
     <ClInclude Include="client_api.h" />
     <ClInclude Include="ip.h" />
-    <ClInclude Include="logging.h" />
-    <ClInclude Include="low_util.h" />
+    <ClInclude Include="log.h" />
     <ClInclude Include="report_kakao.h" />
     <ClInclude Include="tesseract-binary-wrap.h" />
+    <ClInclude Include="winevent.h" />
+    <ClInclude Include="zacum.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

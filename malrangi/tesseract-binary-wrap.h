@@ -1,24 +1,17 @@
 #pragma once
-#include "low_util.h"
+#include "malexc.h"
 
-class TsWrappedException : public std::exception
+class MyException : public MalrangiException
 {
 public:
-	TsWrappedException::TsWrappedException(void) :
-		Message(__CLASSNAME__ + "\n") {}
-	explicit TsWrappedException::TsWrappedException(const char* Message) :
-		Message(Message) {}
-	explicit TsWrappedException::TsWrappedException(string Message) :
-		Message(Message) {}
-	virtual TsWrappedException::~TsWrappedException() throw () {}
-	virtual const char* TsWrappedException::what(void) const throw()
+	MyException(void) :
+		MyException(__CLASSNAME__) {}
+	virtual const char* what(void) const throw()
 	{
 		return Message.c_str();
 	}
-
-protected:
-	std::string Message;
 };
+
 
 namespace Tsw
 {
@@ -57,27 +50,5 @@ namespace Tsw
 
 #undef IMAGENAME
 #undef OUTPUTBASE	
-	}
-	int levenshtein(string input1, string input2) {
-		int dist[100][100];
-		for (int i = 1; i <= input1.length(); i++)
-			dist[i][0] = i;
-		for (int j = 1; j <= input2.length(); j++)
-			dist[0][j] = j;
-
-		for (int j = 1; j <= input2.length(); j++) {
-			for (int i = 1; i <= input1.length(); i++) {
-				if (input1[i - 1] == input2[j - 1]) dist[i][j] = dist[i - 1][j - 1];
-				else dist[i][j] = min(dist[i - 1][j - 1] + 1, min(dist[i][j - 1] + 1, dist[i - 1][j] + 1));
-			}
-		}
-
-		return dist[input1.length()][input2.length()];
-	}
-
-	DOUBLE GetSimilarityBetweenString(string s1, string s2)
-	{
-		CONST DOUBLE MAX_STR = MAX(s1.length(), s2.length());
-		return (1 - (levenshtein(s1, s2) / MAX_STR));
 	}
 };

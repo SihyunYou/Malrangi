@@ -1,11 +1,42 @@
 #pragma once
-#include "low_util.h"
+#include "pathenv.h"
 
-void RenewIPAddress(
-	void)
+class IPCONF
 {
-	static INT HADDR6 = 20;
-	ShellExecuteA(NULL, "open", IPMANAGER_FILENAME, to_string(HADDR6++).c_str(), NULL, SW_SHOW);
+public:
+	IPCONF()
+	{
+		File.open(IPCONF_PATH, ios::in);
+		if (File.is_open())
+		{
+			if (File.peek() == std::ifstream::traits_type::eof())
+			{
+				CurrentHADDR6 = 9;
+			}
+			else
+			{
+				File >> CurrentHADDR6;
+				CurrentHADDR6 = ((CurrentHADDR6 >= 9) ? CurrentHADDR6 : 9);
+			}
+			File.close();
+		}
+		else
+		{
+			CurrentHADDR6 = 9;
+		}
+	}
 
+public:
+	void Renew(void)
+	{
+		ShellExecuteA(NULL, "open", IPMANAGER_PATH, to_string(++CurrentHADDR6).c_str(), NULL, SW_SHOW);
 
-} 
+		File.open(IPCONF_PATH, ios::out | ios::trunc);
+		File << CurrentHADDR6;
+		File.close();
+	}
+
+private:
+	int CurrentHADDR6;
+	fstream File;
+};

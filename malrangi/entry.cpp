@@ -1,6 +1,7 @@
-#include "client.h"
+#include "urus.h"
+#include "zacum.h"
 #include "ip.h"
-#include "logging.h"
+#include "log.h"
 #include "report_kakao.h"
 
 //#define URUS_RAID
@@ -15,7 +16,8 @@ main(
 	char* argv[])
 {
 	Sleep(0x800);
-
+	
+	return 0;
 	try
 	{
 #if defined(URUS_RAID)
@@ -26,7 +28,9 @@ main(
 		ZacumCalc Worker;
 #endif
 		CONF_INFO& Conf = *(CONF_INFO::GetInstance());
-#ifndef USING_IPRENEWER
+#ifdef USING_IPRENEWER
+		IPCONF IpManager;
+#else
 		WriteLog(LOG_LEVEL::WARNING,
 			"This program does not support ip renewal. (Flag USING_IPRENEWER is not defined.)"
 			"The number of accounts written in conf file more than 5 is ignored and this program will be terminated itself.\n");
@@ -38,12 +42,12 @@ main(
 		bool IsIngameExceptional = false;
 		auto LOG_TREE = [&Uri](std::exception* ce) -> void
 		{
-			WriteLog(((nullptr != ce) ? LOG_LEVEL::FAILURE : LOG_LEVEL::SUCCESS), (Uri + "? " + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
+			WriteLog(((nullptr != ce) ? LOG_LEVEL::FAILURE : LOG_LEVEL::SUCCESS), 
+				(Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
 		};
 
 		for each (const auto& NexonAccountInfo in Conf.VecNexonAccount)
 		{
-			Uri = NexonAccountInfo.Id;
 			for each (const auto & MapleIdInfo in NexonAccountInfo.VecMapleId)
 			{
 				Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id;
@@ -71,7 +75,7 @@ main(
 					if (SeqMapleId % 4 == 0)
 					{
 	#ifdef USING_IPRENEWER
-						RenewIPAddress();
+						IpManager.Renew();
 	#else
 						if (SeqMapleId > 3)
 						{
@@ -95,7 +99,7 @@ main(
 					if (SeqMapleId % 4 == 0)
 					{
 	#ifdef USING_IPRENEWER
-						RenewIPAddress();
+						IpManager.Renew();
 	#else
 						if (SeqMapleId > 3)
 						{
@@ -124,7 +128,7 @@ main(
 				{
 					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 				}
-				catch (ClientApi::ClientException & ce)
+				catch (MalrangiException & ce)
 				{
 					LOG_TREE(&ce);
 					IsExgameExceptional = true;
@@ -147,9 +151,9 @@ main(
 					***************************************************************************************************************/
 					try
 					{
-						ClientApi::SelectServer(ServerInfo);
+						ClientApi::SelectServer(ServerInfo, 37);
 					}
-					catch (ClientApi::ClientException & ce)
+					catch (MalrangiException & ce)
 					{
 						LOG_TREE(&ce);
 						IsExgameExceptional = true;
@@ -179,7 +183,7 @@ main(
 
 						goto LOGOUT_DISCONNECTED;
 					}
-					catch (ClientApi::ClientException & ce)
+					catch (MalrangiException & ce)
 					{
 						LOG_TREE(&ce);
 						IsIngameExceptional = true;
@@ -190,20 +194,25 @@ main(
 					try
 					{
 						ClientApi::BreakParty();
-						Worker.Play();
+						for (int sn = 0; sn < 3; sn++)
+						{
+							Worker.Play(sn);
+						}
+						
+						LOG_TREE(nullptr);
 					}
-					catch (BasePlay::AppException & ae)
+					catch (MalrangiException & ae)
 					{
 						LOG_TREE(&ae);
+						Cvw::Save(Cvw::Capture(ClientApi::RECT_CLIENT4), "urus-raid");
 						ClientApi::RemoveAllIngameWindows();
 					}
-					LOG_TREE(nullptr);
 
 					try
 					{
 						ClientApi::ExitGame();
 					}
-					catch (ClientApi::ClientException & ce)
+					catch (MalrangiException & ce)
 					{
 						LOG_TREE(&ce);
 						IsIngameExceptional = true;
@@ -225,7 +234,7 @@ main(
 
 							goto LOGOUT_DISCONNECTED;
 						}
-						catch (ClientApi::ClientException & ce)
+						catch (MalrangiException & ce)
 						{
 							LOG_TREE(&ce);
 							IsIngameExceptional = true;
@@ -235,17 +244,27 @@ main(
 
 						try
 						{
-#ifdef ZACUM_RAID
+#if defined(ZACUM_RAID)
 							ClientApi::MakeParty();
 							Worker.Play(CharacterInfo, FALSE);
-#endif
-#ifdef ZACUM_CALC
+#elif defined(ZACUM_CALC)
 							Worker.Play(MapleIdInfo);
 #endif
 						}
-						catch (BasePlay::AppException & ae)
+						catch (MalrangiException & ae)
 						{
 							LOG_TREE(&ae);
+
+							static int ExceptionSequence = 0;
+#if defined(ZACUM_RAID) || defined(ZACUM_CALC)
+#ifdef ZACUM_RAID
+#define FILENAME "zacum-raid"
+#else
+#define FILENAME "zacum-calc"
+#endif
+							Cvw::Write(SNAP_DIR FILENAME, to_string(++ExceptionSequence), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
+#undef FILENAME
+#endif
 							ClientApi::RemoveAllIngameWindows();
 						}
 
@@ -253,7 +272,7 @@ main(
 						{
 							ClientApi::ExitGame();
 						}
-						catch (ClientApi::ClientException & ce)
+						catch (MalrangiException & ce)
 						{
 							LOG_TREE(&ce);
 							IsIngameExceptional = true;
@@ -272,7 +291,7 @@ main(
 					{
 						ClientApi::ExitCharacterWindow();
 					}
-					catch (ClientApi::ClientException & ce)
+					catch (MalrangiException & ce)
 					{
 						LOG_TREE(&ce);
 						IsExgameExceptional = true;
@@ -297,7 +316,7 @@ main(
 						{
 							ClientApi::Logout();
 						}
-						catch (ClientApi::ClientException & ce)
+						catch (MalrangiException & ce)
 						{
 							LOG_TREE(&ce);
 							IsExgameExceptional = true;
@@ -330,7 +349,7 @@ main(
 	EXIT_ROUTINE:
 		Conf.Destroy();
 	}
-	catch (CvWrappedException & cwe)
+	catch (MalrangiException & cwe)
 	{
 		WriteLog(LOG_LEVEL::CRITICAL, cwe.what());
 	}

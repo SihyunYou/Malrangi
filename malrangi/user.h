@@ -1,5 +1,7 @@
 #pragma once
-#include "low_util.h"
+#include "pathenv.h"
+#include <vector>
+#include <map>
 
 /****************************************************************************
 * Configuration Reader
@@ -10,30 +12,34 @@ typedef struct _CONF_INFO
 	{
 		string Id;
 		string Password;
-		typedef struct _MAPLEID_INFO
+		struct _MAPLEID_INFO
 		{
 			string Id;
 			string SecondPassword;
-			typedef struct _SERVER_INFO
+			struct _SERVER_INFO
 			{
 				string ServerName;
-				Point CoorServer;
-				typedef struct _CHARACTER_INFO
+				POINT CoorServer;
+				struct _CHARACTER_INFO
 				{
 					string CharacterType;
 					BYTE Skill;
 					BYTE RequiredBuf1;
 					BYTE RequiredBuf2;
-				} CHARACTER_INFO;
-				vector<CHARACTER_INFO> VecCharacter;
-			}SERVER_INFO;
-			vector<SERVER_INFO> VecServer;
-		}MAPLEID_INFO;
-		vector<MAPLEID_INFO> VecMapleId;
+				};
+				vector<struct _CHARACTER_INFO> VecCharacter;
+			};
+			vector<struct _SERVER_INFO> VecServer;
+		};
+		vector<struct _MAPLEID_INFO> VecMapleId;
 	} NEXONAC_INFO;
+	typedef NEXONAC_INFO::_MAPLEID_INFO MAPLEID_INFO;
+	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO SERVER_INFO;
+	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO::_CHARACTER_INFO CHARACTER_INFO;
+	
 	vector<NEXONAC_INFO> VecNexonAccount;
-	map<string, NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO> MapServerInfo;
-	map<string, NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO::CHARACTER_INFO> MapCharacterInfo;
+	map<string, SERVER_INFO> MapServerInfo;
+	map<string, CHARACTER_INFO> MapCharacterInfo;
 
 	typedef struct _KEYSET_INFO
 	{
@@ -49,18 +55,18 @@ private:
 	_CONF_INFO(void)
 	{
 		ifstream File;
-		CHAR Line[0x100];
-		const string ServerNames[] = {"스카니아", "베라", "루나", "제니스", "크로아", "유니온", "엘리시움", "이노시스", "레드", "오로라", "아케인", "노바"};
+		File.open(USERCONF_PATH);
 
-		for(int i = 0; i < sizeof(ServerNames) / sizeof(string); i++)
-		{
-			MapServerInfo[ServerNames[i]].ServerName = ServerNames[i];
-			MapServerInfo[ServerNames[i]].CoorServer = { 745, 68 + i * 32 };
-		}
-
-		File.open(CONF_FILENAME);
 		if (File.is_open())
 		{
+			CHAR Line[0x100];
+			const string ServerNames[] = { "스카니아", "베라", "루나", "제니스", "크로아", "유니온", "엘리시움", "이노시스", "레드", "오로라", "아케인", "노바" };
+			for (int i = 0; i < sizeof(ServerNames) / sizeof(string); i++)
+			{
+				MapServerInfo[ServerNames[i]].ServerName = ServerNames[i];
+				MapServerInfo[ServerNames[i]].CoorServer = { 745, 68 + i * 32 };
+			}
+
 			while (File.getline(Line, sizeof(Line)))
 			{
 				if (strlen(Line) == 0)
@@ -77,7 +83,7 @@ private:
 					string Rvalue = string(pdq + 1, strchr(pdq + 1, '\"'));
 				
 					Stream = istringstream(Rvalue);
-					NEXONAC_INFO::MAPLEID_INFO::SERVER_INFO::CHARACTER_INFO CharacterInfo;
+					CHARACTER_INFO CharacterInfo;
 					CharacterInfo.CharacterType = Lvalue;
 
 					Stream >> SubLine;
@@ -140,7 +146,7 @@ private:
 				}
 				else if ('\t' == Line[0])
 				{
-					NEXONAC_INFO::MAPLEID_INFO MapleIdInfo;
+					MAPLEID_INFO MapleIdInfo;
 
 					Stream >> SubLine;
 					MapleIdInfo.Id = SubLine;
