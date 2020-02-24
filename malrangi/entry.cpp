@@ -2,11 +2,11 @@
 #include "zacum.h"
 #include "ip.h"
 #include "log.h"
-#include "report_kakao.h"
+#include "report.h"
 
 //#define URUS_RAID
-//#define ZACUM_RAID
-#define ZACUM_CALC
+#define ZACUM_RAID
+//#define ZACUM_CALC
 
 #define USING_IPRENEWER
 
@@ -16,8 +16,7 @@ main(
 	char* argv[])
 {
 	Sleep(0x800);
-	
-	return 0;
+
 	try
 	{
 #if defined(URUS_RAID)
@@ -27,7 +26,7 @@ main(
 #elif defined(ZACUM_CALC)
 		ZacumCalc Worker;
 #endif
-		CONF_INFO& Conf = *(CONF_INFO::GetInstance());
+		USERCONF& UserManager = *(USERCONF::GetInstance());
 #ifdef USING_IPRENEWER
 		IPCONF IpManager;
 #else
@@ -46,7 +45,7 @@ main(
 				(Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
 		};
 
-		for each (const auto& NexonAccountInfo in Conf.VecNexonAccount)
+		for each (const auto& NexonAccountInfo in UserManager.VecNexonAccount)
 		{
 			for each (const auto & MapleIdInfo in NexonAccountInfo.VecMapleId)
 			{
@@ -244,10 +243,10 @@ main(
 
 						try
 						{
-#if defined(ZACUM_RAID)
+#ifdef ZACUM_RAID
 							ClientApi::MakeParty();
 							Worker.Play(CharacterInfo, FALSE);
-#elif defined(ZACUM_CALC)
+#else
 							Worker.Play(MapleIdInfo);
 #endif
 						}
@@ -256,7 +255,6 @@ main(
 							LOG_TREE(&ae);
 
 							static int ExceptionSequence = 0;
-#if defined(ZACUM_RAID) || defined(ZACUM_CALC)
 #ifdef ZACUM_RAID
 #define FILENAME "zacum-raid"
 #else
@@ -264,7 +262,6 @@ main(
 #endif
 							Cvw::Write(SNAP_DIR FILENAME, to_string(++ExceptionSequence), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
 #undef FILENAME
-#endif
 							ClientApi::RemoveAllIngameWindows();
 						}
 
@@ -347,7 +344,7 @@ main(
 
 		WriteLog(LOG_LEVEL::INFO, "ALL ROUTINES HAVE BEEN SUCCESSFULLY COMPLETE.\n");
 	EXIT_ROUTINE:
-		Conf.Destroy();
+		UserManager.Destroy();
 	}
 	catch (MalrangiException & cwe)
 	{

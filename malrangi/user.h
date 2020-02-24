@@ -6,8 +6,9 @@
 /****************************************************************************
 * Configuration Reader
 ****************************************************************************/
-typedef struct _CONF_INFO
+class USERCONF
 {
+public:
 	typedef struct _NEXONAC_INFO
 	{
 		string Id;
@@ -52,7 +53,7 @@ typedef struct _CONF_INFO
 	KEYSET_INFO VirtualKeyset;
 
 private:
-	_CONF_INFO(void)
+	USERCONF(void)
 	{
 		ifstream File;
 		File.open(USERCONF_PATH);
@@ -172,18 +173,18 @@ private:
 			File.close();
 		}
 	}
-	~_CONF_INFO()
+	~USERCONF()
 	{
 		;
 	}
 
 
 public:
-	static _CONF_INFO* GetInstance(void)
+	static USERCONF* GetInstance(void)
 	{
 		if (nullptr == Instance)
 		{
-			Instance = new _CONF_INFO();
+			Instance = new USERCONF();
 		}
 		return Instance;
 	}
@@ -196,6 +197,6 @@ public:
 		}
 	}
 	private:
-		static _CONF_INFO* Instance;
-}CONF_INFO;
-CONF_INFO* CONF_INFO::Instance = nullptr;
+		static USERCONF* Instance;
+};
+USERCONF* USERCONF::Instance = nullptr;

@@ -1,12 +1,9 @@
 #pragma once
 #include "malexc.h"
 #include "winevent.h"
-#include <filesystem>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
-
 using namespace cv;
 
 class IntegerDivisionByZeroException : public MalrangiException

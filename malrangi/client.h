@@ -189,10 +189,10 @@ public:
 	****************************************************************************/
 	static void BootClient(void);
 	static void Login(
-		const CONF_INFO::NEXONAC_INFO&,
-		const CONF_INFO::MAPLEID_INFO&);
+		const USERCONF::NEXONAC_INFO&,
+		const USERCONF::MAPLEID_INFO&);
 	static void SelectServer(
-		const CONF_INFO::SERVER_INFO&,
+		const USERCONF::SERVER_INFO&,
 		int);
 	static void SelectCharacter(unsigned int);
 	static void UnlockSecondPassword(
@@ -206,7 +206,7 @@ public:
 	* Internal Game Window Control
 	****************************************************************************/
 	static void EnterGame(
-		const CONF_INFO::MAPLEID_INFO&);
+		const USERCONF::MAPLEID_INFO&);
 	enum class JUMP_T
 	{
 		CYGNUS,
@@ -288,8 +288,8 @@ void ClientApi::TerminateClient(
 	}
 }
 void ClientApi::Login(
-	CONST CONF_INFO::NEXONAC_INFO& AccountInfo,
-	CONST CONF_INFO::MAPLEID_INFO& MapleIdInfo)
+	CONST USERCONF::NEXONAC_INFO& AccountInfo,
+	CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 {
 	static Mat TargetImageWindowMapleId = Cvw::Read(TARGET_DIR "window_mapleid.jpg");
 	bool IsFailedAgain = false;
@@ -358,7 +358,7 @@ NEXON_LOGIN:
 	Sleep(0x400);
 }
 void ClientApi::SelectServer(
-	const CONF_INFO::SERVER_INFO& ServerInfo,
+	const USERCONF::SERVER_INFO& ServerInfo,
 	int ChannelNumber)
 {
 	MouseEvent(ServerInfo.CoorServer.x, ServerInfo.CoorServer.y, LEFT_CLICK);
@@ -423,7 +423,7 @@ void ClientApi::UnlockSecondPassword(
 	KeybdEvent(VK_RETURN);
 }
 void ClientApi::EnterGame(
-	CONST CONF_INFO::MAPLEID_INFO& MapleIdInfo)
+	CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 {
 	KeybdEvent(VK_RETURN, 0x400);
 	try
@@ -557,7 +557,7 @@ void ClientApi::MakeParty(
 {
 	static const array<Mat, 2> ArrTargetImage = { Cvw::Read(TARGET_DIR "button_make.jpg"), Cvw::Read(TARGET_DIR "button_break.jpg") };
 
-	KeybdEvent(CONF_INFO::GetInstance()->VirtualKeyset.Party);
+	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
 	ClientApi::SET_CLIENT_STDPOS();
 
 	auto TemplateInfo = Cvw::GetHighestMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), ArrTargetImage);
@@ -566,14 +566,14 @@ void ClientApi::MakeParty(
 		MouseEvent(TemplateInfo.second.Location.x, TemplateInfo.second.Location.y, LEFT_CLICK);
 		KeybdEvent(VK_RETURN);
 	}
-	KeybdEvent(CONF_INFO::GetInstance()->VirtualKeyset.Party);
+	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
 }
 void ClientApi::BreakParty(
 	void)
 {
 	static const array<Mat, 2> ArrTargetImage = { Cvw::Read(TARGET_DIR "button_make.jpg"), Cvw::Read(TARGET_DIR "button_break.jpg") };
 
-	KeybdEvent(CONF_INFO::GetInstance()->VirtualKeyset.Party);
+	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
 	ClientApi::SET_CLIENT_STDPOS();
 
 	auto TemplateInfo = Cvw::GetHighestMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), ArrTargetImage);
@@ -581,7 +581,7 @@ void ClientApi::BreakParty(
 	{
 		MouseEvent(TemplateInfo.second.Location.x, TemplateInfo.second.Location.y, LEFT_CLICK);
 	}
-	KeybdEvent(CONF_INFO::GetInstance()->VirtualKeyset.Party);
+	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
 }
 void ClientApi::MoveServer(
 	bool IsForward)

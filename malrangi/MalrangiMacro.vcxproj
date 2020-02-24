@@ -159,15 +159,17 @@
     <ClCompile Include="entry.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="field.h" />
+    <ClInclude Include="ipmanage.h" />
     <ClInclude Include="malexc.h" />
     <ClInclude Include="pathenv.h" />
     <ClInclude Include="urus.h" />
     <ClInclude Include="user.h" />
     <ClInclude Include="cvwrap.h" />
-    <ClInclude Include="client_api.h" />
+    <ClInclude Include="client.h" />
     <ClInclude Include="ip.h" />
     <ClInclude Include="log.h" />
-    <ClInclude Include="report_kakao.h" />
+    <ClInclude Include="report.h" />
     <ClInclude Include="tesseract-binary-wrap.h" />
     <ClInclude Include="winevent.h" />
     <ClInclude Include="zacum.h" />

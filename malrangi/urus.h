@@ -1,8 +1,11 @@
 #pragma once
-#include "client_api.h"
+#include "client.h"
 
 class UrusRaid
 {
+public:
+	UrusRaid() : RaidCount(0) {}
+
 public:
 	void Play(int SequenceNumber)
 	{
@@ -151,9 +154,10 @@ public:
 			throw MalrangiException("BattleTimeoutException");
 		}
 		Sleep(0x400);
-		
-		static int Seq = 0;
-		Cvw::Write(SNAP_DIR "urus-raid", to_string(++Seq), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
+
+		Mat Image = Cvw::Capture(ClientApi::RECT_CLIENT4, 1);
+		Cvw::Write(SNAP_DIR "urus-raid", to_string(++RaidCount), Image);
+		VecImageRaidResult.push_back(Image);
 
 
 		/*** Επΐε ***/
@@ -182,5 +186,16 @@ public:
 			Sleep(0x400);;
 		}
 	}
+	int TotalUp(void)
+	{
+		for each (const auto & Image in VecImageRaidResult)
+		{
+			;
+		}
+	}
+
+private:
+	int RaidCount;
+	vector<Mat> VecImageRaidResult;
 };
 

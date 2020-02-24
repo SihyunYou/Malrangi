@@ -28,6 +28,12 @@
     <Filter Include="Header Files\application\client">
       <UniqueIdentifier>{ff75f9d6-f3c7-4802-a675-3cbc60ffbe3a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\application\console">
+      <UniqueIdentifier>{6490278e-f3d0-4c09-bfee-cac06b72f709}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\application\external">
+      <UniqueIdentifier>{aced61f3-37a3-42fa-9a69-a31149f8ff5a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cvwrap.h">
@@ -35,9 +41,6 @@
     </ClInclude>
     <ClInclude Include="tesseract-binary-wrap.h">
       <Filter>Header Files\util%28wrap%29</Filter>
-    </ClInclude>
-    <ClInclude Include="client_api.h">
-      <Filter>Header Files\api</Filter>
     </ClInclude>
     <ClInclude Include="user.h">
       <Filter>Header Files\conf</Filter>
@@ -54,17 +57,26 @@
     <ClInclude Include="malexc.h">
       <Filter>Header Files\util%28wrap%29</Filter>
     </ClInclude>
-    <ClInclude Include="log.h">
-      <Filter>Header Files\application</Filter>
-    </ClInclude>
-    <ClInclude Include="report_kakao.h">
-      <Filter>Header Files\application</Filter>
-    </ClInclude>
     <ClInclude Include="urus.h">
       <Filter>Header Files\application\client</Filter>
     </ClInclude>
     <ClInclude Include="zacum.h">
       <Filter>Header Files\application\client</Filter>
+    </ClInclude>
+    <ClInclude Include="field.h">
+      <Filter>Header Files\application\client</Filter>
+    </ClInclude>
+    <ClInclude Include="client.h">
+      <Filter>Header Files\api</Filter>
+    </ClInclude>
+    <ClInclude Include="log.h">
+      <Filter>Header Files\application\console</Filter>
+    </ClInclude>
+    <ClInclude Include="report.h">
+      <Filter>Header Files\application\external</Filter>
+    </ClInclude>
+    <ClInclude Include="ipmanage.h">
+      <Filter>Header Files\application\external</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

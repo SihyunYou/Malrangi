@@ -1,5 +1,5 @@
 #pragma once
-#include "client_api.h"
+#include "client.h"
 
 class Zacum
 {
@@ -112,7 +112,7 @@ private:
 
 public:
 	void Play(
-		CONST CONF_INFO::CHARACTER_INFO& CharacterSpecialty,
+		CONST USERCONF::CHARACTER_INFO& CharacterSpecialty,
 		BOOL IsReady)
 	{
 		static const Mat TargetImageEyeOfFire = Cvw::Read(TARGET_DIR "eye_of_fire.jpg");
@@ -140,7 +140,7 @@ public:
 
 
 		/*** 불의 눈 던지기 ***/
-		CONF_INFO::KEYSET_INFO& KeysetInfo = CONF_INFO::GetInstance()->VirtualKeyset;
+		USERCONF::KEYSET_INFO& KeysetInfo = USERCONF::GetInstance()->VirtualKeyset;
 		KeybdEvent(KeysetInfo.Inventory);
 		try
 		{
@@ -203,7 +203,7 @@ class ZacumCalc : public Zacum
 {
 public:
 	void Play(
-		CONST CONF_INFO::MAPLEID_INFO& MapleIdInfo)
+		CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 	{
 		static const Mat TargetImageButtonMeisterVill(Cvw::Read(TARGET_DIR "button_meistervill.jpg"));
 		static const Mat TargetImageMinimapMarkMeisterVill(Cvw::Read(TARGET_DIR "minimap_mark_meistervill.jpg"));
@@ -218,7 +218,7 @@ public:
 		MoveFromZ1ToZ2(2);
 
 		/*** `자쿰의 제단 입구(카오스) -> `마이스터 빌` 이동 ***/
-		CONF_INFO::KEYSET_INFO& KeysetInfo = CONF_INFO::GetInstance()->VirtualKeyset;
+		USERCONF::KEYSET_INFO& KeysetInfo = USERCONF::GetInstance()->VirtualKeyset;
 		KeybdEvent(KeysetInfo.SpecialTechnology);
 		try
 		{
