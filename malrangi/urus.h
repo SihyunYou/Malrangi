@@ -156,7 +156,7 @@ public:
 		Sleep(0x400);
 
 		Mat Image = Cvw::Capture(ClientApi::RECT_CLIENT4, 1);
-		Cvw::Write(SNAP_DIR "urus-raid", to_string(++RaidCount), Image);
+		Cvw::Write(SNAP_DIR "urus-raid", INT_TO_PNG(++RaidCount), Image);
 		VecImageRaidResult.push_back(Image);
 
 

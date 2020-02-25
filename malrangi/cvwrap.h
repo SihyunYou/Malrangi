@@ -139,7 +139,7 @@ namespace Cvw
 		return ConvertedImage;
 	}
 
-
+#define INT_TO_PNG(x) (to_string(x) + ".png")
 	void Write(
 		string DirectoryName,
 		string FileName,

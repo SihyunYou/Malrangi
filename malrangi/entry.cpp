@@ -4,8 +4,8 @@
 #include "log.h"
 #include "report.h"
 
-//#define URUS_RAID
-#define ZACUM_RAID
+#define URUS_RAID
+//#define ZACUM_RAID
 //#define ZACUM_CALC
 
 #define USING_IPRENEWER
@@ -37,6 +37,7 @@ main(
 #endif
 
 		string Uri;
+		static int ExceptionSequence = 0;
 		int SeqMapleId = 0;
 		bool IsExgameExceptional = false;
 		bool IsIngameExceptional = false;
@@ -204,7 +205,7 @@ main(
 					catch (MalrangiException & ae)
 					{
 						LOG_TREE(&ae);
-						Cvw::Save(Cvw::Capture(ClientApi::RECT_CLIENT4), "urus-raid");
+						Cvw::Write(SNAP_DIR "urus_raid_exception", INT_TO_PNG(++ExceptionSequence), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
 						ClientApi::RemoveAllIngameWindows();
 					}
 
@@ -254,14 +255,12 @@ main(
 						catch (MalrangiException & ae)
 						{
 							LOG_TREE(&ae);
-
-							static int ExceptionSequence = 0;
 #ifdef ZACUM_RAID
-#define FILENAME "zacum-raid"
+#define FILENAME "zacum_raid_exception"
 #else
-#define FILENAME "zacum-calc"
+#define FILENAME "zacum_calc_exception"
 #endif
-							Cvw::Write(SNAP_DIR FILENAME, to_string(++ExceptionSequence), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
+							Cvw::Write(SNAP_DIR FILENAME, INT_TO_PNG(++ExceptionSequence), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
 #undef FILENAME
 							ClientApi::RemoveAllIngameWindows();
 						}
@@ -351,6 +350,10 @@ main(
 	catch (MalrangiException & cwe)
 	{
 		WriteLog(LOG_LEVEL::CRITICAL, cwe.what());
+	}
+	catch (exception & e)
+	{
+		WriteLog(LOG_LEVEL::CRITICAL, e.what());
 	}
 
 	Sleep(10000000);
