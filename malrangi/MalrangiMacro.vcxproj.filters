@@ -34,6 +34,9 @@
     <Filter Include="Header Files\application\external">
       <UniqueIdentifier>{aced61f3-37a3-42fa-9a69-a31149f8ff5a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\application\client\boss">
+      <UniqueIdentifier>{21514a7e-0ae3-4cc8-b2c4-95ab78128270}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cvwrap.h">
@@ -57,12 +60,6 @@
     <ClInclude Include="malexc.h">
       <Filter>Header Files\util%28wrap%29</Filter>
     </ClInclude>
-    <ClInclude Include="urus.h">
-      <Filter>Header Files\application\client</Filter>
-    </ClInclude>
-    <ClInclude Include="zacum.h">
-      <Filter>Header Files\application\client</Filter>
-    </ClInclude>
     <ClInclude Include="field.h">
       <Filter>Header Files\application\client</Filter>
     </ClInclude>
@@ -77,6 +74,15 @@
     </ClInclude>
     <ClInclude Include="ipmanage.h">
       <Filter>Header Files\application\external</Filter>
+    </ClInclude>
+    <ClInclude Include="boss.h">
+      <Filter>Header Files\application\client\boss</Filter>
+    </ClInclude>
+    <ClInclude Include="urus.h">
+      <Filter>Header Files\application\client\boss</Filter>
+    </ClInclude>
+    <ClInclude Include="zacum.h">
+      <Filter>Header Files\application\client\boss</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,7 +1,7 @@
 #pragma once
-#include "client.h"
+#include "boss.h"
 
-class Zacum
+class Zacum : public Boss
 {
 protected:
 	void MoveFromZ1ToZ2(int Level)
@@ -115,88 +115,96 @@ public:
 		CONST USERCONF::CHARACTER_INFO& CharacterSpecialty,
 		BOOL IsReady)
 	{
-		static const Mat TargetImageEyeOfFire = Cvw::Read(TARGET_DIR "eye_of_fire.jpg");
-		static const Mat TargetImageInventoryBar = Cvw::Read(TARGET_DIR "inventory_bar.jpg");
-		static const Mat TargetImageButtonExpandingInventory = Cvw::Read(TARGET_DIR "button_expanding_inventory.jpg");
-		static const Mat TargetImageCrystalOfBoss = Cvw::Read(TARGET_DIR "crystal_of_boss.jpg");
-
-
-		/*** 자쿰의 제단 입장 전 준비 ***/
-		if (!IsReady)
-		{
-			MoveFromZ2ToZ1();
-			GetEyeOfFire();
-			MoveFromZ1ToZ2(1);
-		}
-		MoveFromZ2ToZ3();
-
-
-		/*** 자쿰의 제단 입장 ***/
-		KeybdEventContinued(VK_RIGHT, 1000);
-		if (CharacterSpecialty.RequiredBuf1 != NULL)
-		{
-			KeybdEvent(CharacterSpecialty.RequiredBuf1, 1000);
-		}
-
-
-		/*** 불의 눈 던지기 ***/
-		USERCONF::KEYSET_INFO& KeysetInfo = USERCONF::GetInstance()->VirtualKeyset;
-		KeybdEvent(KeysetInfo.Inventory);
 		try
 		{
-			Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
-			MouseEvent(25, 50, LEFT_CLICK);
-		}
-		catch (MatchFailedException)
-		{
+			static const Mat TargetImageEyeOfFire = Cvw::Read(TARGET_DIR "eye_of_fire.jpg");
+			static const Mat TargetImageInventoryBar = Cvw::Read(TARGET_DIR "inventory_bar.jpg");
+			static const Mat TargetImageButtonExpandingInventory = Cvw::Read(TARGET_DIR "button_expanding_inventory.jpg");
+			static const Mat TargetImageCrystalOfBoss = Cvw::Read(TARGET_DIR "crystal_of_boss.jpg");
+
+
+			/*** 자쿰의 제단 입장 전 준비 ***/
+			if (!IsReady)
+			{
+				MoveFromZ2ToZ1();
+				GetEyeOfFire();
+				MoveFromZ1ToZ2(1);
+			}
+			MoveFromZ2ToZ3();
+
+
+			/*** 자쿰의 제단 입장 ***/
+			KeybdEventContinued(VK_RIGHT, 1000);
+			if (CharacterSpecialty.RequiredBuf1 != NULL)
+			{
+				KeybdEvent(CharacterSpecialty.RequiredBuf1, 1000);
+			}
+
+
+			/*** 불의 눈 던지기 ***/
+			USERCONF::KEYSET_INFO& KeysetInfo = USERCONF::GetInstance()->VirtualKeyset;
+			KeybdEvent(KeysetInfo.Inventory);
 			try
 			{
-				Mat SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
-				Cvw::ClickMatchedTemplate(SourceImage, TargetImageInventoryBar, LEFT_CLICK, { 40 * 2, 40 }, 600);
-				Cvw::ClickMatchedTemplate(SourceImage, TargetImageButtonExpandingInventory, LEFT_CLICK, { 6, 6 }, 600);
-
-				SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
-				Cvw::ClickMatchedTemplate(SourceImage, TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
+				Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
+				MouseEvent(25, 50, LEFT_CLICK);
 			}
 			catch (MatchFailedException)
 			{
-				throw MalrangiException("ThrowEyeOfFireFailedException");
+				try
+				{
+					Mat SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
+					Cvw::ClickMatchedTemplate(SourceImage, TargetImageInventoryBar, LEFT_CLICK, { 40 * 2, 40 }, 600);
+					Cvw::ClickMatchedTemplate(SourceImage, TargetImageButtonExpandingInventory, LEFT_CLICK, { 6, 6 }, 600);
+
+					SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
+					Cvw::ClickMatchedTemplate(SourceImage, TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
+				}
+				catch (MatchFailedException)
+				{
+					throw MalrangiException("ThrowEyeOfFireFailedException");
+				}
+
+				MouseEvent(25, 50, LEFT_CLICK);
+			}
+			KeybdEvent(KeysetInfo.Inventory, 3600);
+
+
+			/*** 쿰돌이 ***/
+			if (CharacterSpecialty.RequiredBuf2 != NULL)
+			{
+				KeybdEvent(CharacterSpecialty.RequiredBuf2, 1000);
 			}
 
-			MouseEvent(25, 50, LEFT_CLICK);
+			try
+			{
+				Cvw::DoUntilMatchingTemplate(
+					ClientApi::RECT_CLIENT4,
+					TargetImageCrystalOfBoss,
+					[CharacterSpecialty]()
+					{
+						KeybdEventDown(CharacterSpecialty.Skill);
+						MouseEvent(800, 294, LEFT_CLICK, 0);
+					},
+					45000,
+						50);
+				KeybdEventUp(CharacterSpecialty.Skill);
+			}
+			catch (MatchFailedException)
+			{
+				;
+			}
+
+
+			/*** 줍기 ***/
+			KeybdEventContinuedWithSubKey(VK_LEFT, KeysetInfo.Picking, 2000);
+			KeybdEventContinuedWithSubKey(VK_RIGHT, KeysetInfo.Picking, 5000);
 		}
-		KeybdEvent(KeysetInfo.Inventory, 3600);
-
-
-		/*** 쿰돌이 ***/
-		if (CharacterSpecialty.RequiredBuf2 != NULL)
+		catch (MalrangiException)
 		{
-			KeybdEvent(CharacterSpecialty.RequiredBuf2, 1000);
+			Cvw::Write(SNAP_DIR "zacum_raid_exception", INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
+			throw;
 		}
-
-		try
-		{
-			Cvw::DoUntilMatchingTemplate(
-				ClientApi::RECT_CLIENT4,
-				TargetImageCrystalOfBoss,
-				[CharacterSpecialty]()
-				{
-					KeybdEventDown(CharacterSpecialty.Skill);
-					MouseEvent(800, 294, LEFT_CLICK, 0);
-				},
-				45000,
-					50);
-			KeybdEventUp(CharacterSpecialty.Skill);
-		}
-		catch (MatchFailedException)
-		{
-			;
-		}
-
-
-		/*** 줍기 ***/
-		KeybdEventContinuedWithSubKey(VK_LEFT, KeysetInfo.Picking, 2000);
-		KeybdEventContinuedWithSubKey(VK_RIGHT, KeysetInfo.Picking, 5000);
 	}
 };
 class ZacumCalc : public Zacum
@@ -205,109 +213,83 @@ public:
 	void Play(
 		CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 	{
-		static const Mat TargetImageButtonMeisterVill(Cvw::Read(TARGET_DIR "button_meistervill.jpg"));
-		static const Mat TargetImageMinimapMarkMeisterVill(Cvw::Read(TARGET_DIR "minimap_mark_meistervill.jpg"));
-		static const Mat TargetImageItemCrystal(Cvw::Read(TARGET_DIR "item_crystal_of_boss.jpg"));
-		static const Mat TargetImageNpcMsBrainy(Cvw::Read(TARGET_DIR "npc_msbrainy.jpg"));
-		static const Mat TargetImageItem100lv(Cvw::Read(TARGET_DIR "item_100lv.jpg"));
-		static const Mat TargetImageItem110lv(Cvw::Read(TARGET_DIR "item_110lv.jpg"));
-		static const Mat TargetImageItemCube(Cvw::Read(TARGET_DIR "item_cube.jpg"));
-
-		MoveFromZ2ToZ1();
-		GetEyeOfFire();
-		MoveFromZ1ToZ2(2);
-
-		/*** `자쿰의 제단 입구(카오스) -> `마이스터 빌` 이동 ***/
-		USERCONF::KEYSET_INFO& KeysetInfo = USERCONF::GetInstance()->VirtualKeyset;
-		KeybdEvent(KeysetInfo.SpecialTechnology);
 		try
 		{
-			Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageButtonMeisterVill, LEFT_CLICK, { 5, 2 });
-		}
-		catch (MatchFailedException)
-		{
-			throw MalrangiException("ClickButtonMeisterVillFailedException");
-		}
+			static const Mat TargetImageButtonMeisterVill(Cvw::Read(TARGET_DIR "button_meistervill.jpg"));
+			static const Mat TargetImageMinimapMarkMeisterVill(Cvw::Read(TARGET_DIR "minimap_mark_meistervill.jpg"));
+			static const Mat TargetImageItemCrystal(Cvw::Read(TARGET_DIR "item_crystal_of_boss.jpg"));
+			static const Mat TargetImageNpcMsBrainy(Cvw::Read(TARGET_DIR "npc_msbrainy.jpg"));
+			static const Mat TargetImageItem100lv(Cvw::Read(TARGET_DIR "item_100lv.jpg"));
+			static const Mat TargetImageItem110lv(Cvw::Read(TARGET_DIR "item_110lv.jpg"));
+			static const Mat TargetImageItemCube(Cvw::Read(TARGET_DIR "item_cube.jpg"));
 
-		KeybdEvent(VK_RETURN);
-		try
-		{
-			Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkMeisterVill, NONWORK, 30000);
-		}
-		catch (MatchFailedException)
-		{
-			throw MalrangiException("MoveZ2ToMFailedException");
-		}
+			MoveFromZ2ToZ1();
+			GetEyeOfFire();
+			MoveFromZ1ToZ2(2);
 
-		Sleep(0x400);
-		KeybdEvent(KeysetInfo.SpecialTechnology);
-
-
-		/*** `마이스터 빌` -> `자유시장` 이동 ***/
-		ClientApi::DownJump(1500);
-		ClientApi::DownJump(1500);
-		KeybdEventContinued(VK_LEFT, 1000);
-		Sleep(0x200);
-		KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 2600);
-		try
-		{
-			Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMsBrainy, NONWORK, 15000);
-		}
-		catch (MatchFailedException)
-		{
-			throw MalrangiException("MoveMToFFailedException");
-		}
-
-
-		/*** 아이템 팔기(콜렉터) ***/
-		MouseEvent(980, 334, LEFT_CLICK);
-
-		// 장비창
-		for (int i = 0; i < 40; i++)
-		{
-			MouseEvent(735, 279, RIGHT_CLICK, 300);
-		}
-
-		// 기타창
-		INT CountCrystal;
-		RECT NewRectClient = ClientApi::RECT_CLIENT4;
-		NewRectClient.top += 220;
-		NewRectClient.left += 710;
-
-		MouseEvent(818, 244, LEFT_CLICK);
-		for (CountCrystal = 0; CountCrystal < 30; CountCrystal++)
-		{
+			/*** `자쿰의 제단 입구(카오스) -> `마이스터 빌` 이동 ***/
+			USERCONF::KEYSET_INFO& KeysetInfo = USERCONF::GetInstance()->VirtualKeyset;
+			KeybdEvent(KeysetInfo.SpecialTechnology);
 			try
 			{
-				Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItemCrystal, RIGHT_CLICK, { NewRectClient.left + 80, NewRectClient.top });
+				Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageButtonMeisterVill, LEFT_CLICK, { 5, 2 });
 			}
 			catch (MatchFailedException)
 			{
-				break;
+				throw MalrangiException("ClickButtonMeisterVillFailedException");
 			}
 
 			KeybdEvent(VK_RETURN);
-		}
-		KeybdEvent(VK_ESCAPE);
-
-
-		/*** 창고에 아이템 넣기  ***/
-		if (0 < CountCrystal)
-		{
-			MouseEvent(310, 334, LEFT_CLICK);
-			ClientApi::UnlockSecondPassword(MapleIdInfo.SecondPassword);
-
-			// 장비템 넣기(아쿠아틱 + 응축)
-			NewRectClient = ClientApi::RECT_CLIENT4;
-			NewRectClient.top += 270;
-			NewRectClient.left += 690;
-
-			for (int i = 0; i < 8; i++)
+			try
 			{
-				MouseEvent(0, 750, CURSOR_MOVE);
+				Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkMeisterVill, NONWORK, 30000);
+			}
+			catch (MatchFailedException)
+			{
+				throw MalrangiException("MoveZ2ToMFailedException");
+			}
+
+			Sleep(0x400);
+			KeybdEvent(KeysetInfo.SpecialTechnology);
+
+
+			/*** `마이스터 빌` -> `자유시장` 이동 ***/
+			ClientApi::DownJump(1500);
+			ClientApi::DownJump(1500);
+			KeybdEventContinued(VK_LEFT, 1000);
+			Sleep(0x200);
+			KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 2600);
+			try
+			{
+				Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMsBrainy, NONWORK, 15000);
+			}
+			catch (MatchFailedException)
+			{
+				throw MalrangiException("MoveMToFFailedException");
+			}
+
+
+			/*** 아이템 팔기(콜렉터) ***/
+			MouseEvent(980, 334, LEFT_CLICK);
+
+			// 장비창
+			for (int i = 0; i < 40; i++)
+			{
+				MouseEvent(735, 279, RIGHT_CLICK, 300);
+			}
+
+			// 기타창
+			INT CountCrystal;
+			RECT NewRectClient = ClientApi::RECT_CLIENT4;
+			NewRectClient.top += 220;
+			NewRectClient.left += 710;
+
+			MouseEvent(818, 244, LEFT_CLICK);
+			for (CountCrystal = 0; CountCrystal < 30; CountCrystal++)
+			{
 				try
 				{
-					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItem100lv, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top });
+					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItemCrystal, RIGHT_CLICK, { NewRectClient.left + 80, NewRectClient.top });
 				}
 				catch (MatchFailedException)
 				{
@@ -315,84 +297,116 @@ public:
 				}
 
 				KeybdEvent(VK_RETURN);
-				KeybdEvent(VK_RETURN);
 			}
+			KeybdEvent(VK_ESCAPE);
 
-			for (int i = 0; i < 8; i++)
+
+			/*** 창고에 아이템 넣기  ***/
+			if (0 < CountCrystal)
 			{
-				MouseEvent(0, 750, CURSOR_MOVE);
-				try
+				MouseEvent(310, 334, LEFT_CLICK);
+				ClientApi::UnlockSecondPassword(MapleIdInfo.SecondPassword);
+
+				// 장비템 넣기(아쿠아틱 + 응축)
+				NewRectClient = ClientApi::RECT_CLIENT4;
+				NewRectClient.top += 270;
+				NewRectClient.left += 690;
+
+				for (int i = 0; i < 8; i++)
 				{
-					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItem110lv, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top });
-				}
-				catch (MatchFailedException)
-				{
-					break;
+					MouseEvent(0, 750, CURSOR_MOVE);
+					try
+					{
+						Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItem100lv, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top });
+					}
+					catch (MatchFailedException)
+					{
+						break;
+					}
+
+					KeybdEvent(VK_RETURN);
+					KeybdEvent(VK_RETURN);
 				}
 
+				for (int i = 0; i < 8; i++)
+				{
+					MouseEvent(0, 750, CURSOR_MOVE);
+					try
+					{
+						Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItem110lv, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top });
+					}
+					catch (MatchFailedException)
+					{
+						break;
+					}
+
+					KeybdEvent(VK_RETURN);
+					KeybdEvent(VK_RETURN);
+				}
+
+				// 소비템 넣기(수큐)
+				MouseEvent(740, 264, LEFT_CLICK);
+				for (int i = 0; i < 3; i++)
+				{
+					MouseEvent(0, 750, CURSOR_MOVE);
+					try
+					{
+						Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItemCube, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top });
+					}
+					catch (MatchFailedException)
+					{
+						break;
+					}
+
+					KeybdEvent(VK_RETURN);
+					KeybdEvent(VK_RETURN);
+				}
+
+				// 돈 넣기
+				MouseEvent(715, 574, LEFT_CLICK);
 				KeybdEvent(VK_RETURN);
-				KeybdEvent(VK_RETURN);
+
+				// 창고 창 닫기
+				MouseEvent(640, 204, LEFT_CLICK);
 			}
 
-			// 소비템 넣기(수큐)
-			MouseEvent(740, 264, LEFT_CLICK);
-			for (int i = 0; i < 3; i++)
+
+			/*** `자유시장` -> `마이스터 빌` -> `자쿰의 제단 입구(카오스)` 이동 ***/
+		RETURN_TO_Z2:
+			KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
+			try
 			{
-				MouseEvent(0, 750, CURSOR_MOVE);
-				try
-				{
-					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItemCube, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top });
-				}
-				catch (MatchFailedException)
-				{
-					break;
-				}
-
-				KeybdEvent(VK_RETURN);
-				KeybdEvent(VK_RETURN);
+				Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkMeisterVill, NONWORK, 20000);
 			}
+			catch (MatchFailedException)
+			{
+				throw MalrangiException("MoveFToMFailedException");
+			}
+			Sleep(0x800);
 
-			// 돈 넣기
-			MouseEvent(715, 574, LEFT_CLICK);
-			KeybdEvent(VK_RETURN);
-
-			// 창고 창 닫기
-			MouseEvent(640, 204, LEFT_CLICK);
+			static bool IsForward = true;
+			ClientApi::MoveServer(IsForward = (IsForward == true) ? false : true);
+			try
+			{
+				Cvw::DoUntilMatchingTemplate(
+					RECT{ 950, 500, 1050, 600 },
+					TargetImageNpcAdobis,
+					[](void) -> void
+					{
+						KeybdEvent(VK_UP, 0x80);
+					},
+					20000);
+			}
+			catch (MatchFailedException)
+			{
+				throw MalrangiException("MoveServerFailedException");
+			}
+			Sleep(0x400);
 		}
-
-
-		/*** `자유시장` -> `마이스터 빌` -> `자쿰의 제단 입구(카오스)` 이동 ***/
-	RETURN_TO_Z2:
-		KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
-		try
+		catch (MalrangiException)
 		{
-			Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkMeisterVill, NONWORK, 20000);
+			Cvw::Write(SNAP_DIR "zacum_calc_exception", INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
 		}
-		catch (MatchFailedException)
-		{
-			throw MalrangiException("MoveFToMFailedException");
-		}
-		Sleep(0x800);
-
-		static bool IsForward = true;
-		ClientApi::MoveServer(IsForward = (IsForward == true) ? false : true);
-		try
-		{
-			Cvw::DoUntilMatchingTemplate(
-				RECT{ 950, 500, 1050, 600 },
-				TargetImageNpcAdobis,
-				[](void) -> void
-				{
-					KeybdEvent(VK_UP, 0x80);
-				},
-				20000);
-		}
-		catch (MatchFailedException)
-		{
-			throw MalrangiException("MoveServerFailedException");
-		}
-
-		Sleep(0x400);
 	}
 };
 class ZacumAndUrus : public Zacum

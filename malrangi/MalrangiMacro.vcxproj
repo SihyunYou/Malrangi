@@ -159,6 +159,7 @@
     <ClCompile Include="entry.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="boss.h" />
     <ClInclude Include="field.h" />
     <ClInclude Include="ipmanage.h" />
     <ClInclude Include="malexc.h" />

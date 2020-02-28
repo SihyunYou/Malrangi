@@ -1,12 +1,14 @@
+#include "field.h"
 #include "urus.h"
 #include "zacum.h"
 #include "ipmanage.h"
 #include "log.h"
 #include "report.h"
 
-#define URUS_RAID
+//#define URUS_RAID
 //#define ZACUM_RAID
 //#define ZACUM_CALC
+#define FIELD_BOT
 
 #define USING_IPRENEWER
 
@@ -17,6 +19,10 @@ main(
 {
 	Sleep(0x800);
 
+#ifdef FIELD_BOT
+	Bot Botter;
+	Botter.Play();
+#else
 	try
 	{
 		USERCONF& UserInfo = *(USERCONF::GetInstance());
@@ -37,7 +43,6 @@ main(
 #endif
 
 		string Uri;
-		static int ExceptionSequence = 0;
 		int SeqMapleId = 0;
 		bool IsExgameExceptional = false;
 		bool IsIngameExceptional = false;
@@ -205,7 +210,6 @@ main(
 					catch (MalrangiException & ae)
 					{
 						LOG_TREE(&ae);
-						Cvw::Write(SNAP_DIR "urus_raid_exception", INT_TO_PNG(++ExceptionSequence), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
 						ClientApi::RemoveAllIngameWindows();
 					}
 
@@ -255,13 +259,6 @@ main(
 						catch (MalrangiException & ae)
 						{
 							LOG_TREE(&ae);
-#ifdef ZACUM_RAID
-#define FILENAME "zacum_raid_exception"
-#else
-#define FILENAME "zacum_calc_exception"
-#endif
-							Cvw::Write(SNAP_DIR FILENAME, INT_TO_PNG(++ExceptionSequence), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
-#undef FILENAME
 							ClientApi::RemoveAllIngameWindows();
 						}
 
@@ -355,6 +352,7 @@ main(
 	{
 		WriteLog(LOG_LEVEL::CRITICAL, e.what());
 	}
+#endif
 
 	Sleep(10000000);
 	return EXIT_SUCCESS;

@@ -20,6 +20,9 @@ while(objIE.Document.readyState != "complete");
 objIE.document.getElementsByName('hw_dynamic6')[0].value = WScript.arguments(0);
 objIE.document.getElementById('appbtn').click();
 
+while(objIE.busy);
+while(objIE.Document.readyState != "complete");
+
 function sleep (delay) {
    var start = new Date().getTime();
    while (new Date().getTime() < start + delay);
