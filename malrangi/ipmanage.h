@@ -1,5 +1,5 @@
 #pragma once
-#include "malexc.h"
+#include "malrangi.h"
 #include "ip.h"
 
 class IpManage

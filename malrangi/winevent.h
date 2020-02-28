@@ -1,5 +1,5 @@
 #pragma once
-#include <Windows.h>
+#include "malrangi.h"
 
 #define INTERVAL_MOUSEEVENT		(0x400)
 #define INTERVAL						(750)

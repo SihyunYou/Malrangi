@@ -54,12 +54,6 @@
     <ClInclude Include="winevent.h">
       <Filter>Header Files\util%28wrap%29</Filter>
     </ClInclude>
-    <ClInclude Include="pathenv.h">
-      <Filter>Header Files\conf</Filter>
-    </ClInclude>
-    <ClInclude Include="malexc.h">
-      <Filter>Header Files\util%28wrap%29</Filter>
-    </ClInclude>
     <ClInclude Include="field.h">
       <Filter>Header Files\application\client</Filter>
     </ClInclude>
@@ -83,6 +77,9 @@
     </ClInclude>
     <ClInclude Include="zacum.h">
       <Filter>Header Files\application\client\boss</Filter>
+    </ClInclude>
+    <ClInclude Include="malrangi.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

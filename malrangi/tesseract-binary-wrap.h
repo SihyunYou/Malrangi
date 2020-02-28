@@ -1,11 +1,11 @@
 #pragma once
-#include "malexc.h"
+#include "malrangi.h"
 
 class MyException : public MalrangiException
 {
 public:
 	MyException(void) :
-		MyException(__CLASSNAME__) {}
+		MalrangiException(__CLASSNAME__) {}
 	virtual const char* what(void) const throw()
 	{
 		return Message.c_str();
@@ -15,40 +15,37 @@ public:
 
 namespace Tsw
 {
-	string ImageToString(Mat SourceImage)
+	template <class F>
+	string TranslateToString(const string& ImagePath, F StrProcRoutine = [](const string&) -> string{})
 	{
-#define IMAGENAME	"tmp\\temp_img.jpg"
-#define OUTPUTBASE	"tmp\\temp_result"
+#define OUTPUTBASE	TMP_DIR "res"
+		CreateDirectoryA("tmp", NULL);
 
-		imwrite(IMAGENAME, SourceImage);
-
-		SHELLEXECUTEINFO ShExecInfo = { 0 };
+		SHELLEXECUTEINFOA ShExecInfo = { 0 };
 		ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
 		ShExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
 		ShExecInfo.hwnd = NULL;
 		ShExecInfo.lpVerb = NULL;
-		ShExecInfo.lpFile = TEXT("tesseract.exe");
-		ShExecInfo.lpParameters = TEXT(IMAGENAME " " OUTPUTBASE " -l eng --oem 0 --psm 7" );
+		ShExecInfo.lpFile = "tesseract.exe";
+		ShExecInfo.lpParameters = (ImagePath + " " OUTPUTBASE " -l eng").c_str();
 		ShExecInfo.lpDirectory = NULL;
 		ShExecInfo.nShow = SW_HIDE;
 		ShExecInfo.hInstApp = NULL;
 
-		ShellExecuteEx(&ShExecInfo);
+		ShellExecuteExA(&ShExecInfo);
 		WaitForSingleObject(ShExecInfo.hProcess, INFINITE);
 		CloseHandle(ShExecInfo.hProcess);
 
-		ifstream File;
-		CHAR Line[0x100];
-
-		File.open(OUTPUTBASE ".txt");
+		ifstream File(OUTPUTBASE ".txt");
 		if (File.is_open())
 		{
+			CHAR Line[0x100];
 			File.getline(Line, sizeof(Line));
-			return Line;
+
+			return StrProcRoutine(Line);
 		}
 		return "";
 
-#undef IMAGENAME
 #undef OUTPUTBASE	
 	}
 };

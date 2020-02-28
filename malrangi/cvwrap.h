@@ -1,10 +1,6 @@
 #pragma once
-#include "malexc.h"
+#include "malrangi.h"
 #include "winevent.h"
-#include <opencv2/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-using namespace cv;
 
 class IntegerDivisionByZeroException : public MalrangiException
 {
@@ -57,16 +53,14 @@ public:
 	}
 };
 
-typedef struct _Valloc
+struct Valloc
 {
-	_Valloc::_Valloc(void) :
-		Value(0), Location(0, 0) {}
-	_Valloc::_Valloc(double Value, Point Location) :
-		Value(Value), Location(Location) {}
+	Valloc() : Value(0), Location(0, 0) {}
+	Valloc(double Value, Point Location) : Value(Value), Location(Location) {}
 
 	double Value;
 	Point Location;
-} Valloc;
+};
 
 /****************************************************************************
 * Mat I/O
@@ -141,12 +135,10 @@ namespace Cvw
 
 #define INT_TO_PNG(x) (to_string(x) + ".png")
 	void Write(
-		string DirectoryName,
-		string FileName,
+		const string& FilePath,
 		const Mat& Image)
 	{
-		CreateDirectoryA(DirectoryName.c_str(), NULL);
-		imwrite(DirectoryName + "//" + FileName, Image);
+		imwrite(FilePath, Image);
 	}
 }
 

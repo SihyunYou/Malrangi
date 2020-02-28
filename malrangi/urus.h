@@ -1,5 +1,9 @@
 #pragma once
 #include "boss.h"
+#include "tesseract-binary-wrap.h"
+
+#undef SNAP_DIR
+#define SNAP_DIR "snap//urus-raid//"
 
 class UrusRaid : public Boss
 {
@@ -152,11 +156,8 @@ public:
 			{
 				throw MalrangiException("BattleTimeoutException");
 			}
-			Sleep(0x400);
-
-			Mat Image = Cvw::Capture(ClientApi::RECT_CLIENT4, 1);
-			Cvw::Write(SNAP_DIR "urus-raid", INT_TO_PNG(++PlayCount), Image);
-			VecImageRaidResult.push_back(Image);
+			Sleep(1250);
+			Cvw::Write(SNAP_DIR + INT_TO_PNG(++PlayCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
 
 
 			/*** Επΐε ***/
@@ -182,24 +183,46 @@ public:
 				{
 					throw MalrangiException("NpcMashurNotFound");
 				}
-				Sleep(0x400);;
+				Sleep(0x400);
 			}
 		}
 		catch (MalrangiException)
 		{
-			Cvw::Write(SNAP_DIR "urus_raid_exception", INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
+			Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
 			throw;
 		}
 	}
 	int TotalUp(void)
 	{
-		for each (const auto & Image in VecImageRaidResult)
+		int Sum = 0;
+		auto StrProc = [](const string& s) -> decltype(auto)
 		{
-			;
-		}
-	}
+			string _s("");
+			for (int i = 0; i < s.length(); i++)
+			{
+				if (s[i] >= 48 && s[i] <= 57)
+				{
+					_s += s[i];
+				}
+			}
 
-private:
-	vector<Mat> VecImageRaidResult;
+			return _s;
+		};
+
+		for(int i = 1; i <= PlayCount; i++)
+		{
+#define TMP_FILENAME "image.png"
+#define FILEPATH (TMP_DIR TMP_FILENAME)
+			Cvw::Write(FILEPATH, Cvw::Read(SNAP_DIR + INT_TO_PNG(i))({ 980, 534, 168, 30 }));
+			Sum += stoi(Tsw::TranslateToString(FILEPATH, StrProc));
+
+#undef FILEPATH
+#undef TMP_FILENAME
+		}
+
+		return Sum;
+	}
 };
 
+#undef SNAP_DIR
+#define SNAP_DIR "snap//"

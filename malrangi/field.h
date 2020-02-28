@@ -3,7 +3,6 @@
 #include <chrono>
 using namespace chrono;
 
-
 class Bot
 {
 public:
@@ -21,7 +20,7 @@ public:
 		BYTE CurrentDir = VK_LEFT;
 	
 		VecBuf.push_back({ '2', 1000, seconds(180), system_clock::now() });
-		VecBuf.push_back({ '3', 1000, seconds(30), system_clock::now() });
+		VecBuf.push_back({ '3', 1200, seconds(60), system_clock::now() });
 		VecBuf.push_back({ 'E', 800, seconds(6), system_clock::now() });
 		VecBuf.push_back({ 'R', 1300, seconds(8), system_clock::now() });
 

@@ -81,6 +81,10 @@ protected:
 };
 const Mat Zacum::TargetImageNpcAdobis = Cvw::Read(TARGET_DIR "npc_adobis.jpg");
 
+
+#undef SNAP_DIR
+#define SNAP_DIR "snap//zacum-raid//"
+
 class ZacumRaid : public Zacum
 {
 private:
@@ -202,11 +206,15 @@ public:
 		}
 		catch (MalrangiException)
 		{
-			Cvw::Write(SNAP_DIR "zacum_raid_exception", INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
+			Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
 			throw;
 		}
 	}
 };
+
+#undef SNAP_DIR
+#define SNAP_DIR "snap//zacum-calc//"
+
 class ZacumCalc : public Zacum
 {
 public:
@@ -405,10 +413,14 @@ public:
 		}
 		catch (MalrangiException)
 		{
-			Cvw::Write(SNAP_DIR "zacum_calc_exception", INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, 1));
+			Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
 		}
 	}
 };
+
+#undef SNAP_DIR
+#define SNAP_DIR "snap//"
+
 class ZacumAndUrus : public Zacum
 {
 public:

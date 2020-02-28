@@ -1,6 +1,4 @@
 #pragma once
-#include "pathenv.h"
-#include <vector>
 #include <map>
 
 /****************************************************************************

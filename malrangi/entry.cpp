@@ -1,14 +1,14 @@
 #include "field.h"
 #include "urus.h"
 #include "zacum.h"
-#include "ipmanage.h"
 #include "log.h"
+#include "ipmanage.h"
 #include "report.h"
 
 //#define URUS_RAID
 //#define ZACUM_RAID
-//#define ZACUM_CALC
-#define FIELD_BOT
+#define ZACUM_CALC
+//#define FIELD_BOT
 
 #define USING_IPRENEWER
 
@@ -18,7 +18,6 @@ main(
 	char* argv[])
 {
 	Sleep(0x800);
-
 #ifdef FIELD_BOT
 	Bot Botter;
 	Botter.Play();

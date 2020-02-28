@@ -162,8 +162,7 @@
     <ClInclude Include="boss.h" />
     <ClInclude Include="field.h" />
     <ClInclude Include="ipmanage.h" />
-    <ClInclude Include="malexc.h" />
-    <ClInclude Include="pathenv.h" />
+    <ClInclude Include="malrangi.h" />
     <ClInclude Include="urus.h" />
     <ClInclude Include="user.h" />
     <ClInclude Include="cvwrap.h" />

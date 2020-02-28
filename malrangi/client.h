@@ -5,7 +5,6 @@
 ****************************************************************************/
 
 #pragma once
-#include "malexc.h"
 #include "winevent.h"
 #include "cvwrap.h"
 #include "user.h"
