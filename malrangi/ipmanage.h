@@ -10,7 +10,14 @@ public:
 		ofstream File(IPCONF_PATH, ios::out | ios::trunc);
 		if (InternetInfo.IsIpValid)
 		{
-			++InternetInfo.MacAddr.HADDR6;
+			if (99 == InternetInfo.MacAddr.HADDR6)
+			{
+				InternetInfo.MacAddr.HADDR6 = 10;
+			}
+			else
+			{
+				++InternetInfo.MacAddr.HADDR6;
+			}
 		}
 		else
 		{

@@ -7,8 +7,8 @@
 
 //#define URUS_RAID
 //#define ZACUM_RAID
-#define ZACUM_CALC
-//#define FIELD_BOT
+//#define ZACUM_CALC
+#define FIELD_BOT
 
 #define USING_IPRENEWER
 
@@ -18,10 +18,19 @@ main(
 	char* argv[])
 {
 	Sleep(0x800);
-#ifdef FIELD_BOT
-	Bot Botter;
-	Botter.Play();
-#else
+
+#if defined(FIELD_BOT)
+	try
+	{
+		Bot Botter;
+		Botter.Play();
+	}
+	catch (std::exception & me)
+	{
+		WriteLog(LOG_LEVEL::CRITICAL, me.what());
+	}
+
+#elif defined(URUS_RAID) || defined(ZACUM_RAID) || defined(ZACUM_CALC)
 	try
 	{
 		USERCONF& UserInfo = *(USERCONF::GetInstance());
@@ -342,14 +351,11 @@ main(
 	EXIT_ROUTINE:
 		UserInfo.Destroy();
 		IpInfo.Destroy();
+
 	}
-	catch (MalrangiException & cwe)
+	catch (MalrangiException & me)
 	{
-		WriteLog(LOG_LEVEL::CRITICAL, cwe.what());
-	}
-	catch (exception & e)
-	{
-		WriteLog(LOG_LEVEL::CRITICAL, e.what());
+		WriteLog(LOG_LEVEL::CRITICAL, me.what());
 	}
 #endif
 

@@ -58,7 +58,7 @@ public:
 					[](void) -> void
 					{
 						MouseEvent(640, 429, LEFT_CLICK, 0x40);
-						KeybdEvent('E', 0x40);
+						KeybdEvent('R', 0x40);
 					},
 					1800000);
 			}
