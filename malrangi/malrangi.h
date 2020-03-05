@@ -7,6 +7,9 @@
 #include <exception>
 using namespace std;
 
+#include <chrono>
+using namespace chrono;
+
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>

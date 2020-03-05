@@ -1,5 +1,6 @@
 #pragma once
 #include "client.h"
+#include "tesseract-binary-wrap.h"
 
 class Boss
 {

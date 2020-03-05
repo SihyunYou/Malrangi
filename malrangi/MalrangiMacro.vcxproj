@@ -160,10 +160,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="boss.h" />
+    <ClInclude Include="bridge.h" />
+    <ClInclude Include="calc.h" />
     <ClInclude Include="field.h" />
     <ClInclude Include="ipmanage.h" />
     <ClInclude Include="malrangi.h" />
-    <ClInclude Include="urus.h" />
+    <ClInclude Include="raid.h" />
     <ClInclude Include="user.h" />
     <ClInclude Include="cvwrap.h" />
     <ClInclude Include="client.h" />
@@ -172,7 +174,6 @@
     <ClInclude Include="report.h" />
     <ClInclude Include="tesseract-binary-wrap.h" />
     <ClInclude Include="winevent.h" />
-    <ClInclude Include="zacum.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

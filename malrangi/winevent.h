@@ -1,8 +1,8 @@
 #pragma once
 #include "malrangi.h"
 
-#define INTERVAL_MOUSEEVENT		(0x400)
-#define INTERVAL						(750)
+constexpr DWORD INTERVAL_MOUSEEVENT = 0x400;
+constexpr DWORD INTERVAL = 750;
 
 /****************************************************************************
 * Mouse Event Util

@@ -1,9 +1,7 @@
 #pragma once
 #include "client.h"
 #include <thread>
-#include <chrono>
 
-using namespace chrono;
 #pragma comment(lib,"winmm.lib")
 
 
@@ -13,7 +11,7 @@ class Bot
 	{
 		BYTE Key;
 		DWORD Delay;
-		seconds Cooltime;
+		milliseconds Cooltime;
 		system_clock::time_point LastRenewedTime;
 	};
 
@@ -63,8 +61,8 @@ public:
 		);
 		VecBuf.push_back({ '2', 1000, seconds(180), system_clock::now() });
 		VecBuf.push_back({ '3', 1200, seconds(60), system_clock::now() });
-		VecBuf.push_back({ 'E', 800, seconds(6), system_clock::now() });
-		VecBuf.push_back({ 'R', 1300, seconds(8), system_clock::now() });
+		VecBuf.push_back({ 'E', 800, seconds(3), system_clock::now() });
+		VecBuf.push_back({ 'R', 1300, milliseconds(8100), system_clock::now() });
 		
 		BYTE CurrentDir = VK_LEFT;
 		bool IsFirstLoop = true;

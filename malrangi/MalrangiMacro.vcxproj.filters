@@ -69,17 +69,20 @@
     <ClInclude Include="ipmanage.h">
       <Filter>Header Files\application\external</Filter>
     </ClInclude>
+    <ClInclude Include="malrangi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="boss.h">
       <Filter>Header Files\application\client\boss</Filter>
     </ClInclude>
-    <ClInclude Include="urus.h">
+    <ClInclude Include="bridge.h">
       <Filter>Header Files\application\client\boss</Filter>
     </ClInclude>
-    <ClInclude Include="zacum.h">
+    <ClInclude Include="calc.h">
       <Filter>Header Files\application\client\boss</Filter>
     </ClInclude>
-    <ClInclude Include="malrangi.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="raid.h">
+      <Filter>Header Files\application\client\boss</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

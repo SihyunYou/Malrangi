@@ -53,60 +53,43 @@ public:
 			return MinimapRecognizer(RectMinimap);
 		}
 
-	protected:
-		enum class OBJECT
-		{
-			YELLOW,
-			RED,
-		};
-
 	public:
-		void MoveToRelativeCriteria(
-			INT MinimapRelativeCriteria)
+		int WhereAmI(void)
 		{
-			auto GetCurrentMiniMapPosition = [this](MinimapRecognizer::OBJECT ObjectToGet) ->INT
-			{
-				try
-				{
-					Mat SourceMiniMapImage = Cvw::Capture(RectMinimap, IMREAD_COLOR);
-					//Cvw::Show(SourceMiniMapImage);
-					Mat Mask;
-					if (OBJECT::YELLOW == ObjectToGet)
-					{
-						Cvw::InRange(SourceMiniMapImage, Scalar(20, 235, 245), Scalar(40, 245, 255), Mask);
-					}
-					//Cvw::Show(Mask);
-					for (int y = 0; y < Mask.rows; ++y)
-					{
-						for (int x = 0; x < Mask.cols; ++x)
-						{
-							if (Mask.at<BYTE>(y, x) == 255)
-							{
-								return x;
-							}
-						}
-					}
-				}
-				catch (EmptyMatException & cwexception)
-				{
-					throw;
-				}
-				catch (IntegerDivisionByZeroException & cwexception)
-				{
-					throw;
-				}
+			Mat Mask;
 
-				throw MinimapRecognizer::CharacterNotFoundException();
-			};
-			INT RelativeDistance = GetCurrentMiniMapPosition(OBJECT::YELLOW) - MinimapRelativeCriteria;
+			try
+			{
+				Cvw::InRange(Cvw::Capture(RectMinimap, IMREAD_COLOR), Scalar(20, 235, 245), Scalar(40, 245, 255), Mask);
+			}
+			catch (IntegerDivisionByZeroException)
+			{
+				throw;
+			}
+			//Cvw::Show(Mask);
+			for (int y = 0; y < Mask.rows; ++y)
+			{
+				for (int x = 0; x < Mask.cols; ++x)
+				{
+					if (Mask.at<BYTE>(y, x) == 255)
+					{
+						return x;
+					}
+				}
+			}
+			throw CharacterNotFoundException();
+		};
+		void MoveToRelativeCriteria(
+			int MinimapRelativeCriteria)
+		{
+			int RelativeDistance = WhereAmI() - MinimapRelativeCriteria;
 
 			if (RelativeDistance < 0)
 			{
 				KeybdEventDown(VK_RIGHT);
 				while (RelativeDistance <= 0)
 				{
-					std::cout << GetCurrentMiniMapPosition(OBJECT::YELLOW) << endl;
-					RelativeDistance = GetCurrentMiniMapPosition(OBJECT::YELLOW) - MinimapRelativeCriteria + 2;
+					RelativeDistance = WhereAmI() - MinimapRelativeCriteria + 2;
 				}
 				KeybdEventUp(VK_RIGHT);
 			}
@@ -115,8 +98,7 @@ public:
 				KeybdEventDown(VK_LEFT);
 				while (RelativeDistance >= 0)
 				{
-					std::cout << GetCurrentMiniMapPosition(OBJECT::YELLOW) << endl;
-					RelativeDistance = GetCurrentMiniMapPosition(OBJECT::YELLOW) - MinimapRelativeCriteria - 2;
+					RelativeDistance = WhereAmI() - MinimapRelativeCriteria - 2;
 				}
 				KeybdEventUp(VK_LEFT);
 			}
@@ -267,7 +249,7 @@ void ClientApi::BootClient(
 			{
 				ClientApi::SET_CLIENT_STDPOS();
 			},
-			180000);
+			seconds(180));
 	}
 	catch (MatchFailedException & cwe)
 	{
@@ -348,7 +330,7 @@ NEXON_LOGIN:
 
 	try
 	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, 15000);
+		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, seconds(15));
 	}
 	catch (MatchFailedException)
 	{
@@ -364,7 +346,7 @@ void ClientApi::SelectServer(
 	MouseEvent(265 + 70 * (ChannelNumber % 5), 255 + 30 * (ChannelNumber / 5), DLEFT_CLICK);
 	try
 	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E3, ClientApi::TARGETIMAGE_E3, NONWORK, 30000);
+		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E3, ClientApi::TARGETIMAGE_E3, NONWORK, seconds(30));
 	}
 	catch (MatchFailedException)
 	{
@@ -444,7 +426,7 @@ void ClientApi::EnterGame(
 			{
 				ClientApi::SET_CLIENT_STDPOS();
 			},
-			60000);
+			seconds(60));
 	}
 	catch (MatchFailedException)
 	{
@@ -507,7 +489,7 @@ void ClientApi::ExitGame(
 			{
 				ClientApi::SET_CLIENT_STDPOS();
 			},
-			30000);
+			seconds(30));
 	}
 	catch (MatchFailedException & mfe)
 	{
@@ -530,7 +512,7 @@ void ClientApi::Logout(
 	KeybdEvent(VK_RETURN);
 	try
 	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E1, ClientApi::TARGETIMAGE_E1, NONWORK, 30000);
+		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E1, ClientApi::TARGETIMAGE_E1, NONWORK, seconds(30));
 	}
 	catch (MatchFailedException)
 	{
@@ -543,7 +525,7 @@ void ClientApi::ExitCharacterWindow(void)
 	KeybdEvent(VK_ESCAPE);
 	try
 	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, 30000);
+		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, seconds(30));
 	}
 	catch (MatchFailedException)
 	{
@@ -619,7 +601,7 @@ void ClientApi::Jump(
 	case JUMP_T::DEMON:
 		KeybdEvent(VK_MENU, 60);
 		KeybdEvent(VK_UP, 60);
-		KeybdEvent(VK_UP, 2500);
+		KeybdEvent(VK_UP, 1800);
 		break;
 
 	case JUMP_T::CYGNUS:

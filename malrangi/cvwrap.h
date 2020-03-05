@@ -27,6 +27,8 @@ class EmptyMatException : public MalrangiException
 public:
 	EmptyMatException() :
 		MalrangiException(__CLASSNAME__) {}
+	EmptyMatException(string FileName) :
+		MalrangiException(__CLASSNAME__ + "! " + FileName){}
 	virtual const char* what(void) const throw()
 	{
 		return Message.c_str();
@@ -81,7 +83,7 @@ namespace Cvw
 		Mat Image = imread(FileName, Flag);
 		if (Image.empty())
 		{
-			throw EmptyMatException();
+			throw EmptyMatException(FileName);
 		}
 		return Image;
 	}
@@ -161,7 +163,7 @@ namespace Cvw
 			&MatchInfo.Value,
 			nullptr,
 			&MatchInfo.Location);
-
+		cout << MatchInfo.Value << endl;
 		if (MatchInfo.Value < Threshold)
 		{
 			throw MatchFailedException();
@@ -203,17 +205,17 @@ namespace Cvw
 		return MatchInfo;
 	}
 #define NONWORK					[](void) -> void {;}
-	template <class LAMBDA>
+	template <class T_LAMBDA, class T_DUR = seconds>
 	__forceinline Point DoUntilMatchingTemplate(
 		RECT Area,
 		Mat TargetImage,
-		LAMBDA Func,
-		INT LimitTime,
-		INT IdleTime = 256,
-		DOUBLE Threshold = 0.9)
+		T_LAMBDA Func,
+		T_DUR Duration,
+		int IdleTime = 256,
+		double Threshold = 0.9)
 	{
-		INT SumOfIdleTime = 0;
-		while (SumOfIdleTime < LimitTime)
+		const auto StartTime = system_clock::now();
+		while (duration_cast<T_DUR>(system_clock::now() - StartTime) < Duration)
 		{
 			try
 			{
@@ -228,8 +230,6 @@ namespace Cvw
 				Func();
 				Sleep(IdleTime);
 			}
-
-			SumOfIdleTime += IdleTime;
 		}
 
 		throw MatchFailedException();

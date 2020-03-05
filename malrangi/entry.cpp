@@ -1,14 +1,15 @@
 #include "field.h"
-#include "urus.h"
-#include "zacum.h"
+#include "raid.h"
+#include "calc.h"
 #include "log.h"
 #include "ipmanage.h"
 #include "report.h"
+#include "bridge.h"
 
-//#define URUS_RAID
-//#define ZACUM_RAID
-//#define ZACUM_CALC
-#define FIELD_BOT
+#define BUILD_URUSRAID
+//#define BUILD_ZACUMRAID
+//#define BUILD_CALC
+//#define BUILD_FIELDBOT
 
 #define USING_IPRENEWER
 
@@ -19,7 +20,7 @@ main(
 {
 	Sleep(0x800);
 
-#if defined(FIELD_BOT)
+#if defined(BUILD_FIELDBOT)
 	try
 	{
 		Bot Botter;
@@ -30,16 +31,16 @@ main(
 		WriteLog(LOG_LEVEL::CRITICAL, me.what());
 	}
 
-#elif defined(URUS_RAID) || defined(ZACUM_RAID) || defined(ZACUM_CALC)
+#elif defined(BUILD_URUSRAID) || defined(BUILD_ZACUMRAID) || defined(BUILD_CALC)
 	try
 	{
 		USERCONF& UserInfo = *(USERCONF::GetInstance());
-#if defined(URUS_RAID)
+#if defined(BUILD_URUSRAID)
 		UrusRaid Worker;
-#elif defined(ZACUM_RAID)
+#elif defined(BUILD_ZACUMRAID)
 		ZacumRaid Worker;
-#elif defined(ZACUM_CALC)
-		ZacumCalc Worker;
+#elif defined(BUILD_CALC)
+		Calc Worker;
 #endif
 #ifdef USING_IPRENEWER
 		IPCONF& IpInfo = *(IPCONF::GetInstance());  
@@ -64,12 +65,14 @@ main(
 		{
 			for each (const auto & MapleIdInfo in NexonAccountInfo.VecMapleId)
 			{
-				Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id;
-#if defined(ZACUM_RAID) || defined(ZACUM_CALC)
 				bool IsPlayValid = false;
 				for each (const auto & ServerInfo in MapleIdInfo.VecServer)
 				{
+#if defined(BUILD_URUSRAID)
 					if (ServerInfo.VecCharacter.size() > 0)
+#elif defined(BUILD_ZACUMRAID) || defined(BUILD_CALC)
+					if (ServerInfo.VecCharacter.size() > 1)
+#endif
 					{
 						IsPlayValid = true;
 						break;
@@ -79,7 +82,8 @@ main(
 				{
 					continue;
 				}
-#endif
+
+				Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id;
 
 				/***************************************************************************************************************
 				* E0 -> E1 / E1
@@ -152,13 +156,16 @@ main(
 
 				for each (const auto & ServerInfo in MapleIdInfo.VecServer)
 				{
-					Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName;
-#if defined(ZACUM_RAID) || defined(ZACUM_CALC)
-					if (0 == ServerInfo.VecCharacter.size())
+#if defined(BUILD_URUSRAID)
+					if (ServerInfo.VecCharacter.size() == 0)
+#elif defined(BUILD_ZACUMRAID) || defined(BUILD_CALC)
+					if (ServerInfo.VecCharacter.size() <= 1)
+#endif
 					{
 						continue;
 					}
-#endif
+
+					Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName;
 
 					/***************************************************************************************************************
 					* E2 -> E3
@@ -175,17 +182,13 @@ main(
 						goto LOGOUT;
 					}
 
-#if defined(URUS_RAID)
 					ClientApi::SelectCharacter(1);
-#elif defined(ZACUM_RAID) || defined(ZACUM_CALC)
-					ClientApi::SelectCharacter(2);
-#endif
 
 					/***************************************************************************************************************
 					* INGAME APPLICATION
 					***************************************************************************************************************/
 					IsIngameExceptional = false;
-#if defined(URUS_RAID)
+#if defined(BUILD_URUSRAID)
 					try
 					{
 						ClientApi::EnterGame(MapleIdInfo);
@@ -208,10 +211,7 @@ main(
 					try
 					{
 						ClientApi::BreakParty();
-						for (int sn = 0; sn < 3; sn++)
-						{
-							Worker.Play(sn);
-						}
+						Worker.Play(ServerInfo.VecCharacter[0]);
 						
 						LOG_TREE(nullptr);
 					}
@@ -232,7 +232,8 @@ main(
 
 						break;
 					}
-#elif defined(ZACUM_RAID) || defined(ZACUM_CALC)
+#elif defined(BUILD_ZACUMRAID) || defined(BUILD_CALC)
+					bool IsFirstRoutine = true;
 					for each (auto & CharacterInfo in ServerInfo.VecCharacter)
 					{
 						Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName + "/" + CharacterInfo.CharacterType;
@@ -257,11 +258,27 @@ main(
 
 						try
 						{
-#ifdef ZACUM_RAID
+#ifdef BUILD_ZACUMRAID
 							ClientApi::MakeParty();
-							Worker.Play(CharacterInfo, FALSE);
+							if (IsFirstRoutine)
+							{
+								IsFirstRoutine = false;
+								Worker.PlayFromUrus(CharacterInfo);
+							}
+							else
+							{
+								Worker.PlayFromZacum(CharacterInfo);
+							}					
 #else
-							Worker.Play(MapleIdInfo);
+							if (IsFirstRoutine)
+							{
+								IsFirstRoutine = false;
+								Worker.PlayFromUrus(MapleIdInfo);
+							}
+							else
+							{
+								Worker.PlayFromZacum(MapleIdInfo);
+							}
 #endif
 						}
 						catch (MalrangiException & ae)
@@ -351,7 +368,6 @@ main(
 	EXIT_ROUTINE:
 		UserInfo.Destroy();
 		IpInfo.Destroy();
-
 	}
 	catch (MalrangiException & me)
 	{
