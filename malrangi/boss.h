@@ -5,9 +5,9 @@
 class Boss
 {
 public:
-	Boss() : PlayCount(0), ExceptionCount(0) {}
+	Boss() : SuccessCount(0), FailureCount(0) {}
 
 public:
-	int PlayCount;
-	int ExceptionCount;
+	int SuccessCount;
+	int FailureCount;
 };

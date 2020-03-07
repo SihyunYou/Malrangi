@@ -151,7 +151,7 @@ public:
 							}
 						},
 						seconds(1000),
-							0);
+						0);
 				}
 				catch (MatchFailedException)
 				{
@@ -159,7 +159,7 @@ public:
 				}
 
 				Sleep(1250);
-				Cvw::Write(SNAP_DIR + INT_TO_PNG(++PlayCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
+				Cvw::Write(SNAP_DIR + INT_TO_PNG(++SuccessCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
 #undef Operate
 
 				/*** Επΐε ***/
@@ -191,7 +191,7 @@ public:
 		}
 		catch (MalrangiException)
 		{
-			Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
+			Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG(++FailureCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
 			throw;
 		}
 	}
@@ -212,7 +212,7 @@ public:
 			return _s;
 		};
 
-		for (int i = 1; i <= PlayCount; i++)
+		for (int i = 1; i <= SuccessCount; i++)
 		{
 #define TMP_FILENAME "image.png"
 #define FILEPATH (TMP_DIR TMP_FILENAME)
@@ -246,7 +246,7 @@ public:
 		}
 		catch (MalrangiException)
 		{
-			Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
+			Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG(++FailureCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
 			throw;
 		}
 	}
@@ -268,7 +268,7 @@ public:
 		}
 		catch (MalrangiException)
 		{
-			Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG(++ExceptionCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
+			Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG(++FailureCount), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
 			throw;
 		}
 	}

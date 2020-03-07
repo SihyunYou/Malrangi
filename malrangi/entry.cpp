@@ -6,8 +6,8 @@
 #include "report.h"
 #include "bridge.h"
 
-#define BUILD_URUSRAID
-//#define BUILD_ZACUMRAID
+//#define BUILD_URUSRAID
+#define BUILD_ZACUMRAID
 //#define BUILD_CALC
 //#define BUILD_FIELDBOT
 
@@ -68,11 +68,7 @@ main(
 				bool IsPlayValid = false;
 				for each (const auto & ServerInfo in MapleIdInfo.VecServer)
 				{
-#if defined(BUILD_URUSRAID)
 					if (ServerInfo.VecCharacter.size() > 0)
-#elif defined(BUILD_ZACUMRAID) || defined(BUILD_CALC)
-					if (ServerInfo.VecCharacter.size() > 1)
-#endif
 					{
 						IsPlayValid = true;
 						break;
@@ -156,11 +152,7 @@ main(
 
 				for each (const auto & ServerInfo in MapleIdInfo.VecServer)
 				{
-#if defined(BUILD_URUSRAID)
 					if (ServerInfo.VecCharacter.size() == 0)
-#elif defined(BUILD_ZACUMRAID) || defined(BUILD_CALC)
-					if (ServerInfo.VecCharacter.size() <= 1)
-#endif
 					{
 						continue;
 					}
@@ -364,7 +356,11 @@ main(
 			}
 		}
 
-		WriteLog(LOG_LEVEL::INFO, "ALL ROUTINES HAVE BEEN SUCCESSFULLY COMPLETE.\n");
+		WriteLog(LOG_LEVEL::INFO, 
+			"All routines have been successfully complete. (Success : %d, Failure : %d)\n", 
+			Worker.SuccessCount, 
+			Worker.FailureCount);
+
 	EXIT_ROUTINE:
 		UserInfo.Destroy();
 		IpInfo.Destroy();

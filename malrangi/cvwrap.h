@@ -163,7 +163,7 @@ namespace Cvw
 			&MatchInfo.Value,
 			nullptr,
 			&MatchInfo.Location);
-		cout << MatchInfo.Value << endl;
+
 		if (MatchInfo.Value < Threshold)
 		{
 			throw MatchFailedException();
