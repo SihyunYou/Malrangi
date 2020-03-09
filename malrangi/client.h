@@ -342,8 +342,18 @@ void ClientApi::SelectServer(
 	const USERCONF::SERVER_INFO& ServerInfo,
 	int ChannelNumber)
 {
-	MouseEvent(ServerInfo.CoorServer.x, ServerInfo.CoorServer.y, LEFT_CLICK);
+	const static string ServerNames[] = { "스카니아", "베라", "루나", "제니스", "크로아", "유니온", "엘리시움", "이노시스", "레드", "오로라", "아케인", "노바" };
+
+	for (int i = 0; i < sizeof(ServerNames) / sizeof(string); i++)
+	{
+		if (ServerNames[i] == ServerInfo.ServerName)
+		{
+			MouseEvent(745, 68 + i * 32, LEFT_CLICK);
+			break;
+		}
+	}
 	MouseEvent(265 + 70 * (ChannelNumber % 5), 255 + 30 * (ChannelNumber / 5), DLEFT_CLICK);
+	
 	try
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E3, ClientApi::TARGETIMAGE_E3, NONWORK, seconds(30));

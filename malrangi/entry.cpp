@@ -164,7 +164,7 @@ main(
 					***************************************************************************************************************/
 					try
 					{
-						ClientApi::SelectServer(ServerInfo, 37);
+						ClientApi::SelectServer(ServerInfo, 27);
 					}
 					catch (MalrangiException & ce)
 					{

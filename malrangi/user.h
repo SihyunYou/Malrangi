@@ -18,7 +18,6 @@ public:
 			struct _SERVER_INFO
 			{
 				string ServerName;
-				POINT CoorServer;
 				struct _CHARACTER_INFO
 				{
 					string CharacterType;
@@ -45,7 +44,6 @@ public:
 	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO::_CHARACTER_INFO CHARACTER_INFO;
 	
 	vector<NEXONAC_INFO> VecNexonAccount;
-	map<string, SERVER_INFO> MapServerInfo;
 	map<string, CHARACTER_INFO> MapCharacterInfo;
 	KEYSET_INFO VirtualKeyset;
 
@@ -58,13 +56,6 @@ private:
 		if (File.is_open())
 		{
 			CHAR Line[0x100];
-			const string ServerNames[] = { "스카니아", "베라", "루나", "제니스", "크로아", "유니온", "엘리시움", "이노시스", "레드", "오로라", "아케인", "노바" };
-			for (int i = 0; i < sizeof(ServerNames) / sizeof(string); i++)
-			{
-				MapServerInfo[ServerNames[i]].ServerName = ServerNames[i];
-				MapServerInfo[ServerNames[i]].CoorServer = { 745, 68 + i * 32 };
-			}
-
 			while (File.getline(Line, sizeof(Line)))
 			{
 				if (strlen(Line) == 0)
@@ -138,9 +129,13 @@ private:
 				}
 				else if (!strncmp("\t\t", Line, 2))
 				{
+					SERVER_INFO ServerInfo;
+
 					Stream >> SubLine;
+					ServerInfo.ServerName = SubLine;
+
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].
-						VecServer.push_back(MapServerInfo[SubLine]);
+						VecServer.push_back(ServerInfo);
 				}
 				else if ('\t' == Line[0])
 				{
