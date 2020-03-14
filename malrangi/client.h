@@ -9,10 +9,7 @@
 #include "cvwrap.h"
 #include "user.h"
 
-void ThrowClientLowestException()
-{
-	
-}
+
 class ClientApi
 {
 public:
@@ -114,7 +111,7 @@ public:
 
 
 	/****************************************************************************
-	* High Exceptions (What)
+	* High-level Exceptions
 	****************************************************************************/
 	class BootFailedException : public MalrangiException
 	{
@@ -126,60 +123,10 @@ public:
 			return Message.c_str();
 		}
 	};
-	class NexonLoginFailedException : public MalrangiException
+	class ServerDelayException : public MalrangiException
 	{
 	public:
-		NexonLoginFailedException(void) :
-			MalrangiException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class MapleLoginFailedException : public MalrangiException
-	{
-	public:
-		MapleLoginFailedException(void) :
-			MalrangiException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class ServerEntryFailedException : public MalrangiException
-	{
-	public:
-		ServerEntryFailedException(void) :
-			MalrangiException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class GameEntryException : public MalrangiException
-	{
-	public:
-		GameEntryException(void) :
-			MalrangiException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class GameExitException : public MalrangiException
-	{
-	public:
-		GameExitException(void) :
-			MalrangiException(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class CharacterWindowExitException : public MalrangiException
-	{
-	public:
-		CharacterWindowExitException(void) :
+		ServerDelayException(void) :
 			MalrangiException(__CLASSNAME__) {}
 		virtual const char* what(void) const throw()
 		{
@@ -188,8 +135,25 @@ public:
 	};
 
 	/****************************************************************************
-	* Low Exceptions (Description)
+	* Low-level Exceptions
 	****************************************************************************/
+	static void ThrowLowException(const char* DefaultWhat)
+	{
+		static const Mat TargetImageWindowServerDisconnection = Cvw::Read(TARGET_DIR "window_server-disconnection.jpg");
+
+		if (HWND_MAPLESTORY == NULL)
+		{
+			throw ClientApi::ClientAbnormalTerminationException();
+		}
+		if (Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), TargetImageWindowServerDisconnection).IsMatched)
+		{
+			throw ClientApi::ServerDisconnectedException();
+		}
+		else
+		{
+			throw MalrangiException(DefaultWhat);
+		}
+	}
 	class ServerDisconnectedException : public MalrangiException
 	{
 	public:
@@ -215,15 +179,16 @@ public:
 	* External Client Control
 	****************************************************************************/
 	static void BootClient(void);
-	static void Login(
+	static void Login( 
 		const USERCONF::NEXONAC_INFO&,
 		const USERCONF::MAPLEID_INFO&);
 	static void SelectServer(
 		const USERCONF::SERVER_INFO&,
-		int);
-	static void SelectCharacter(unsigned int);
+		int); 
+	static void SelectCharacter(
+		unsigned int); 
 	static void UnlockSecondPassword(
-		const string&);
+		const string&); 
 	static void ExitCharacterWindow(void);
 	static void Logout(void);
 	static void TerminateClient(void);
@@ -297,9 +262,9 @@ void ClientApi::BootClient(
 			},
 			seconds(180));
 	}
-	catch (MatchFailedException & cwe)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException("BootFailedException");
+		throw BootFailedException();
 	}
 }
 void ClientApi::TerminateClient(
@@ -343,7 +308,7 @@ NEXON_LOGIN:
 	{
 		Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), TargetImageWindowMapleId);
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
 		if (!IsFailedAgain)
 		{
@@ -378,7 +343,7 @@ NEXON_LOGIN:
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
 		throw MalrangiException("MapleLoginFailedException");
 	}
@@ -389,6 +354,7 @@ void ClientApi::SelectServer(
 	int ChannelNumber)
 {
 	const static string ServerNames[] = { "스카니아", "베라", "루나", "제니스", "크로아", "유니온", "엘리시움", "이노시스", "레드", "오로라", "아케인", "노바" };
+	const static Mat TargetImageWindowServerDelay = Cvw::Read(TARGET_DIR "window_server-delay.jpg");
 
 	for (int i = 0; i < sizeof(ServerNames) / sizeof(string); i++)
 	{
@@ -404,9 +370,16 @@ void ClientApi::SelectServer(
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E3, ClientApi::TARGETIMAGE_E3, NONWORK, seconds(30));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException("SelectServerFailedException");
+		if (Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), TargetImageWindowServerDelay).IsMatched)
+		{
+			throw ServerDelayException();
+		}
+		else
+		{
+			ThrowLowException(__FEWHAT__);
+		}
 	}
 	Sleep(0x400);
 }
@@ -463,14 +436,9 @@ void ClientApi::EnterGame(
 	CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 {
 	KeybdEvent(VK_RETURN, 0x400);
-	try
+	if(Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), Cvw::Read(TARGET_DIR "button_1.jpg")).IsMatched)
 	{
-		Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), Cvw::Read(TARGET_DIR "button_1.jpg"));
 		ClientApi::UnlockSecondPassword(MapleIdInfo.SecondPassword);
-	}
-	catch (MatchFailedException & cwe)
-	{
-		; // Second-password unrequired
 	}
 
 	try
@@ -484,17 +452,9 @@ void ClientApi::EnterGame(
 			},
 			seconds(180));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		try
-		{
-			Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), ClientApi::TARGETIMAGE_E1);
-			throw ClientApi::ServerDisconnectedException();
-		}
-		catch (MatchFailedException)
-		{
-			throw GameEntryException();
-		}
+		ThrowLowException(__FEWHAT__);
 	}
 	Sleep(0x400);
 	
@@ -547,17 +507,9 @@ void ClientApi::ExitGame(
 			},
 			seconds(30));
 	}
-	catch (MatchFailedException & mfe)
+	catch (MatchTimeoutException)
 	{
-		try
-		{
-			Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), ClientApi::TARGETIMAGE_E1);
-			throw ClientApi::ServerDisconnectedException();
-		}
-		catch (MatchFailedException & mfe)
-		{
-			throw ClientApi::GameExitException();
-		}
+		ThrowLowException(__FEWHAT__);
 	}
 	Sleep(0x400);
 }
@@ -570,9 +522,9 @@ void ClientApi::Logout(
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E1, ClientApi::TARGETIMAGE_E1, NONWORK, seconds(30));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException("LogoutFailedException");
+		ThrowLowException(__FEWHAT__);
 	}
 	Sleep(0x400);
 }
@@ -583,9 +535,9 @@ void ClientApi::ExitCharacterWindow(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, seconds(30));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw CharacterWindowExitException();
+		ThrowLowException(__FEWHAT__);
 	}
 	
 }
@@ -633,7 +585,7 @@ void ClientApi::MoveServer(
 	{
 		Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImage);
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
 		if (!IsFailedAgain)
 		{
@@ -642,7 +594,7 @@ void ClientApi::MoveServer(
 			IsFailedAgain = true;
 			goto OPEN;
 		}
-		throw MalrangiException(__FEWHAT__);
+		ThrowLowException(__FEWHAT__);
 	}
 
 	KeybdEvent(IsForward ? VK_RIGHT : VK_LEFT, 0x200);

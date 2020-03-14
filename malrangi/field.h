@@ -42,20 +42,16 @@ public:
 			{
 				while (true)
 				{
-					try
+					Mat SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
+					for each (const auto & TargetImage in VecTargetImage)
 					{
-						Mat SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
-						for each (const auto & TargetImage in VecTargetImage)
+						if (Cvw::MatchTemplate(SourceImage, TargetImage).IsMatched)
 						{
-							Cvw::UnmatchTemplate(SourceImage, TargetImage);
+							PlaySoundA("gibbon-monkey-daniel_simon.wav", NULL, SND_ASYNC);
+							Sleep(0x1600);
 						}
-						Sleep(0x100);
 					}
-					catch (MatchSuccessedException)
-					{
-						PlaySoundA("gibbon-monkey-daniel_simon.wav", NULL, SND_ASYNC);
-						Sleep(0x1600);
-					}
+					Sleep(0x100);
 				}
 			}
 		);

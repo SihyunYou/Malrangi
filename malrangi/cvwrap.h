@@ -34,20 +34,10 @@ public:
 		return Message.c_str();
 	}
 };
-class MatchFailedException : public MalrangiException
+class MatchTimeoutException : public MalrangiException
 {
 public:
-	MatchFailedException() :
-		MalrangiException(__CLASSNAME__) {}
-	virtual const char* what(void) const throw()
-	{
-		return Message.c_str();
-	}
-};
-class MatchSuccessedException : public MalrangiException
-{
-public:
-	MatchSuccessedException() :
+	MatchTimeoutException(void) :
 		MalrangiException(__CLASSNAME__) {}
 	virtual const char* what(void) const throw()
 	{
@@ -55,13 +45,14 @@ public:
 	}
 };
 
-struct Valloc
+struct VALLOC
 {
-	Valloc() : Value(0), Location(0, 0) {}
-	Valloc(double Value, Point Location) : Value(Value), Location(Location) {}
+	VALLOC() : Value(0), Location(0, 0) {}
+	VALLOC(double Value, Point Location) : Value(Value), Location(Location) {}
 
 	double Value;
 	Point Location;
+	bool IsMatched;
 };
 
 /****************************************************************************
@@ -150,47 +141,25 @@ namespace Cvw
 ****************************************************************************/
 namespace Cvw
 {
-	__forceinline Valloc MatchTemplate(
+	VALLOC MatchTemplate(
 		Mat SourceImage,
 		Mat TargetImage,
-		DOUBLE Threshold = 0.9)
+		double Threshold = 0.9)
 	{
 		Mat ResultImage;
-		Valloc MatchInfo;
+		VALLOC MatchInfo;
+
 		cv::matchTemplate(SourceImage, TargetImage, ResultImage, TM_CCOEFF_NORMED);
 		cv::minMaxLoc(ResultImage,
 			nullptr,
 			&MatchInfo.Value,
 			nullptr,
 			&MatchInfo.Location);
+		MatchInfo.IsMatched = (MatchInfo.Value < Threshold) ? false : true;
 
-		if (MatchInfo.Value < Threshold)
-		{
-			throw MatchFailedException();
-		}
 		return MatchInfo;
 	}
-	__forceinline Valloc UnmatchTemplate(
-		Mat SourceImage,
-		Mat TargetImage,
-		DOUBLE Threshold = 0.9)
-	{
-		Mat ResultImage;
-		Valloc MatchInfo;
-		cv::matchTemplate(SourceImage, TargetImage, ResultImage, TM_CCOEFF_NORMED);
-		cv::minMaxLoc(ResultImage,
-			nullptr,
-			&MatchInfo.Value,
-			nullptr,
-			&MatchInfo.Location);
-
-		if (MatchInfo.Value > Threshold)
-		{
-			throw MatchSuccessedException();
-		}
-		return MatchInfo;
-	}
-	__forceinline Valloc ClickMatchedTemplate(
+	VALLOC ClickMatchedTemplate(
 		Mat SourceImage,
 		Mat TargetImage,
 		CHAR Flag,
@@ -198,15 +167,18 @@ namespace Cvw
 		DWORD MilliSeconds = INTERVAL_MOUSEEVENT,
 		DOUBLE Threshold = 0.9)
 	{
-		Valloc MatchInfo = MatchTemplate(SourceImage, TargetImage, Threshold);
-		Point PositionToClick = MatchInfo.Location + AdjustmentValue;
-		MouseEvent(PositionToClick.x, PositionToClick.y, Flag, MilliSeconds);
+		VALLOC MatchInfo = MatchTemplate(SourceImage, TargetImage, Threshold);
+		if (MatchInfo.IsMatched)
+		{
+			Point PositionToClick = MatchInfo.Location + AdjustmentValue;
+			MouseEvent(PositionToClick.x, PositionToClick.y, Flag, MilliSeconds);
+		}
 
 		return MatchInfo;
 	}
 #define NONWORK					[](void) -> void {;}
 	template <class T_LAMBDA, class T_DUR = seconds>
-	__forceinline Point DoUntilMatchingTemplate(
+	void DoUntilMatchingTemplate(
 		RECT Area,
 		Mat TargetImage,
 		T_LAMBDA Func,
@@ -215,37 +187,31 @@ namespace Cvw
 		double Threshold = 0.9)
 	{
 		const auto StartTime = system_clock::now();
-		while (duration_cast<T_DUR>(system_clock::now() - StartTime) < Duration)
+		do
 		{
-			try
-			{
-				Point LocationTemplate = Cvw::MatchTemplate(Cvw::Capture(Area), TargetImage, Threshold).Location;
-				Func();
-				Sleep(IdleTime);
+			Func();
+			Sleep(IdleTime);
 
-				return LocationTemplate;
-			}
-			catch (MatchFailedException & CvwException)
+			if (Cvw::MatchTemplate(Cvw::Capture(Area), TargetImage, Threshold).IsMatched)
 			{
-				Func();
-				Sleep(IdleTime);
+				return;
 			}
-		}
+		} while (duration_cast<T_DUR>(system_clock::now() - StartTime) < Duration);
 
-		throw MatchFailedException();
+		throw MatchTimeoutException();
 	}
 	template<SIZE_T ArrSize>
-	pair<SIZE_T, Valloc> GetHighestMatchedTemplate(
+	pair<SIZE_T, VALLOC> GetHighestMatchedTemplate(
 		Mat SourceImage,
 		const array<Mat, ArrSize>& ArrTargetImage)
 	{
-		Valloc HighestValloc;
+		VALLOC HighestValloc;
 		SIZE_T CountArrTargetImage = 0;
 		SIZE_T SeqHighestMatchedTemplate = 0;
 
 		for each (auto & TargetImage in ArrTargetImage)
 		{
-			Valloc CurrentValloc = Cvw::MatchTemplate(SourceImage, TargetImage, 0);
+			VALLOC CurrentValloc = Cvw::MatchTemplate(SourceImage, TargetImage, 0);
 			if (CurrentValloc.Value > HighestValloc.Value)
 			{
 				HighestValloc = CurrentValloc;

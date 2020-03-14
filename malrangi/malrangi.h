@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <exception>
+#include <initializer_list>
 using namespace std;
 
 #include <chrono>

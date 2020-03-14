@@ -29,7 +29,7 @@ public:
 			{
 				Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageButtonReady, LEFT_CLICK);
 			}
-			catch (MatchFailedException)
+			catch (MatchTimeoutException)
 			{
 				if (!IsFailedAgain)
 				{
@@ -38,7 +38,7 @@ public:
 					IsFailedAgain = true;
 					goto BATTLE_ENTRY;
 				}
-				throw MalrangiException("ButtonReadyNotFound");
+				throw AppException("ButtonReadyNotFound");
 			}
 			IsFailedAgain = false;
 
@@ -63,9 +63,9 @@ public:
 					seconds(1800),
 						0);
 			}
-			catch (MatchFailedException)
+			catch (MatchTimeoutException)
 			{
-				throw MalrangiException("BattleEntryTimeoutException");
+				throw AppException("BattleEntryTimeoutException");
 			}
 
 
@@ -148,9 +148,9 @@ public:
 					seconds(1000),
 						0);
 			}
-			catch (MatchFailedException)
+			catch (MatchTimeoutException)
 			{
-				throw MalrangiException("BattleTimeoutException");
+				throw AppException("BattleTimeoutException");
 			}
 
 			Sleep(1600);
@@ -165,9 +165,9 @@ public:
 			{
 				Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageBackgroundUrus, NONWORK, seconds(45), 0x100, 0.99);
 			}
-			catch (MatchFailedException)
+			catch (MatchTimeoutException)
 			{
-				throw MalrangiException("UrusExitException");
+				throw AppException("UrusExitException");
 			}
 			Sleep(0x400);
 
@@ -178,9 +178,9 @@ public:
 				{
 					Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMashur, NONWORK, seconds(30));
 				}
-				catch (MatchFailedException)
+				catch (MatchTimeoutException)
 				{
-					throw MalrangiException("NpcMashurNotFound");
+					throw AppException("NpcMashurNotFound");
 				}
 				Sleep(0x400);
 			}
@@ -239,7 +239,7 @@ private:
 			Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
 			MouseEvent(25, 50, LEFT_CLICK);
 		}
-		catch (MatchFailedException)
+		catch (MatchTimeoutException)
 		{
 			try
 			{
@@ -250,9 +250,9 @@ private:
 				SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
 				Cvw::ClickMatchedTemplate(SourceImage, TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
 			}
-			catch (MatchFailedException)
+			catch (MatchTimeoutException)
 			{
-				throw MalrangiException("ThrowEyeOfFireFailedException");
+				throw AppException("ThrowEyeOfFireFailedException");
 			}
 
 			MouseEvent(25, 50, LEFT_CLICK);
@@ -280,7 +280,7 @@ private:
 					50);
 			KeybdEventUp(CharacterInfo.Skill);
 		}
-		catch (MatchFailedException)
+		catch (MatchTimeoutException)
 		{
 			;
 		}

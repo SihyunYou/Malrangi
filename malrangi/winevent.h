@@ -69,6 +69,17 @@ KeybdEvent(
 }
 VOID
 WINAPI
+KeybdEvent(
+	_In_ initializer_list<BYTE> lVirtualKey,
+	_In_ DWORD dwMilliseconds = INTERVAL)
+{
+	for each (const auto Key in lVirtualKey)
+	{
+		KeybdEvent(Key);
+	}
+}
+VOID
+WINAPI
 KeybdEventWithSubKey(
 	_In_ BYTE bVirtualKey,
 	_In_ BYTE bSubVirtualKey,

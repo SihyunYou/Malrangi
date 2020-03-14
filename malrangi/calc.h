@@ -55,15 +55,12 @@ private:
 		MouseEvent(818, 244, LEFT_CLICK);
 		for (CountCrystal = 0; CountCrystal < 30; CountCrystal++)
 		{
-			try
-			{
-				Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItemCrystal, RIGHT_CLICK, { NewRectClient.left + 80, NewRectClient.top });
-			}
-			catch (MatchFailedException)
+			if (!Cvw::ClickMatchedTemplate(
+				Cvw::Capture(NewRectClient), TargetImageItemCrystal, RIGHT_CLICK, { NewRectClient.left + 80, NewRectClient.top }).
+				IsMatched)
 			{
 				break;
 			}
-
 			KeybdEvent(VK_RETURN);
 		}
 		KeybdEvent(VK_ESCAPE);
@@ -83,33 +80,27 @@ private:
 			for (int i = 0; i < 8; i++)
 			{
 				MouseEvent(0, 750, CURSOR_MOVE);
-				try
-				{
-					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItem100lv, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top });
-				}
-				catch (MatchFailedException)
+				if(!Cvw::ClickMatchedTemplate(
+					Cvw::Capture(NewRectClient), TargetImageItem100lv, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top }).
+					IsMatched)
 				{
 					break;
 				}
 
-				KeybdEvent(VK_RETURN);
-				KeybdEvent(VK_RETURN);
+				KeybdEvent({ VK_RETURN, VK_RETURN });
 			}
 
 			for (int i = 0; i < 8; i++)
 			{
 				MouseEvent(0, 750, CURSOR_MOVE);
-				try
-				{
-					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItem110lv, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top });
-				}
-				catch (MatchFailedException)
+				if (!Cvw::ClickMatchedTemplate(
+					Cvw::Capture(NewRectClient), TargetImageItem110lv, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top }).
+					IsMatched)
 				{
 					break;
 				}
 
-				KeybdEvent(VK_RETURN);
-				KeybdEvent(VK_RETURN);
+				KeybdEvent({ VK_RETURN, VK_RETURN });
 			}
 
 			// 소비템 넣기(수큐)
@@ -117,17 +108,14 @@ private:
 			for (int i = 0; i < 3; i++)
 			{
 				MouseEvent(0, 750, CURSOR_MOVE);
-				try
-				{
-					Cvw::ClickMatchedTemplate(Cvw::Capture(NewRectClient), TargetImageItemCube, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top });
-				}
-				catch (MatchFailedException)
+				if (!Cvw::ClickMatchedTemplate(
+					Cvw::Capture(NewRectClient), TargetImageItemCube, DLEFT_CLICK, { NewRectClient.left, NewRectClient.top }).
+					IsMatched)
 				{
 					break;
 				}
 
-				KeybdEvent(VK_RETURN);
-				KeybdEvent(VK_RETURN);
+				KeybdEvent({ VK_RETURN, VK_RETURN });
 			}
 
 			// 돈 넣기

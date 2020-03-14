@@ -8,12 +8,12 @@ public:
 	
 };
 
-class BossException : public MalrangiException
+class AppException : public MalrangiException
 {
 public:
-	BossException(void) :
+	AppException(void) :
 		MalrangiException(__CLASSNAME__) {}
-	BossException(string Description) :
+	AppException(string Description) :
 		MalrangiException(__CLASSNAME__ + "! " + Description) {}
 	virtual const char* what(void) const throw()
 	{

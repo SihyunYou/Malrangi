@@ -13,9 +13,9 @@ MakeBridge(Urus, Elnas)(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkElnas, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -25,15 +25,7 @@ MakeBridge(Elnas, Office)(void)
 	static const Mat TargetImageNpcRene(Cvw::Read(TARGET_DIR "npc_rene.jpg"));
 
 	KeybdEventContinued(VK_RIGHT, 10);
-	KeybdEvent('C', 1000);
-	KeybdEvent('C', 1000);
-	KeybdEvent('X', 1300);
-	KeybdEvent('X', 1300);
-	KeybdEvent('X', 1300);
-	KeybdEvent('X', 1300);
-	KeybdEvent('X', 1300);
-	KeybdEvent('X', 1300);
-	KeybdEvent('X', 1300);
+	KeybdEvent({ 'C', 'C', 'X', 'X','X','X','X','X','X' }, 1300);
 	ClientApi::Jump(ClientApi::JUMP_T::DEMON);
 	ClientApi::DownJump(1000);
 
@@ -42,9 +34,9 @@ MakeBridge(Elnas, Office)(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcRene, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -60,9 +52,9 @@ void MoveFromOfficeToZ1(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkZacum, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -89,11 +81,7 @@ GET_EYE_OF_FIRE:
 	KeybdEvent(VK_RETURN, 400);
 	KeybdEvent(VK_RETURN, 400);
 
-	try
-	{
-		Cvw::UnmatchTemplate(Cvw::Capture({ 440, 320, 550, 410 }), TargetImageNpcAdobis, 0.8);
-	}
-	catch (MatchSuccessedException)
+	if (Cvw::MatchTemplate(Cvw::Capture({ 440, 320, 550, 410 }), TargetImageNpcAdobis, 0.8).IsMatched)
 	{
 		if (!IsFailedAgain)
 		{
@@ -102,7 +90,7 @@ GET_EYE_OF_FIRE:
 			IsFailedAgain = true;
 			goto GET_EYE_OF_FIRE;
 		}
-		throw MalrangiException("GetEyeOfFireFailedException");
+		throw AppException("GetEyeOfFireFailedException");
 	}
 
 	KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 1200);
@@ -115,9 +103,9 @@ GET_EYE_OF_FIRE:
 	{
 		Cvw::DoUntilMatchingTemplate(RECT{ 950, 500, 1050, 600 }, TargetImageNpcAdobis, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -134,14 +122,14 @@ void MoveFromZ2ToZ3()
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageUnitZ3, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
 		if (!IsFailedAgain)
 		{
 			IsFailedAgain = true;
 			goto MOVE;
 		}
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -155,9 +143,9 @@ void MoveFromZ3ToZ2(void)
 	{
 		Cvw::DoUntilMatchingTemplate(RECT{ 950, 500, 1050, 600 }, TargetImageNpcAdobis, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -173,14 +161,14 @@ MOVE:
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageScluptureZ1, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
 		if (!IsFailedAgain)
 		{
 			IsFailedAgain = true;
 			goto MOVE;
 		}
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -201,9 +189,9 @@ void MoveFromZ1ToElnas(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkElnas, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -222,9 +210,9 @@ void MoveFromElnasToUrus(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageBackgroundUrus, NONWORK, seconds(30));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -239,9 +227,9 @@ void MoveFromZ2ToMeisterVill(void)
 	{
 		Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageButtonMeisterVill, LEFT_CLICK, { 5, 2 });
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException("ClickButtonMeisterVillFailedException");
+		throw AppException(__FEWHAT__);
 	}
 
 	KeybdEvent(VK_RETURN);
@@ -249,9 +237,9 @@ void MoveFromZ2ToMeisterVill(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkMeisterVill, NONWORK, seconds(30));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x400);
@@ -270,9 +258,9 @@ void MoveFromMeisterVillToFreeMarket(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMsBrainy, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 }
 void MoveFromFreeMarketToMeisterVill(void)
@@ -284,9 +272,9 @@ void MoveFromFreeMarketToMeisterVill(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkMeisterVill, NONWORK, seconds(20));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x800);
@@ -308,9 +296,9 @@ MakeBridge(MeisterVill, Z2)(void)
 			},
 			seconds(20));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x400);
@@ -326,9 +314,9 @@ MakeBridge(Elnas, FreeMarket)(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMsBrainy, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 
 	Sleep(0x200);
@@ -342,9 +330,9 @@ MakeBridge(FreeMarket, ElnasMarket)(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageMinimapMarkElnas, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 }
 MakeBridge(ElnasMarket, Elnas)(void)
@@ -357,8 +345,8 @@ MakeBridge(ElnasMarket, Elnas)(void)
 	{
 		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageButtonMove, NONWORK, seconds(15));
 	}
-	catch (MatchFailedException)
+	catch (MatchTimeoutException)
 	{
-		throw MalrangiException(__FEWHAT__);
+		throw AppException(__FEWHAT__);
 	}
 }

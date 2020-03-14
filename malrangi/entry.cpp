@@ -6,8 +6,8 @@
 #include "report.h"
 #include "bridge.h"
 
-#define BUILD_URUSRAID
-//#define BUILD_ZACUMRAID
+//#define BUILD_URUSRAID
+#define BUILD_ZACUMRAID
 //#define BUILD_CALC
 //#define BUILD_FIELDBOT
 
@@ -95,7 +95,6 @@ main(
 					continue;
 				}
 				
-
 				Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id;
 				switch (LogoutState)
 				{
@@ -133,26 +132,17 @@ main(
 					break;
 				}
 				
-
 				try
 				{
 					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 				}
-				catch (ClientApi::NexonLoginFailedException& e)
+				catch (MalrangiException& e)
 				{
 					LEAVE_LOG(&e);
 					LogoutState = UNHANDLED;
 
 					goto __LOGOUT;
 				}
-				catch (ClientApi::MapleLoginFailedException & e)
-				{
-					LEAVE_LOG(&e);
-					LogoutState = UNHANDLED;
-
-					goto __LOGOUT;
-				}
-
 
 				for each (const auto & ServerInfo in MapleIdInfo.VecServer)
 				{
@@ -160,69 +150,53 @@ main(
 					{
 						continue;
 					}
-					Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName;
 
+					Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName;
 					try
 					{
 						try
 						{
 							ClientApi::SelectServer(ServerInfo, 27);
 						}
-						catch (ClientApi::ServerEntryFailedException & e)
+						catch (ClientApi::ServerDelayException & e)
 						{
-							ThrowClientLowestException();
+							LEAVE_LOG(&e);
+							LogoutState = NORMAL;
+							KeybdEvent({ VK_RETURN, VK_ESCAPE });
+
+							goto __LOGOUT;
 						}
+
 						ClientApi::SelectCharacter(1);
-
 #if defined(BUILD_URUSRAID)
-						try
-						{
-							ClientApi::EnterGame(MapleIdInfo);
-						}
-						catch (ClientApi::GameEntryException)
-						{
-							ThrowClientLowestException();
-						}
+						ClientApi::EnterGame(MapleIdInfo);
+						ClientApi::BreakParty();
 
 						try
 						{
-							ClientApi::BreakParty();
 							Worker.Play(ServerInfo.VecCharacter[0]);
 
 							LEAVE_LOG(nullptr);
 						}
-						catch (BossException & e)
+						catch (AppException & e)
 						{
 							LEAVE_LOG(&e);
 							ClientApi::RemoveAllIngameWindows();
 						}
 
-						try
-						{
-							ClientApi::ExitGame();
-						}
-						catch (ClientApi::GameExitException)
-						{
-							ThrowClientLowestException();
-						}
+						ClientApi::ExitGame();
 #elif defined(BUILD_ZACUMRAID) || defined(BUILD_CALC)
 						bool IsFirstRoutine = true;
 						for each (auto & CharacterInfo in ServerInfo.VecCharacter)
 						{
 							Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName + "/" + CharacterInfo.CharacterType;
-							try
-							{
-								ClientApi::EnterGame(MapleIdInfo);
-							}
-							catch (ClientApi::GameEntryException)
-							{
-								ThrowClientLowestException();
-							}
+							
+							ClientApi::EnterGame(MapleIdInfo);
+							ClientApi::MakeParty();
 
 							try
 							{
 #ifdef BUILD_ZACUMRAID
-								ClientApi::MakeParty();
 								if (IsFirstRoutine)
 								{
 									IsFirstRoutine = false;
@@ -244,33 +218,17 @@ main(
 								}
 #endif
 							}
-							catch (BossException & e)
+							catch (AppException & e)
 							{
 								LEAVE_LOG(&e);
 								ClientApi::RemoveAllIngameWindows();
 							}
 
-							try
-							{
-								ClientApi::ExitGame();
-							}
-							catch (ClientApi::GameExitException)
-							{
-								ThrowClientLowestException();
-							}
-
+							ClientApi::ExitGame();
 							KeybdEvent(VK_RIGHT);
 						}
 #endif
-
-						try
-						{
-							ClientApi::ExitCharacterWindow();
-						}
-						catch (ClientApi::CharacterWindowExitException)
-						{
-							ThrowClientLowestException();
-						}
+						ClientApi::ExitCharacterWindow();
 					}
 					catch (ClientApi::ServerDisconnectedException & e)
 					{
