@@ -9,6 +9,10 @@
 #include "cvwrap.h"
 #include "user.h"
 
+void ThrowClientLowestException()
+{
+	
+}
 class ClientApi
 {
 public:
@@ -110,7 +114,7 @@ public:
 
 
 	/****************************************************************************
-	* Exceptions
+	* High Exceptions (What)
 	****************************************************************************/
 	class BootFailedException : public MalrangiException
 	{
@@ -122,10 +126,30 @@ public:
 			return Message.c_str();
 		}
 	};
-	class ServerDisconnectedException : public MalrangiException
+	class NexonLoginFailedException : public MalrangiException
 	{
 	public:
-		ServerDisconnectedException(void) :
+		NexonLoginFailedException(void) :
+			MalrangiException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class MapleLoginFailedException : public MalrangiException
+	{
+	public:
+		MapleLoginFailedException(void) :
+			MalrangiException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class ServerEntryFailedException : public MalrangiException
+	{
+	public:
+		ServerEntryFailedException(void) :
 			MalrangiException(__CLASSNAME__) {}
 		virtual const char* what(void) const throw()
 		{
@@ -152,10 +176,10 @@ public:
 			return Message.c_str();
 		}
 	};
-	class UnhandledException : public MalrangiException
+	class CharacterWindowExitException : public MalrangiException
 	{
 	public:
-		UnhandledException(void) :
+		CharacterWindowExitException(void) :
 			MalrangiException(__CLASSNAME__) {}
 		virtual const char* what(void) const throw()
 		{
@@ -163,7 +187,29 @@ public:
 		}
 	};
 
-
+	/****************************************************************************
+	* Low Exceptions (Description)
+	****************************************************************************/
+	class ServerDisconnectedException : public MalrangiException
+	{
+	public:
+		ServerDisconnectedException(void) :
+			MalrangiException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class ClientAbnormalTerminationException : public MalrangiException
+	{
+	public:
+		ClientAbnormalTerminationException(void) :
+			MalrangiException(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
 
 	/****************************************************************************
 	* External Client Control
@@ -436,7 +482,7 @@ void ClientApi::EnterGame(
 			{
 				ClientApi::SET_CLIENT_STDPOS();
 			},
-			seconds(60));
+			seconds(180));
 	}
 	catch (MatchFailedException)
 	{
@@ -447,11 +493,11 @@ void ClientApi::EnterGame(
 		}
 		catch (MatchFailedException)
 		{
-			throw MalrangiException("GameEntryFailedException");
+			throw GameEntryException();
 		}
 	}
 	Sleep(0x400);
-
+	
 	// Remove tooltips
 	MouseEvent( 902, 337 , LEFT_CLICK);
 	KeybdEvent(VK_ESCAPE);
@@ -539,7 +585,7 @@ void ClientApi::ExitCharacterWindow(void)
 	}
 	catch (MatchFailedException)
 	{
-		throw MalrangiException("ExitCharacterWindowFailedException");
+		throw CharacterWindowExitException();
 	}
 	
 }

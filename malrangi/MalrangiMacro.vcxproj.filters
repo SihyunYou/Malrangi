@@ -72,9 +72,6 @@
     <ClInclude Include="malrangi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="boss.h">
-      <Filter>Header Files\application\client\boss</Filter>
-    </ClInclude>
     <ClInclude Include="bridge.h">
       <Filter>Header Files\application\client\boss</Filter>
     </ClInclude>
@@ -84,10 +81,24 @@
     <ClInclude Include="raid.h">
       <Filter>Header Files\application\client\boss</Filter>
     </ClInclude>
+    <ClInclude Include="bsp.h">
+      <Filter>Header Files\application\client\boss</Filter>
+    </ClInclude>
+    <ClInclude Include="crlp.h">
+      <Filter>Header Files\application\client\boss</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\conf\ip.conf">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\conf\user.conf">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

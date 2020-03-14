@@ -1,8 +1,8 @@
 #pragma once
-#include "boss.h"
+#include "bsp.h"
 #include "bridge.h"
 
-class Calc : public Boss
+class Calc : public BasePlay
 {
 public:
 	void PlayFromZacum(

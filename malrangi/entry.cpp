@@ -6,12 +6,14 @@
 #include "report.h"
 #include "bridge.h"
 
-//#define BUILD_URUSRAID
-#define BUILD_ZACUMRAID
+#define BUILD_URUSRAID
+//#define BUILD_ZACUMRAID
 //#define BUILD_CALC
 //#define BUILD_FIELDBOT
 
 #define USING_IPRENEWER
+
+
 
 int 
 main(
@@ -53,13 +55,27 @@ main(
 
 		string Uri;
 		int SeqMapleId = 0;
-		bool IsExgameExceptional = false;
-		bool IsIngameExceptional = false;
-		auto LOG_TREE = [&Uri](std::exception* ce) -> void
+		int SeqSuccess, SeqFailure = 0;
+		auto LEAVE_LOG = [&Uri, &SeqSuccess, &SeqFailure](std::exception* ce) -> void
 		{
-			WriteLog(((nullptr != ce) ? LOG_LEVEL::FAILURE : LOG_LEVEL::SUCCESS), 
+			if (nullptr != ce)
+			{
+				Cvw::Write(SNAP_DIR "exception" + INT_TO_PNG((nullptr != ce) ? ++SeqFailure : ++SeqSuccess),
+					Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
+			}
+			WriteLog(((nullptr != ce) ? LOG_LEVEL::FAILURE : LOG_LEVEL::SUCCESS),
 				(Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
 		};
+
+		enum LOGOUT_STATE
+		{
+			NORMAL,
+			SERVER_DISCONNECTION,
+			ABNORMAL_CLIENT_TERMINATION,
+			UNHANDLED // force termination
+		};
+		int LogoutState = NORMAL;
+
 
 		for each (const auto& NexonAccountInfo in UserInfo.VecNexonAccount)
 		{
@@ -78,77 +94,65 @@ main(
 				{
 					continue;
 				}
+				
 
 				Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id;
-
-				/***************************************************************************************************************
-				* E0 -> E1 / E1
-				***************************************************************************************************************/
-				if (!IsIngameExceptional && !IsExgameExceptional)
+				switch (LogoutState)
 				{
 					if (SeqMapleId % 4 == 0)
 					{
-	#ifdef USING_IPRENEWER
+#ifdef USING_IPRENEWER
 						IpManager.Renew(IpInfo.InternetInfo);
-	#else
+#else
 						if (SeqMapleId > 3)
 						{
 							goto EXIT_ROUTINE;
 						}
-	#endif
-						try
-						{
-							ClientApi::BootClient();
-						}
-						catch (ClientApi::BootFailedException & bfe)
-						{
-							LOG_TREE(&bfe);
-
-							goto EXIT_ROUTINE;
-						}
+#endif
 					}
-				}
-				else
-				{
-					if (SeqMapleId % 4 == 0)
+
+				case NORMAL:
+				case SERVER_DISCONNECTION:
+					if (SeqMapleId % 4 != 0)
 					{
-	#ifdef USING_IPRENEWER
-						IpManager.Renew(IpInfo.InternetInfo);
-	#else
-						if (SeqMapleId > 3)
-						{
-							goto EXIT_ROUTINE;
-						}
-	#endif
+						break;
 					}
 
+				case ABNORMAL_CLIENT_TERMINATION:
+				case UNHANDLED:
 					try
 					{
 						ClientApi::BootClient();
 					}
 					catch (ClientApi::BootFailedException & bfe)
 					{
-						LOG_TREE(&bfe);
+						LEAVE_LOG(&bfe);
 
 						goto EXIT_ROUTINE;
 					}
+					break;
 				}
 				
-				/***************************************************************************************************************
-				* E1 -> E2
-				***************************************************************************************************************/
-				IsExgameExceptional = false;
+
 				try
 				{
 					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 				}
-				catch (MalrangiException & ce)
+				catch (ClientApi::NexonLoginFailedException& e)
 				{
-					LOG_TREE(&ce);
-					IsExgameExceptional = true;
+					LEAVE_LOG(&e);
+					LogoutState = UNHANDLED;
 
-					goto LOGOUT;
+					goto __LOGOUT;
 				}
+				catch (ClientApi::MapleLoginFailedException & e)
+				{
+					LEAVE_LOG(&e);
+					LogoutState = UNHANDLED;
+
+					goto __LOGOUT;
+				}
+
 
 				for each (const auto & ServerInfo in MapleIdInfo.VecServer)
 				{
@@ -156,126 +160,40 @@ main(
 					{
 						continue;
 					}
-
 					Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName;
 
-					/***************************************************************************************************************
-					* E2 -> E3
-					***************************************************************************************************************/
 					try
 					{
-						ClientApi::SelectServer(ServerInfo, 27);
-					}
-					catch (MalrangiException & ce)
-					{
-						LOG_TREE(&ce);
-						IsExgameExceptional = true;
+						try
+						{
+							ClientApi::SelectServer(ServerInfo, 27);
+						}
+						catch (ClientApi::ServerEntryFailedException & e)
+						{
+							ThrowClientLowestException();
+						}
+						ClientApi::SelectCharacter(1);
 
-						goto LOGOUT;
-					}
-
-					ClientApi::SelectCharacter(1);
-
-					/***************************************************************************************************************
-					* INGAME APPLICATION
-					***************************************************************************************************************/
-					IsIngameExceptional = false;
 #if defined(BUILD_URUSRAID)
-					try
-					{
-						ClientApi::EnterGame(MapleIdInfo);
-					}
-					catch (ClientApi::ServerDisconnectedException & sde)
-					{
-						LOG_TREE(&sde);
-						IsIngameExceptional = true;
-
-						goto LOGOUT_DISCONNECTED;
-					}
-					catch (MalrangiException & ce)
-					{
-						LOG_TREE(&ce);
-						IsIngameExceptional = true;
-
-						goto LOGOUT;
-					}
-
-					try
-					{
-						ClientApi::BreakParty();
-						Worker.Play(ServerInfo.VecCharacter[0]);
-						
-						LOG_TREE(nullptr);
-					}
-					catch (MalrangiException & ae)
-					{
-						LOG_TREE(&ae);
-						ClientApi::RemoveAllIngameWindows();
-					}
-
-					try
-					{
-						ClientApi::ExitGame();
-					}
-					catch (MalrangiException & ce)
-					{
-						LOG_TREE(&ce);
-						IsIngameExceptional = true;
-
-						break;
-					}
-#elif defined(BUILD_ZACUMRAID) || defined(BUILD_CALC)
-					bool IsFirstRoutine = true;
-					for each (auto & CharacterInfo in ServerInfo.VecCharacter)
-					{
-						Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName + "/" + CharacterInfo.CharacterType;
 						try
 						{
 							ClientApi::EnterGame(MapleIdInfo);
 						}
-						catch (ClientApi::ServerDisconnectedException & sde)
+						catch (ClientApi::GameEntryException)
 						{
-							LOG_TREE(&sde);
-							IsIngameExceptional = false;
-
-							goto LOGOUT_DISCONNECTED;
-						}
-						catch (MalrangiException & ce)
-						{
-							LOG_TREE(&ce);
-							IsIngameExceptional = true;
-
-							goto LOGOUT;
+							ThrowClientLowestException();
 						}
 
 						try
 						{
-#ifdef BUILD_ZACUMRAID
-							ClientApi::MakeParty();
-							if (IsFirstRoutine)
-							{
-								IsFirstRoutine = false;
-								Worker.PlayFromUrus(CharacterInfo);
-							}
-							else
-							{
-								Worker.PlayFromZacum(CharacterInfo);
-							}					
-#else
-							if (IsFirstRoutine)
-							{
-								IsFirstRoutine = false;
-								Worker.PlayFromUrus(MapleIdInfo);
-							}
-							else
-							{
-								Worker.PlayFromZacum(MapleIdInfo);
-							}
-#endif
+							ClientApi::BreakParty();
+							Worker.Play(ServerInfo.VecCharacter[0]);
+
+							LEAVE_LOG(nullptr);
 						}
-						catch (MalrangiException & ae)
+						catch (BossException & e)
 						{
-							LOG_TREE(&ae);
+							LEAVE_LOG(&e);
 							ClientApi::RemoveAllIngameWindows();
 						}
 
@@ -283,40 +201,107 @@ main(
 						{
 							ClientApi::ExitGame();
 						}
-						catch (MalrangiException & ce)
+						catch (ClientApi::GameExitException)
 						{
-							LOG_TREE(&ce);
-							IsIngameExceptional = true;
-
-							break;
+							ThrowClientLowestException();
 						}
+#elif defined(BUILD_ZACUMRAID) || defined(BUILD_CALC)
+						bool IsFirstRoutine = true;
+						for each (auto & CharacterInfo in ServerInfo.VecCharacter)
+						{
+							Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName + "/" + CharacterInfo.CharacterType;
+							try
+							{
+								ClientApi::EnterGame(MapleIdInfo);
+							}
+							catch (ClientApi::GameEntryException)
+							{
+								ThrowClientLowestException();
+							}
 
-						KeybdEvent(VK_RIGHT);
-					}
+							try
+							{
+#ifdef BUILD_ZACUMRAID
+								ClientApi::MakeParty();
+								if (IsFirstRoutine)
+								{
+									IsFirstRoutine = false;
+									Worker.PlayFromUrus(CharacterInfo);
+								}
+								else
+								{
+									Worker.PlayFromZacum(CharacterInfo);
+								}
+#else
+								if (IsFirstRoutine)
+								{
+									IsFirstRoutine = false;
+									Worker.PlayFromUrus(MapleIdInfo);
+								}
+								else
+								{
+									Worker.PlayFromZacum(MapleIdInfo);
+								}
+#endif
+							}
+							catch (BossException & e)
+							{
+								LEAVE_LOG(&e);
+								ClientApi::RemoveAllIngameWindows();
+							}
+
+							try
+							{
+								ClientApi::ExitGame();
+							}
+							catch (ClientApi::GameExitException)
+							{
+								ThrowClientLowestException();
+							}
+
+							KeybdEvent(VK_RIGHT);
+						}
 #endif
 
-					/***************************************************************************************************************
-					* E3 -> E2
-					***************************************************************************************************************/
-					try
-					{
-						ClientApi::ExitCharacterWindow();
+						try
+						{
+							ClientApi::ExitCharacterWindow();
+						}
+						catch (ClientApi::CharacterWindowExitException)
+						{
+							ThrowClientLowestException();
+						}
 					}
-					catch (MalrangiException & ce)
+					catch (ClientApi::ServerDisconnectedException & e)
 					{
-						LOG_TREE(&ce);
-						IsExgameExceptional = true;
+						LEAVE_LOG(&e);
+						LogoutState = SERVER_DISCONNECTION;
 
-						break;
+						goto __LOGOUT;
+					}
+					catch (ClientApi::ClientAbnormalTerminationException & e)
+					{
+						LEAVE_LOG(&e);
+						LogoutState = ABNORMAL_CLIENT_TERMINATION;
+
+						goto __LOGOUT;
+					}
+					catch (MalrangiException & e)
+					{
+						LEAVE_LOG(&e);
+						LogoutState = UNHANDLED;
+
+						goto __LOGOUT;
 					}
 				}
 
 			/***************************************************************************************************************
 			* E2 -> E1 / E0
 			***************************************************************************************************************/
-			LOGOUT:
-				if (!IsIngameExceptional && !IsExgameExceptional)
+			__LOGOUT:
+				switch(LogoutState)
 				{
+				case SUCCESS:
 					if (SeqMapleId % 4 == 3)
 					{
 						ClientApi::TerminateClient();
@@ -327,39 +312,39 @@ main(
 						{
 							ClientApi::Logout();
 						}
-						catch (MalrangiException & ce)
+						catch (MalrangiException & e)
 						{
-							LOG_TREE(&ce);
-							IsExgameExceptional = true;
+							LEAVE_LOG(&e);
+							LogoutState = UNHANDLED;
 
-							goto LOGOUT;
+							goto __LOGOUT;
 						}
 					}
-				}
-				else
-				{
-					ClientApi::TerminateClient();
-				}
-				++SeqMapleId;
-				continue;
+					break;
 
-			LOGOUT_DISCONNECTED:
-				if (SeqMapleId % 4 == 3)
-				{
+				case SERVER_DISCONNECTION:
+					if (SeqMapleId % 4 == 3)
+					{
+						ClientApi::TerminateClient();
+					}
+					else
+					{
+						KeybdEvent(VK_RETURN);
+					}
+					break;
+
+				case ABNORMAL_CLIENT_TERMINATION:
+				case UNHANDLED:
 					ClientApi::TerminateClient();
+					break;
 				}
-				else
-				{
-					KeybdEvent(VK_RETURN);
-				}
+
 				++SeqMapleId;
 			}
 		}
 
-		WriteLog(LOG_LEVEL::INFO, 
-			"All routines have been successfully complete. (Success : %d, Failure : %d)\n", 
-			Worker.SuccessCount, 
-			Worker.FailureCount);
+		WriteLog(LOG_LEVEL::INFO,
+			"All routines have been successfully complete. (Success : %d, Failure : %d)\n");
 
 	EXIT_ROUTINE:
 		UserInfo.Destroy();

@@ -159,9 +159,10 @@
     <ClCompile Include="entry.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="boss.h" />
+    <ClInclude Include="bsp.h" />
     <ClInclude Include="bridge.h" />
     <ClInclude Include="calc.h" />
+    <ClInclude Include="crlp.h" />
     <ClInclude Include="field.h" />
     <ClInclude Include="ipmanage.h" />
     <ClInclude Include="malrangi.h" />
@@ -174,6 +175,10 @@
     <ClInclude Include="report.h" />
     <ClInclude Include="tesseract-binary-wrap.h" />
     <ClInclude Include="winevent.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\conf\ip.conf" />
+    <None Include="..\conf\user.conf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
