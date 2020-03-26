@@ -28,14 +28,11 @@
     <Filter Include="Header Files\application\client">
       <UniqueIdentifier>{ff75f9d6-f3c7-4802-a675-3cbc60ffbe3a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\application\console">
-      <UniqueIdentifier>{6490278e-f3d0-4c09-bfee-cac06b72f709}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\application\external">
       <UniqueIdentifier>{aced61f3-37a3-42fa-9a69-a31149f8ff5a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\application\client\boss">
-      <UniqueIdentifier>{21514a7e-0ae3-4cc8-b2c4-95ab78128270}</UniqueIdentifier>
+    <Filter Include="Header Files\application\log">
+      <UniqueIdentifier>{6490278e-f3d0-4c09-bfee-cac06b72f709}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -54,14 +51,8 @@
     <ClInclude Include="winevent.h">
       <Filter>Header Files\util%28wrap%29</Filter>
     </ClInclude>
-    <ClInclude Include="field.h">
-      <Filter>Header Files\application\client</Filter>
-    </ClInclude>
     <ClInclude Include="client.h">
       <Filter>Header Files\api</Filter>
-    </ClInclude>
-    <ClInclude Include="log.h">
-      <Filter>Header Files\application\console</Filter>
     </ClInclude>
     <ClInclude Include="report.h">
       <Filter>Header Files\application\external</Filter>
@@ -72,20 +63,23 @@
     <ClInclude Include="malrangi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="bridge.h">
-      <Filter>Header Files\application\client\boss</Filter>
-    </ClInclude>
     <ClInclude Include="calc.h">
-      <Filter>Header Files\application\client\boss</Filter>
+      <Filter>Header Files\application\client</Filter>
+    </ClInclude>
+    <ClInclude Include="circular_play.h">
+      <Filter>Header Files\application\client</Filter>
     </ClInclude>
     <ClInclude Include="raid.h">
-      <Filter>Header Files\application\client\boss</Filter>
+      <Filter>Header Files\application\client</Filter>
     </ClInclude>
-    <ClInclude Include="bsp.h">
-      <Filter>Header Files\application\client\boss</Filter>
+    <ClInclude Include="map.h">
+      <Filter>Header Files\application\client</Filter>
     </ClInclude>
-    <ClInclude Include="crlp.h">
-      <Filter>Header Files\application\client\boss</Filter>
+    <ClInclude Include="boss.h">
+      <Filter>Header Files\application\client</Filter>
+    </ClInclude>
+    <ClInclude Include="log.h">
+      <Filter>Header Files\application\log</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -100,5 +94,9 @@
     <None Include="..\conf\user.conf">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\iprenewal.js">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

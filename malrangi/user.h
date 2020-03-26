@@ -20,10 +20,13 @@ public:
 				string ServerName;
 				struct _CHARACTER_INFO
 				{
-					string CharacterType;
-					BYTE Skill;
-					BYTE RequiredBuf1;
-					BYTE RequiredBuf2;
+					string ClassName;
+					enum
+					{
+						ZACUM,
+						ZACUM_ROOTABYSS
+					};
+					int Type;
 				};
 				vector<struct _CHARACTER_INFO> VecCharacter;
 			};
@@ -38,13 +41,12 @@ public:
 		BYTE Inventory;
 		BYTE Potion;
 		BYTE Party;
+		BYTE Attack;
 	}KEYSET_INFO;
 	typedef NEXONAC_INFO::_MAPLEID_INFO MAPLEID_INFO;
 	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO SERVER_INFO;
 	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO::_CHARACTER_INFO CHARACTER_INFO;
-	
 	vector<NEXONAC_INFO> VecNexonAccount;
-	map<string, CHARACTER_INFO> MapCharacterInfo;
 	KEYSET_INFO VirtualKeyset;
 
 private:
@@ -65,67 +67,25 @@ private:
 				istringstream Stream(Line);
 				string SubLine;
 
-				if (!strncmp("var", Line, 3))
+				if (!strncmp("\t\t\t", Line, 3))
 				{
-					string Lvalue = string(strchr(Line, ' ') + 1, strchr(Line, '=') - 1);
-					char* pdq = strchr(Line, '\"');
-					string Rvalue = string(pdq + 1, strchr(pdq + 1, '\"'));
-				
-					Stream = istringstream(Rvalue);
 					CHARACTER_INFO CharacterInfo;
-					CharacterInfo.CharacterType = Lvalue;
 
 					Stream >> SubLine;
-					CharacterInfo.Skill = SubLine[0];
+					if (SubLine[SubLine.length() - 1] == '*')
+					{
+						CharacterInfo.ClassName = SubLine.substr(0, SubLine.length() - 1);
+						CharacterInfo.Type = CHARACTER_INFO::ZACUM_ROOTABYSS;
+					}
+					else
+					{
+						CharacterInfo.ClassName = SubLine;
+						CharacterInfo.Type = CHARACTER_INFO::ZACUM;
+					}
 
-					Stream >> SubLine;
-					CharacterInfo.RequiredBuf1 = (SubLine == "null" ? NULL : SubLine[0]);
-
-					Stream >> SubLine;
-					CharacterInfo.RequiredBuf2 = (SubLine == "null" ? NULL : SubLine[0]);
-					
-					MapCharacterInfo[Lvalue] = CharacterInfo;
-				}
-				else if (!strncmp("vk.", Line, 3))
-				{
-					auto GetVirtualKey = [](string Key) -> BYTE
-					{
-						if ("space" == Key) return VK_SPACE;
-						else if ("control" == Key) return VK_CONTROL;
-						else if ("shift" == Key) return VK_SHIFT;
-						else if ("[" == Key) return VK_OEM_4;
-						else return Key[0];
-					};
-					string Lvalue = string(Line + 3, strchr(Line, '=') - 1);
-					string Rvalue = string(strchr(Line, '=') + 2);
-
-					if ("inv" == Lvalue)
-					{
-						VirtualKeyset.Inventory = GetVirtualKey(Rvalue);
-					}
-					else if ("party" == Lvalue)
-					{
-						VirtualKeyset.Party = GetVirtualKey(Rvalue);
-					}
-					else if ("pick" == Lvalue)
-					{
-						VirtualKeyset.Picking = GetVirtualKey(Rvalue);
-					}
-					else if ("potion" == Lvalue)
-					{
-						VirtualKeyset.Potion = GetVirtualKey(Rvalue);
-					}
-					else if ("tech" == Lvalue)
-					{
-						VirtualKeyset.SpecialTechnology = GetVirtualKey(Rvalue);
-					}
-				}
-				else if (!strncmp("\t\t\t", Line, 3))
-				{
-					Stream >> SubLine;
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].
 						VecServer[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].VecServer.size() - 1].
-						VecCharacter.push_back(MapCharacterInfo[SubLine]);
+						VecCharacter.push_back(CharacterInfo);
 				}
 				else if (!strncmp("\t\t", Line, 2))
 				{
@@ -163,6 +123,13 @@ private:
 				}
 			}
 			File.close();
+
+			VirtualKeyset.Inventory = 'I';
+			VirtualKeyset.Party = VK_OEM_4;
+			VirtualKeyset.Picking = VK_SPACE;
+			VirtualKeyset.Potion = VK_CONTROL;
+			VirtualKeyset.SpecialTechnology = 'Y';
+			VirtualKeyset.Attack = VK_OEM_PERIOD;
 		}
 	}
 	~USERCONF()
@@ -188,7 +155,7 @@ public:
 			Instance = nullptr;
 		}
 	}
-	private:
-		static USERCONF* Instance;
+private:
+	static USERCONF* Instance;
 };
 USERCONF* USERCONF::Instance = nullptr;

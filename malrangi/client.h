@@ -1,6 +1,6 @@
 /****************************************************************************
 *
-* exercise.h -- Macro Applications Optimized to Maple
+* client.h -- Application Interface for Client
 *
 ****************************************************************************/
 
@@ -9,22 +9,20 @@
 #include "cvwrap.h"
 #include "user.h"
 
-
 class ClientApi
 {
 public:
 #define HWND_MAPLESTORY (::FindWindow(NULL, TEXT("MapleStory")))
+#define SourceImageClient1				(Capture(ClientApi::RECT_CLIENT1))
+#define SourceImageClient4				(Capture(ClientApi::RECT_CLIENT4))
+#define SourceImageClient4Colored		(Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR))
 	static void SET_CLIENT_STDPOS(void);
-	static CONST RECT RECT_CLIENT1;
-	static CONST RECT RECT_CLIENT4;
-	static CONST Mat TARGETIMAGE_E1;
-	static CONST Mat TARGETIMAGE_E2;
-	static CONST Mat TARGETIMAGE_E3;
-	static CONST Mat TARGETIMAGE_I1;
-	static CONST RECT RECT_E1;
-	static CONST RECT RECT_E2;
-	static CONST RECT RECT_E3;
-	static CONST RECT RECT_I1;
+	inline static const RECT RECT_CLIENT1 = { 0, 0, 800, 600 + 26 };
+	inline static const RECT RECT_CLIENT4 = { 0, 0, 1366, 768 + 26 };
+	inline static const Mat TARGETIMAGE_EXTERN1 = Read(TARGET_DIR "window//initial_logo.jpg");
+	inline static const Mat TARGETIMAGE_EXTERN2 = Read(TARGET_DIR "window//world-channel_select.jpg");
+	inline static const Mat TARGETIMAGE_EXTERN3 = Read(TARGET_DIR "window//character_select.jpg");
+	inline static const Mat TARGETIMAGE_INTERN = Read(TARGET_DIR "button//meilege.jpg");
 
 public:
 	class MinimapRecognizer
@@ -59,49 +57,51 @@ public:
 		{
 			Mat Mask;
 
-			try
+			if (InRange(Capture(RectMinimap, IMREAD_COLOR), Scalar(20, 235, 245), Scalar(40, 245, 255), Mask))
 			{
-				Cvw::InRange(Cvw::Capture(RectMinimap, IMREAD_COLOR), Scalar(20, 235, 245), Scalar(40, 245, 255), Mask);
-			}
-			catch (IntegerDivisionByZeroException)
-			{
-				throw;
-			}
-			//Cvw::Show(Mask);
-			for (int y = 0; y < Mask.rows; ++y)
-			{
-				for (int x = 0; x < Mask.cols; ++x)
+				for (int y = 0; y < Mask.rows; ++y)
 				{
-					if (Mask.at<BYTE>(y, x) == 255)
+					for (int x = 0; x < Mask.cols; ++x)
 					{
-						return x;
+						if (Mask.at<BYTE>(y, x) == 255)
+						{
+							return x;
+						}
 					}
 				}
 			}
-			throw CharacterNotFoundException();
+			return -1;
 		};
 		void MoveToRelativeCriteria(
 			int MinimapRelativeCriteria)
 		{
-			int RelativeDistance = WhereAmI() - MinimapRelativeCriteria;
+			int CurrentPosition = WhereAmI();
+			int RelativeDistance = CurrentPosition - MinimapRelativeCriteria;
 
-			if (RelativeDistance < 0)
+			if (CurrentPosition == -1)
 			{
-				KeybdEventDown(VK_RIGHT);
-				while (RelativeDistance <= 0)
-				{
-					RelativeDistance = WhereAmI() - MinimapRelativeCriteria + 2;
-				}
-				KeybdEventUp(VK_RIGHT);
+				throw CharacterNotFoundException();
 			}
-			else if (RelativeDistance > 0)
+			else
 			{
-				KeybdEventDown(VK_LEFT);
-				while (RelativeDistance >= 0)
+				if (RelativeDistance < 0)
 				{
-					RelativeDistance = WhereAmI() - MinimapRelativeCriteria - 2;
+					KeybdEventDown(VK_RIGHT);
+					while (RelativeDistance <= 0)
+					{
+						RelativeDistance = WhereAmI() - MinimapRelativeCriteria + 2;
+					}
+					KeybdEventUp(VK_RIGHT);
 				}
-				KeybdEventUp(VK_LEFT);
+				else if (RelativeDistance > 0)
+				{
+					KeybdEventDown(VK_LEFT);
+					while (RelativeDistance >= 0)
+					{
+						RelativeDistance = WhereAmI() - MinimapRelativeCriteria - 2;
+					}
+					KeybdEventUp(VK_LEFT);
+				}
 			}
 		}
 
@@ -109,9 +109,8 @@ public:
 		RECT RectMinimap;
 	};
 
-
 	/****************************************************************************
-	* High-level Exceptions
+	* Excetpions handled specifically
 	****************************************************************************/
 	class BootFailedException : public MalrangiException
 	{
@@ -135,17 +134,17 @@ public:
 	};
 
 	/****************************************************************************
-	* Low-level Exceptions
+	* Exceptions handled commonly
 	****************************************************************************/
 	static void ThrowLowException(const char* DefaultWhat)
 	{
-		static const Mat TargetImageWindowServerDisconnection = Cvw::Read(TARGET_DIR "window_server-disconnection.jpg");
+		static const Mat TargetImageWindowServerDisconnection = Read(TARGET_DIR "window//server-disconnection.jpg");
 
 		if (HWND_MAPLESTORY == NULL)
 		{
 			throw ClientApi::ClientAbnormalTerminationException();
 		}
-		if (Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), TargetImageWindowServerDisconnection).IsMatched)
+		else if (MatchTemplate(SourceImageClient1, TargetImageWindowServerDisconnection))
 		{
 			throw ClientApi::ServerDisconnectedException();
 		}
@@ -231,38 +230,27 @@ void ClientApi::SET_CLIENT_STDPOS(void)
 	SetWindowPos(
 		HWND_MAPLESTORY,
 		HWND_TOPMOST,
-		-3, -26,
+		-3, 0,
 		0, 0,
 		SWP_NOSIZE);
-	SetCursorPos(0, 0);
+	SetCursorPos(10, 476);
 }
-CONST RECT ClientApi::RECT_CLIENT1 = { 0, 0, 800, 600 };
-CONST RECT ClientApi::RECT_CLIENT4 = { 0, 0, 1366, 768 };
-CONST Mat ClientApi::TARGETIMAGE_E1 = Cvw::Read(TARGET_DIR "initial_logo.jpg");
-CONST Mat ClientApi::TARGETIMAGE_E2 = Cvw::Read(TARGET_DIR "world-channel_select.jpg");
-CONST Mat ClientApi::TARGETIMAGE_E3 = Cvw::Read(TARGET_DIR "character_select.jpg");
-CONST Mat ClientApi::TARGETIMAGE_I1 = Cvw::Read(TARGET_DIR "button_mileage.jpg");
-CONST RECT ClientApi::RECT_E1 = { 700, 0, 850, 100 };
-CONST RECT ClientApi::RECT_E2 = { 30, 0, 190, 50 };
-CONST RECT ClientApi::RECT_E3 = { 0, 0, 200, 70 };
-CONST RECT ClientApi::RECT_I1 = { 0, 280, 100, 500 };
 
 void ClientApi::BootClient(
 	void)
 {
 	ShellExecute(NULL, TEXT("open"), TEXT("C:\\Nexon\\Maple\\MapleStory.exe"), TEXT("GameLaunching"), NULL, SW_SHOW);
-	try
+	if (DoUntilMatchingTemplate(
+		ClientApi::RECT_CLIENT1,
+		ClientApi::TARGETIMAGE_EXTERN1,
+		[](){
+			ClientApi::SET_CLIENT_STDPOS();
+		},
+		seconds(180)))
 	{
-		Cvw::DoUntilMatchingTemplate(
-			ClientApi::RECT_E1,
-			ClientApi::TARGETIMAGE_E1,
-			[]()
-			{
-				ClientApi::SET_CLIENT_STDPOS();
-			},
-			seconds(180));
+		Sleep(0x200);
 	}
-	catch (MatchTimeoutException)
+	else
 	{
 		throw BootFailedException();
 	}
@@ -283,8 +271,9 @@ void ClientApi::Login(
 	CONST USERCONF::NEXONAC_INFO& AccountInfo,
 	CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 {
-	static Mat TargetImageWindowMapleId = Cvw::Read(TARGET_DIR "window_mapleid.jpg");
-	bool IsFailedAgain = false;
+	ClientApi::SET_CLIENT_STDPOS();
+
+	static const Mat TargetImageWindowMapleId = Read(TARGET_DIR "window//mapleid.jpg");
 	auto WriteString = [](const string& s) -> void
 	{
 		for (int i = 0; i < s.length(); i++)
@@ -297,32 +286,22 @@ void ClientApi::Login(
 		}
 	};
 	
-NEXON_LOGIN:
-	ClientApi::SET_CLIENT_STDPOS();
+	MouseEvent({ 334, 282 }, LEFT_CLICK);
+	MouseEvent({ 452, 282 }, LEFT_CLICK);
 	WriteString(AccountInfo.Id);
 	KeybdEvent(VK_TAB);
 	WriteString(AccountInfo.Password);
-	KeybdEvent(VK_RETURN, 0x400);
+	KeybdEvent(VK_RETURN);
+	SetCursorPos(100, 100);
 
-	try
+	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, TargetImageWindowMapleId, seconds(20)))
 	{
-		Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), TargetImageWindowMapleId);
+		Sleep(0x400);
 	}
-	catch (MatchTimeoutException)
+	else
 	{
-		if (!IsFailedAgain)
-		{
-			KeybdEvent(VK_RETURN);
-			MouseEvent( 334, 256, LEFT_CLICK);
-			MouseEvent( 452, 256 , LEFT_CLICK);
-
-			IsFailedAgain = true;
-			goto NEXON_LOGIN;
-		}
 		throw MalrangiException("NexonLoginFailedException");
 	}
-	IsFailedAgain = false;
-
 
 	DWORD SeqId = 0;
 	for each (auto & MapleId in AccountInfo.VecMapleId)
@@ -339,40 +318,41 @@ NEXON_LOGIN:
 	}
 	KeybdEvent(VK_RETURN);
 
-	try
+	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN2, seconds(15)))
 	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, seconds(15));
+		Sleep(0x400);
 	}
-	catch (MatchTimeoutException)
+	else
 	{
 		throw MalrangiException("MapleLoginFailedException");
 	}
-	Sleep(0x400);
 }
 void ClientApi::SelectServer(
 	const USERCONF::SERVER_INFO& ServerInfo,
 	int ChannelNumber)
 {
-	const static string ServerNames[] = { "스카니아", "베라", "루나", "제니스", "크로아", "유니온", "엘리시움", "이노시스", "레드", "오로라", "아케인", "노바" };
-	const static Mat TargetImageWindowServerDelay = Cvw::Read(TARGET_DIR "window_server-delay.jpg");
+	ClientApi::SET_CLIENT_STDPOS();
+
+	static const string ServerNames[] = { "스카니아", "베라", "루나", "제니스", "크로아", "유니온", "엘리시움", "이노시스", "레드", "오로라", "아케인", "노바" };
+	static const Mat TargetImageWindowServerDelay = Read(TARGET_DIR "window//server-delay.jpg");
 
 	for (int i = 0; i < sizeof(ServerNames) / sizeof(string); i++)
 	{
 		if (ServerNames[i] == ServerInfo.ServerName)
 		{
-			MouseEvent(745, 68 + i * 32, LEFT_CLICK);
+			MouseEvent({ 745, 32 + 94 + i * 32 }, LEFT_CLICK);
 			break;
 		}
 	}
-	MouseEvent(265 + 70 * (ChannelNumber % 5), 255 + 30 * (ChannelNumber / 5), DLEFT_CLICK);
+	MouseEvent({ 291 + 70 * (ChannelNumber % 5), 255 + 30 * (ChannelNumber / 5) }, DLEFT_CLICK);
 	
-	try
+	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN3, seconds(30)))
 	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E3, ClientApi::TARGETIMAGE_E3, NONWORK, seconds(30));
+		Sleep(0x400);
 	}
-	catch (MatchTimeoutException)
+	else
 	{
-		if (Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), TargetImageWindowServerDelay).IsMatched)
+		if (MatchTemplate(SourceImageClient1, TargetImageWindowServerDelay))
 		{
 			throw ServerDelayException();
 		}
@@ -381,12 +361,13 @@ void ClientApi::SelectServer(
 			ThrowLowException(__FEWHAT__);
 		}
 	}
-	Sleep(0x400);
 }
 void ClientApi::UnlockSecondPassword(
-	const string& lpPw)
+	const string& Password)
 {
-	for each (auto Character in lpPw)
+	ClientApi::SET_CLIENT_STDPOS();
+
+	for each (auto Character in Password)
 	{
 		switch (Character)
 		{
@@ -400,14 +381,15 @@ void ClientApi::UnlockSecondPassword(
 		case '8':
 		case '9':
 		case '0':
-			SetCursorPos(0, 0);
-			Cvw::ClickMatchedTemplate(
-				Cvw::Capture(ClientApi::RECT_CLIENT4),
-				Cvw::Read(string(TARGET_DIR "button_") + Character + ".jpg"),
-				LEFT_CLICK,
-				{ 5, 5 });
+		{
+			VALLOC MatchInfo;
+			if (MatchTemplate(SourceImageClient4, Read(string(TARGET_DIR "button//2pwd//") + Character + ".jpg"), &MatchInfo))
+			{
+				MouseEvent(MatchInfo.Location + Point{5, 5}, LEFT_CLICK);
+			}
+				
 			break;
-
+		}
 		case '!':
 			KeybdEventWithSubKey('1', VK_SHIFT, 300); break;
 		case '@':
@@ -436,32 +418,32 @@ void ClientApi::EnterGame(
 	CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 {
 	KeybdEvent(VK_RETURN, 0x400);
-	if(Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT1), Cvw::Read(TARGET_DIR "button_1.jpg")).IsMatched)
+
+	if(MatchTemplate(Capture(ClientApi::RECT_CLIENT1), Read(TARGET_DIR "button//2pwd//1.jpg")))
 	{
 		ClientApi::UnlockSecondPassword(MapleIdInfo.SecondPassword);
 	}
 
-	try
+	if (DoUntilMatchingTemplate(
+		ClientApi::RECT_CLIENT4,
+		ClientApi::TARGETIMAGE_INTERN,
+		[]()
+		{
+			ClientApi::SET_CLIENT_STDPOS();
+		},
+		seconds(150)))
 	{
-		Cvw::DoUntilMatchingTemplate(
-			ClientApi::RECT_I1,
-			ClientApi::TARGETIMAGE_I1,
-			[]()
-			{
-				ClientApi::SET_CLIENT_STDPOS();
-			},
-			seconds(180));
+		Sleep(0x400);
+
+		// Remove tooltips
+		MouseEvent({ 902, 363 }, LEFT_CLICK);
+		KeybdEvent(VK_ESCAPE);
+		KeybdEvent(VK_ESCAPE);
 	}
-	catch (MatchTimeoutException)
+	else
 	{
 		ThrowLowException(__FEWHAT__);
 	}
-	Sleep(0x400);
-	
-	// Remove tooltips
-	MouseEvent( 902, 337 , LEFT_CLICK);
-	KeybdEvent(VK_ESCAPE);
-	KeybdEvent(VK_ESCAPE);
 }
 void ClientApi::SelectCharacter(
 	unsigned int Seq)
@@ -478,6 +460,11 @@ void ClientApi::SelectCharacter(
 void ClientApi::RemoveAllIngameWindows(
 	void)
 {
+	KeybdEventUp(VK_LEFT);
+	KeybdEventUp(VK_RIGHT);
+	KeybdEventUp(VK_UP);
+	KeybdEventUp(VK_DOWN);
+
 	for (int i = 0; i < 4; i++)
 	{
 		KeybdEvent(VK_RETURN);
@@ -486,7 +473,7 @@ void ClientApi::RemoveAllIngameWindows(
 	{
 		KeybdEvent(VK_ESCAPE);
 	}
-	MouseEvent( 64, 64 , LEFT_CLICK);
+	MouseEvent({ 10, 476 }, LEFT_CLICK);
 }
 void ClientApi::ExitGame(
 	void)
@@ -496,63 +483,60 @@ void ClientApi::ExitGame(
 	KeybdEvent(VK_RETURN);
 	KeybdEvent(VK_RETURN);
 
-	try
+	if (DoUntilMatchingTemplate(
+		ClientApi::RECT_CLIENT1,
+		ClientApi::TARGETIMAGE_EXTERN3,
+		[]()
+		{
+			ClientApi::SET_CLIENT_STDPOS();
+		},
+		seconds(30)))
 	{
-		Cvw::DoUntilMatchingTemplate(
-			ClientApi::RECT_E3,
-			ClientApi::TARGETIMAGE_E3,
-			[]()
-			{
-				ClientApi::SET_CLIENT_STDPOS();
-			},
-			seconds(30));
+		Sleep(0x400);
 	}
-	catch (MatchTimeoutException)
+	else
 	{
 		ThrowLowException(__FEWHAT__);
 	}
-	Sleep(0x400);
 }
 void ClientApi::Logout(
 	void)
 {
 	KeybdEvent(VK_ESCAPE);
 	KeybdEvent(VK_RETURN);
-	try
+	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN1, seconds(30)))
 	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E1, ClientApi::TARGETIMAGE_E1, NONWORK, seconds(30));
+		Sleep(0x400);
 	}
-	catch (MatchTimeoutException)
+	else
 	{
 		ThrowLowException(__FEWHAT__);
 	}
-	Sleep(0x400);
 }
 void ClientApi::ExitCharacterWindow(void)
 {
 	KeybdEvent(VK_ESCAPE);
-	try
+	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN2, seconds(30)))
 	{
-		Cvw::DoUntilMatchingTemplate(ClientApi::RECT_E2, ClientApi::TARGETIMAGE_E2, NONWORK, seconds(30));
+		Sleep(0x400);
 	}
-	catch (MatchTimeoutException)
+	else
 	{
 		ThrowLowException(__FEWHAT__);
 	}
-	
 }
 void ClientApi::MakeParty(
 	void)
 {
-	static const array<Mat, 2> ArrTargetImage = { Cvw::Read(TARGET_DIR "button_make.jpg"), Cvw::Read(TARGET_DIR "button_break.jpg") };
+	static const array<Mat, 2> ArrTargetImage = { Read(TARGET_DIR "button//make.jpg"), Read(TARGET_DIR "button//break.jpg") };
 
 	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
 	ClientApi::SET_CLIENT_STDPOS();
 
-	auto TemplateInfo = Cvw::GetHighestMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), ArrTargetImage);
-	if (0 == TemplateInfo.first)
+	const auto [Seq, Value, Location] = GetHighestMatchedTemplate(Capture(ClientApi::RECT_CLIENT4), ArrTargetImage);
+	if (0 == Seq)
 	{
-		MouseEvent(TemplateInfo.second.Location.x, TemplateInfo.second.Location.y, LEFT_CLICK);
+		MouseEvent(Location, LEFT_CLICK);
 		KeybdEvent(VK_RETURN);
 	}
 	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
@@ -560,45 +544,38 @@ void ClientApi::MakeParty(
 void ClientApi::BreakParty(
 	void)
 {
-	static const array<Mat, 2> ArrTargetImage = { Cvw::Read(TARGET_DIR "button_make.jpg"), Cvw::Read(TARGET_DIR "button_break.jpg") };
+	static const array<Mat, 2> ArrTargetImage = { Read(TARGET_DIR "button//make.jpg"), Read(TARGET_DIR "button//break.jpg") };
 
 	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
 	ClientApi::SET_CLIENT_STDPOS();
 
-	auto TemplateInfo = Cvw::GetHighestMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), ArrTargetImage);
-	if (1 == TemplateInfo.first)
+	const auto [Seq, Value, Location] = GetHighestMatchedTemplate(Capture(ClientApi::RECT_CLIENT4), ArrTargetImage);
+	if (1 == Seq)
 	{
-		MouseEvent(TemplateInfo.second.Location.x, TemplateInfo.second.Location.y, LEFT_CLICK);
+		MouseEvent(Location, LEFT_CLICK);
 	}
 	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
 }
 void ClientApi::MoveServer(
 	bool IsForward)
 {
-	static const Mat TargetImage = Cvw::Read(TARGET_DIR "button_channel-change.jpg");
-	bool IsFailedAgain = false;
+	static const Mat TargetImage = Read(TARGET_DIR "button//channel-change.jpg");
 
-	OPEN:
 	KeybdEvent(VK_ESCAPE, 0x200);
 	KeybdEvent(VK_RETURN, 0x400);
-	try
-	{
-		Cvw::MatchTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImage);
-	}
-	catch (MatchTimeoutException)
-	{
-		if (!IsFailedAgain)
-		{
-			ClientApi::RemoveAllIngameWindows();
 
-			IsFailedAgain = true;
-			goto OPEN;
-		}
+	if (WaitUntilMatchingTemplate(
+		ClientApi::RECT_CLIENT4,
+		TargetImage,
+		seconds(10)))
+	{
+		KeybdEvent(IsForward ? VK_RIGHT : VK_LEFT, 0x200);
+		KeybdEvent(VK_RETURN, 0x400);
+	}
+	else
+	{
 		ThrowLowException(__FEWHAT__);
 	}
-
-	KeybdEvent(IsForward ? VK_RIGHT : VK_LEFT, 0x200);
-	KeybdEvent(VK_RETURN, 0x400);
 }
 void ClientApi::Jump(
 	JUMP_T JumpType,

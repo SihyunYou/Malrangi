@@ -1,10 +1,7 @@
 #pragma once
-#include <windows.h>
-#include <ctime>
-#include <mutex>
-using namespace std;
+#include "malrangi.h"
 
-enum CONSOLE_COLOR
+enum
 {
 	BLACK,
 	BLUE,
@@ -32,17 +29,20 @@ enum LOG_LEVEL
 	FAILURE = LIGHT_RED
 };
 
-mutex MutexLocker;
-INT NumberOfLine;
-LPCSTR lpFileName;
+
 #define __FILENAME__		(strrchr(__FILE__,'\\')+1)
 #define WriteLog(_lv, _fm, ...)	{																									\
 											MutexLocker.lock();																			\
 											NumberOfLine = __LINE__;															\
-											lpFileName = __FILENAME__;															\
+											FileName = __FILENAME__;															\
 											VWriteLog(_lv, _fm, __VA_ARGS__);												\
 											MutexLocker.unlock();																		\
 										}
+INT NumberOfLine;
+LPCSTR FileName;
+mutex MutexLocker;
+ofstream LogFile{ SNAP_DIR "log.txt", ios::out || ios::trunc };
+
 void VWriteLog(LOG_LEVEL LogLevel, LPCSTR lpFormat, ...)
 {
 	auto GetCurrentDateTimeString = [](void) -> string
@@ -68,28 +68,29 @@ void VWriteLog(LOG_LEVEL LogLevel, LPCSTR lpFormat, ...)
 	};
 #define SetConsolePosition(_x, _y)	SetConsoleCursorPosition(hStdOutput, {_x, _y})
 
-	SetConsoleTextColor(2);
-	cout << GetCurrentDateTimeString() << ", " << NumberOfLine << " [" << lpFileName << "] ";
-
-	va_list Args;
-	va_start(Args, lpFormat);
+	SetConsoleTextColor(GREEN);
+	string LogContent = GetCurrentDateTimeString() + ", " + to_string(NumberOfLine) + " [" + FileName + "] ";
 
 	SetConsoleTextColor(LogLevel);
 	switch (LogLevel)
 	{
 	case INFO:
-		cout << "INFO: ";
-		break;
-
+		LogContent += "INFO: "; break;
 	case WARNING:
-		cout << "WARNING: ";
-		break;
-
+		LogContent += "WARNING: "; break;
 	case CRITICAL:
-		cout << "CRITICAL: ";
-		break;
+		LogContent += "CRITICAL: "; break;
 	}
-	vprintf(lpFormat, Args);
 
+	va_list Args;
+	char Buffer[0x100];
+
+	va_start(Args, lpFormat);
+	vsprintf(Buffer, lpFormat, Args);
 	va_end(Args);
+
+	LogContent += Buffer;
+
+	LogFile << LogContent;
+	cout << LogContent;
 }

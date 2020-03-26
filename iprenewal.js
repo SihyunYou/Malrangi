@@ -17,6 +17,11 @@ objIE.navigate("http://192.168.0.1/sess-bin/timepro.cgi?tmenu=netconf&smenu=wans
 while(objIE.busy);
 while(objIE.Document.readyState != "complete");
 
+objIE.document.getElementsByName('hw_dynamic1')[0].value = 48;
+objIE.document.getElementsByName('hw_dynamic2')[0].value = 45;
+objIE.document.getElementsByName('hw_dynamic3')[0].value = 20;
+objIE.document.getElementsByName('hw_dynamic4')[0].value = 81;
+objIE.document.getElementsByName('hw_dynamic5')[0].value = 37;
 objIE.document.getElementsByName('hw_dynamic6')[0].value = WScript.arguments(0);
 objIE.document.getElementById('appbtn').click();
 

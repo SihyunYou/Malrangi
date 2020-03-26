@@ -1,11 +1,14 @@
 #pragma once
 #include <Windows.h>
+#include <ctime>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <exception>
 #include <initializer_list>
+#include <thread>
+#include <mutex>
 using namespace std;
 
 #include <chrono>
@@ -17,7 +20,7 @@ using namespace chrono;
 using namespace cv;
 
 #define TARGET_DIR				"target//"
-#define SNAP_DIR					"snap//"
+#define SNAP_DIR					"log//"
 #define CONF_DIR					"conf//"
 #define TMP_DIR					"tmp//"
 #define USERCONF_FILENAME	"user.conf"

@@ -15,27 +15,26 @@ constexpr DWORD INTERVAL = 750;
 VOID
 WINAPI
 MouseEvent(
-	_In_ DWORD dx,
-	_In_ DWORD dy,
+	_In_ Point Location,
 	_In_ CHAR chFlag,
 	_In_ DWORD dwMilliseconds = INTERVAL_MOUSEEVENT)
 {
-	dx = dx * 65535 / GetSystemMetrics(SM_CXSCREEN);
-	dy = dy * 65535 / GetSystemMetrics(SM_CYSCREEN);
+	Location.x = Location.x * 65535 / GetSystemMetrics(SM_CXSCREEN);
+	Location.y = Location.y * 65535 / GetSystemMetrics(SM_CYSCREEN);
 
-	mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, NULL);
+	mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, Location.x, Location.y, 0, NULL);
 	switch (chFlag)
 	{
 	case RIGHT_CLICK:
-		mouse_event(MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, NULL);
-		mouse_event(MOUSEEVENTF_RIGHTUP | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, NULL);
+		mouse_event(MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_ABSOLUTE, Location.x, Location.y, 0, NULL);
+		mouse_event(MOUSEEVENTF_RIGHTUP | MOUSEEVENTF_ABSOLUTE, Location.x, Location.y, 0, NULL);
 		break;
 	case LEFT_CLICK:
 	case DLEFT_CLICK:
 		for (int i = 0; i < chFlag; i++)
 		{
-			mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, NULL);
-			mouse_event(MOUSEEVENTF_LEFTUP | MOUSEEVENTF_ABSOLUTE, dx, dy, 0, NULL);
+			mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_ABSOLUTE, Location.x, Location.y, 0, NULL);
+			mouse_event(MOUSEEVENTF_LEFTUP | MOUSEEVENTF_ABSOLUTE, Location.x, Location.y, 0, NULL);
 		}
 		break;
 	}
@@ -75,7 +74,7 @@ KeybdEvent(
 {
 	for each (const auto Key in lVirtualKey)
 	{
-		KeybdEvent(Key);
+		KeybdEvent(Key, dwMilliseconds);
 	}
 }
 VOID

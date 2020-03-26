@@ -1,299 +1,471 @@
 #pragma once
-#include "bsp.h"
-#include "bridge.h"
+#include "boss.h"
 
-class UrusRaid : public BasePlay
+class UrusRaid : protected BossRaid
 {
-public:
+private:
+	VALLOC MatchInfo;
+
+protected:
 	void Play(
-		const USERCONF::CHARACTER_INFO& CharacterInfo)
+		const USERCONF::CHARACTER_INFO& CharacterInfo,
+		int SequenceNumber)
 	{
-		static Mat TargetImageBackgroundUrus(Cvw::Read(TARGET_DIR "background_urus.jpg"));
-		static Mat TargetImageNpcMashur(Cvw::Read(TARGET_DIR "npc_mashur.jpg"));
-		static Mat TargetImageButtonReady(Cvw::Read(TARGET_DIR "button_ready.jpg"));
-		static Mat TargetImageUnitInUrusBattleMap(Cvw::Read(TARGET_DIR "unit_in_urus_battle_map.jpg"));
-		static Mat TargetImageButtonEnter(Cvw::Read(TARGET_DIR "button_enter.jpg"));
+		static const Mat TargetImageButtonReady(Read(TARGET_DIR "button//ready.jpg"));
+		static const Mat TargetImageButtonEnter(Read(TARGET_DIR "button//enter.jpg"));
+		static const Mat TargetImagePicUrus(Read(TARGET_DIR "pic//urus.jpg"));
+		static const Mat TargetImageNpcMashur(Read(TARGET_DIR "npc//mashur.jpg"));
+		const static Mat TargetImageMapU3 = Read(TARGET_DIR "map//u3.jpg");
 
-		for (int sn = 0; sn < 3; sn++)
+		/*** 전투 전 ***/
+		if (0 == SequenceNumber)
 		{
-			bool IsFailedAgain = false;
+			ClientApi::BreakParty();
+		}
+		MouseEvent({ SequenceNumber != 0 ? 1140 : 892, 626 }, LEFT_CLICK);
+		MouseEvent({ 440, 710 }, LEFT_CLICK);
+		MouseEvent({ 487, 771 }, LEFT_CLICK);
+		MouseEvent({ 820, 780 }, LEFT_CLICK);
 
-			/*** 우르스 매칭 준비 ***/
-		BATTLE_ENTRY:
-			MouseEvent(sn != 0 ? 1140 : 892, 600, LEFT_CLICK);
-			MouseEvent(440, 684, LEFT_CLICK);
-			MouseEvent(487, 745, LEFT_CLICK);
-			MouseEvent(820, 754, LEFT_CLICK);
+		if (MatchTemplate(SourceImageClient4, TargetImageButtonReady, &MatchInfo))
+		{
+			MouseEvent(MatchInfo.Location, LEFT_CLICK);
+		}
+		else
+		{
+			throw AppException("ButtonReadyNotFound");
+		}
 
-			try
-			{
-				Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageButtonReady, LEFT_CLICK);
-			}
-			catch (MatchTimeoutException)
-			{
-				if (!IsFailedAgain)
-				{
-					ClientApi::RemoveAllIngameWindows();
-
-					IsFailedAgain = true;
-					goto BATTLE_ENTRY;
-				}
-				throw AppException("ButtonReadyNotFound");
-			}
-			IsFailedAgain = false;
-
-
-			/*** 우르스 매칭 ***/
 #define Operate(d)		KeybdEventContinued(d, 0x40);	\
 							KeybdEvent('E', 0x20);
+		RECT NewRectClient = ClientApi::RECT_CLIENT4;
+		NewRectClient.left += 100;
+		NewRectClient.right -= 700;
+		NewRectClient.bottom -= 500;
 
-			RECT NewRectClient = ClientApi::RECT_CLIENT4;
-			NewRectClient.left += 100;
-			NewRectClient.right -= 700;
-			NewRectClient.bottom -= 500;
-			try
+		if(!DoUntilMatchingTemplate(
+				NewRectClient,
+				TargetImagePicUrus,
+				[]() 
+				{
+					MouseEvent({ 640, 455 }, LEFT_CLICK, 0x200);
+				},
+				seconds(1800),
+				0))
+		{
+			throw AppException("BattleEntryTimeout");
+		}
+
+
+		/*** 전투 중 ***/
+		const auto StartTime = system_clock::now();
+		BYTE CurrentDir, LastDir = NULL;
+		int CountNullOfCurrentDir, CountInitialOperation = 0;
+		NewRectClient = ClientApi::RECT_CLIENT4;
+		NewRectClient.left += 900;
+		NewRectClient.top += 530;
+
+		MouseEvent({ 897, 159 }, LEFT_CLICK, 0);
+		if (DoUntilMatchingTemplate(
+			NewRectClient,
+			TargetImageButtonEnter,
+			[&](void) -> void
 			{
-				Cvw::DoUntilMatchingTemplate(
-					NewRectClient,
-					TargetImageUnitInUrusBattleMap,
-					[](void) -> void
+				if (duration_cast<seconds>(system_clock::now() - StartTime) > seconds(240))
+				{
+					Sleep(0x100);
+					return;
+				}
+
+				int Score = 0;
+				Mat MaskImage;
+				RECT NewRect = ClientApi::RECT_CLIENT4;
+				NewRect.top += 156;
+				NewRect.bottom -= 100;
+
+				InRange(Capture(NewRect, 1), Scalar(242, 30, 195), Scalar(255, 60, 205), MaskImage);
+
+				for (int y = 0; y < MaskImage.rows; ++y)
+				{
+					for (int x = 0; x < MaskImage.cols; ++x)
 					{
-						MouseEvent(640, 429, LEFT_CLICK, 0x200);
-					},
-					seconds(1800),
-						0);
-			}
-			catch (MatchTimeoutException)
-			{
-				throw AppException("BattleEntryTimeoutException");
-			}
-
-
-			/*** 전투 중 ***/
-			MouseEvent(897, 133, LEFT_CLICK, 0);
-
-			const auto StartTime = system_clock::now();
-			BYTE CurrentDir, LastDir = NULL;
-			int CountNullOfCurrentDir, CountInitialOperation = 0;
-			NewRectClient = ClientApi::RECT_CLIENT4;
-			NewRectClient.left += 900;
-			NewRectClient.top += 530;
-
-			try
-			{
-				Cvw::DoUntilMatchingTemplate(
-					NewRectClient,
-					TargetImageButtonEnter,
-					[&](void) -> void
-					{
-						if (duration_cast<seconds>(system_clock::now() - StartTime) > seconds(240))
+						if (MaskImage.at<BYTE>(y, x) == 255)
 						{
-							Sleep(0x100);
-							return;
+							(x < 692) ? --Score : ++Score;
 						}
+					}
+				}
 
-						int Score = 0;
-						Mat MaskImage;
-						RECT NewRect = ClientApi::RECT_CLIENT4;
-						NewRect.top += 156;
-						NewRect.bottom -= 100;
+				if (Score >= -2 && Score <= 2)
+				{
+					CurrentDir = NULL;
+				}
+				else
+				{
+					LastDir = CurrentDir = (Score < 0) ? VK_LEFT : VK_RIGHT;
+				}
 
-						try
-						{
-							Cvw::InRange(Cvw::Capture(NewRect, 1), Scalar(242, 30, 195), Scalar(255, 60, 205), MaskImage);
-						}
-						catch (IntegerDivisionByZeroException)
-						{
-							throw;
-						}
+				if (CountNullOfCurrentDir > 120)
+				{
+					LastDir = (LastDir == VK_LEFT) ? VK_RIGHT : VK_LEFT;
+					CountNullOfCurrentDir = 0;
+				}
 
-						for (int y = 0; y < MaskImage.rows; ++y)
-						{
-							for (int x = 0; x < MaskImage.cols; ++x)
-							{
-								if (MaskImage.at<BYTE>(y, x) == 255)
-								{
-									(x < 692) ? --Score : ++Score;
-								}
-							}
-						}
-
-						if (Score >= -2 && Score <= 2) CurrentDir = NULL;
-						else LastDir = CurrentDir = (Score < 0) ? VK_LEFT : VK_RIGHT;
-
-						if (CountNullOfCurrentDir > 160 && CurrentDir == NULL)
-						{
-							LastDir = (LastDir == VK_LEFT) ? VK_RIGHT : VK_LEFT;
-							CountNullOfCurrentDir = 0;
-						}
-
-
-						if ((NULL == LastDir && NULL == CurrentDir) || CountInitialOperation < 24)
-						{
-							Operate(VK_LEFT);
-							Operate(VK_RIGHT);
-							++CountInitialOperation;
-						}
-						else if (NULL != LastDir && NULL == CurrentDir)
-						{
-							Operate(LastDir);
-							++CountNullOfCurrentDir;
-						}
-						else // NULL != CurrentDir
-						{
-							Operate(CurrentDir);
-							CountNullOfCurrentDir = 0;
-						}
-					},
-					seconds(1000),
-						0);
-			}
-			catch (MatchTimeoutException)
-			{
-				throw AppException("BattleTimeoutException");
-			}
-
-			Sleep(1600);
-			
-			static int SeqUrus = 0;
-			Cvw::Write(SNAP_DIR + INT_TO_PNG(++SeqUrus), Cvw::Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR));
+				if ((NULL == LastDir && NULL == CurrentDir) || CountInitialOperation < 24)
+				{
+					Operate(VK_LEFT);
+					Operate(VK_RIGHT);
+					++CountInitialOperation;
+				}
+				else if (NULL != LastDir && NULL == CurrentDir)
+				{
+					Operate(LastDir);
+					++CountNullOfCurrentDir;
+				}
+				else // NULL != CurrentDir
+				{
+					Operate(CurrentDir);
+					CountNullOfCurrentDir = 0;
+				}
+			},
+			seconds(1000),
+				0))
+		{
+			Sleep(2000);
+		}
+		else
+		{
+			throw AppException("BattleTimeout");
+		}
 #undef Operate
 
-			/*** 퇴장 ***/
-			MouseEvent(1259, 668, LEFT_CLICK);
-			try
-			{
-				Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageBackgroundUrus, NONWORK, seconds(45), 0x100, 0.99);
-			}
-			catch (MatchTimeoutException)
-			{
-				throw AppException("UrusExitException");
-			}
-			Sleep(0x400);
 
-			if (2 > sn)
+		/*** 전투 후 ***/
+		Write(SNAP_DIR "urus-raid//" + to_string(SeqSuccess) + "_" + to_string(SequenceNumber) + ".jpg", 
+			SourceImageClient4Colored);
+		MouseEvent({ 1259, 694 }, LEFT_CLICK);
+
+		if (WaitUntilMatchingTemplate(
+			ClientApi::RECT_CLIENT4,
+			TargetImageMapU3,
+			seconds(60)))
+		{
+			Sleep(1000);
+		}
+		else
+		{
+			throw AppException("ExitToU3Failed");
+		}
+
+		if (SequenceNumber < 2)
+		{
+			KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 4000);
+			if(WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMashur, seconds(40)))
 			{
-				KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 4000);
-				try
-				{
-					Cvw::DoUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMashur, NONWORK, seconds(30));
-				}
-				catch (MatchTimeoutException)
-				{
-					throw AppException("NpcMashurNotFound");
-				}
-				Sleep(0x400);
+				Sleep(1000);
+			}
+			else
+			{
+				throw AppException("NpcMashurNotFound");
 			}
 		}
 	}
 };
 
-class ZacumRaid : public BasePlay
+class ZacumRaid : protected BossRaid
 {
-public:
-	void PlayFromZacum(
-		const USERCONF::CHARACTER_INFO& CharacterInfo)
-	{
-		MoveFromZ2ToZ1();
-		MoveFromZ1ToZ2(1);
-		MoveFromZ2ToZ3();
-		Play(CharacterInfo);
-	}
-	void PlayFromUrus(
-		const USERCONF::CHARACTER_INFO& CharacterInfo)
-	{
-		MoveFromUrusToElnas();
-		MoveFromElnasToOffice();
-		MoveFromOfficeToZ1();
-		MoveFromZ1ToZ2(1);
-		MoveFromZ2ToZ3();
-		Play(CharacterInfo);
-		MoveFromZ3ToZ2();
-		MoveFromZ2ToZ1();
-		MoveFromZ1ToElnas();
-		MoveFromElnasToUrus();
-	}
-
 private:
+	VALLOC MatchInfo;
+
+protected:
 	void Play(
 		const USERCONF::CHARACTER_INFO& CharacterInfo)
 	{
-		static const Mat TargetImageEyeOfFire = Cvw::Read(TARGET_DIR "eye_of_fire.jpg");
-		static const Mat TargetImageInventoryBar = Cvw::Read(TARGET_DIR "inventory_bar.jpg");
-		static const Mat TargetImageButtonExpandingInventory = Cvw::Read(TARGET_DIR "button_expanding_inventory.jpg");
-		static const Mat TargetImageCrystalOfBoss = Cvw::Read(TARGET_DIR "crystal_of_boss.jpg");
-		
-		/*** 자쿰의 제단 입장 ***/
-		KeybdEventContinued(VK_RIGHT, 1000);
-		if (CharacterInfo.RequiredBuf1 != NULL)
+		static const Mat TargetImageEyeOfFire = Read(TARGET_DIR "item//eye_of_fire1.jpg");
+		static const Mat TargetImageInventoryBar = Read(TARGET_DIR "window//inventory_bar.jpg");
+		static const Mat TargetImageButtonExpandingInventory = Read(TARGET_DIR "button//expanding_inventory.jpg");
+
+		static map<string, vector<SKILL>> MapVecSkills;
+		MapVecSkills["닼나"] =
 		{
-			KeybdEvent(CharacterInfo.RequiredBuf1, 1000);
-		}
+			{'W', SKILL::UNITARY }
+		};
+		MapVecSkills["불독"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills["썬콜"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'W', SKILL::ASSIST, seconds(5)}
+		};
+		MapVecSkills["비숍"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills["보마"] =
+		{
+			{'Q', SKILL::RAPID },
+			{'O', SKILL::ONOFF }
+		};
+		MapVecSkills["신궁"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills["패파"] =
+		{
+			{'W', SKILL::UNITARY }
+		};
+		MapVecSkills["나로"] =
+		{
+			{'Q', SKILL::UNITARY},
+			{'2', SKILL::BUF }
+		};
+		MapVecSkills["섀도어"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'1', SKILL::BUF }
+		};
+		MapVecSkills["듀블"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'2', SKILL::BUF }
+		};
+		MapVecSkills["바이퍼"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'3', SKILL::BUF }
+		};
+		MapVecSkills["캐슈"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'1', SKILL::BUF }
+		};
+		MapVecSkills["미하일"] =
+		{
+			{'W', SKILL::UNITARY }
+		};
+		MapVecSkills["소마"] =
+		{
+			{'W', SKILL::UNITARY }
+		};
+		MapVecSkills["플위"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'D', SKILL::BUF },
+			{'W', SKILL::ASSIST, seconds(10)}
+		};
+		MapVecSkills["윈브"] =
+		{
+			{'Q', SKILL::RAPID },
+			{'2', SKILL::BUF }
+		};
+		MapVecSkills["나워"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'1', SKILL::BUF },
+			{'W', SKILL::ASSIST, seconds(15)}
+		};
+		MapVecSkills["스커"] =
+		{
+			{'W', SKILL::UNITARY }
+		};
+		MapVecSkills["아란"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills["에반"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'A', SKILL::ASSIST, seconds(15)}
+		};
+		MapVecSkills["메세"] =
+		{
+			{'Q', SKILL::RAPID }
+		};
+		MapVecSkills["팬텀"] =
+		{
+			{'Q', SKILL::RAPID }
+		};
+		MapVecSkills["은월"] =
+		{
+			{'Q', SKILL::RAPID }
+		};
+		MapVecSkills["데슬"] =
+		{
+			{'W', SKILL::UNITARY },
+			{'2', SKILL::BUF }
+		};
+		MapVecSkills["데벤"] =
+		{
+			{'W', SKILL::UNITARY},
+			{'E', SKILL::ASSIST, seconds(6)}
+		};
+		MapVecSkills["블래"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills["배메"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills["와헌"] =
+		{
+			{'Q', SKILL::RAPID },
+			{'A', SKILL::ASSIST, seconds(30)},
+			{'O', SKILL::ONOFF}
+		};
+		MapVecSkills["제논"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'3', SKILL::BUF}
+		};
+		MapVecSkills["메카닉"] =
+		{
+			{'Q', SKILL::RAPID }
+		};
+		MapVecSkills["엔버"] =
+		{
+			{'W', SKILL::UNITARY }
+		};
+		MapVecSkills["제로"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills["키네"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills["일리움"] =
+		{
+			{'Q', SKILL::UNITARY },
+			{'R', SKILL::ASSIST},
+			{'2', SKILL::ONOFF}
+		};
+		MapVecSkills["카데나"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills["아크"] =
+		{
+			{'A', SKILL::UNITARY }
+		};
+		MapVecSkills["호영"] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		SetSkills(&MapVecSkills[CharacterInfo.ClassName]);
 
-
-		/*** 불의 눈 던지기 ***/
-		USERCONF::KEYSET_INFO& KeysetInfo = USERCONF::GetInstance()->VirtualKeyset;
-		KeybdEvent(KeysetInfo.Inventory);
 		try
 		{
-			Cvw::ClickMatchedTemplate(Cvw::Capture(ClientApi::RECT_CLIENT4), TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
-			MouseEvent(25, 50, LEFT_CLICK);
-		}
-		catch (MatchTimeoutException)
-		{
-			try
-			{
-				Mat SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
-				Cvw::ClickMatchedTemplate(SourceImage, TargetImageInventoryBar, LEFT_CLICK, { 40 * 2, 40 }, 600);
-				Cvw::ClickMatchedTemplate(SourceImage, TargetImageButtonExpandingInventory, LEFT_CLICK, { 6, 6 }, 600);
-
-				SourceImage = Cvw::Capture(ClientApi::RECT_CLIENT4);
-				Cvw::ClickMatchedTemplate(SourceImage, TargetImageEyeOfFire, LEFT_CLICK, { 10, 10 }, 600);
-			}
-			catch (MatchTimeoutException)
-			{
-				throw AppException("ThrowEyeOfFireFailedException");
-			}
-
-			MouseEvent(25, 50, LEFT_CLICK);
-		}
-		KeybdEvent(KeysetInfo.Inventory, 3600);
-
-
-		/*** 쿰돌이 ***/
-		if (CharacterInfo.RequiredBuf2 != NULL)
-		{
-			KeybdEvent(CharacterInfo.RequiredBuf2, 1000);
-		}
-
-		try
-		{
-			Cvw::DoUntilMatchingTemplate(
-				ClientApi::RECT_CLIENT4,
-				TargetImageCrystalOfBoss,
-				[CharacterInfo]()
+			RaidCallBoss(
+				[this]()
 				{
-					KeybdEventDown(CharacterInfo.Skill);
-					MouseEvent(800, 294, LEFT_CLICK, 0);
+					KeybdEventContinued(VK_RIGHT, 1000);
+					KeybdEvent(KeysetInfo.Inventory);
+
+					if (MatchTemplate(SourceImageClient4, TargetImageEyeOfFire, &MatchInfo))
+					{
+						MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
+					}
+					else
+					{
+						Mat SourceImage = SourceImageClient4;
+						MatchTemplate(SourceImage, TargetImageInventoryBar, &MatchInfo);
+						MouseEvent(MatchInfo.Location + Point{ 40 * 2, 40 }, LEFT_CLICK, 600);
+						MatchTemplate(SourceImage, TargetImageButtonExpandingInventory, &MatchInfo);
+						MouseEvent(MatchInfo.Location + Point{ 6, 6 }, LEFT_CLICK, 600);
+
+						if (MatchTemplate(SourceImageClient4, TargetImageEyeOfFire, &MatchInfo))
+						{
+							MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
+						}
+						else
+						{
+							throw AppException("ThrowEyeOfFireFailedException");
+						}
+					}
+
+					MouseEvent({ 25, 76 }, LEFT_CLICK);
+					KeybdEvent(KeysetInfo.Inventory, 3600);
+				});
+			
+			RaidDoBattle(
+				[]() -> bool
+				{
+					return WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageItemPlusCoin, seconds(120));
 				},
-				seconds(120),
-					50);
-			KeybdEventUp(CharacterInfo.Skill);
+				true);
+
+			RaidCompleteRequest(-2000, 5000);
 		}
-		catch (MatchTimeoutException)
+		catch (AppException&)
 		{
-			;
+			Write(SNAP_DIR "zacum-raid//" + to_string(++SeqFail) + ".jpg", SourceImageClient4Colored);
+			throw;
 		}
-
-
-		/*** 줍기 ***/
-		KeybdEventContinuedWithSubKey(VK_LEFT, KeysetInfo.Picking, 2000);
-		KeybdEventContinuedWithSubKey(VK_RIGHT, KeysetInfo.Picking, 5000);
 	}
 };
 
 
-class RootAbyssRaid
+class RootAbyssRaid : protected BossRaid
 {
+private:
+	VALLOC MatchInfo;
 
+public:
+	void Play(
+		const USERCONF::CHARACTER_INFO& CharacterInfo)
+	{
+		static const Mat TargetImageRootAbyssBox = Read(TARGET_DIR "pic//rootabyss_box.jpg");
+		static map<string, vector<SKILL>> MapVecSkills =
+		{
+			{
+				"데벤",
+				{
+					{'1', SKILL::BUF},
+					{'2', SKILL::BUF},
+					{'3', SKILL::BUF, seconds(60)},
+					{'E', SKILL::ASSIST, seconds(7)},
+					{'Q', SKILL::UNITARY}
+				}
+			}
+		};
+		SetSkills(&MapVecSkills[CharacterInfo.ClassName]);
+
+		try
+		{
+			RaidCallBoss(
+				[]()
+				{
+					for (int i = 0; i < 9; i++)
+					{
+						MouseEvent({ 982, 561 }, LEFT_CLICK, 400);
+					}
+					ClientApi::SET_CLIENT_STDPOS();
+				});
+
+			RaidDoBattle(
+				[]() -> bool
+				{
+					return WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageRootAbyssBox, seconds(120));
+				},
+				true);
+
+			RaidCompleteRequest(
+				2500,
+				-5000,
+				[this]()
+				{
+					Sleep(1000);
+					KeybdEvent('C', 1500);
+					KeybdEvent(KeysetInfo.Attack, 3500);
+				});
+		}
+		catch (AppException&)
+		{
+			Write(SNAP_DIR "rootabyss-raid//" + to_string(++SeqFail) + ".jpg", SourceImageClient4Colored);
+			throw;
+		}
+	}
 };
