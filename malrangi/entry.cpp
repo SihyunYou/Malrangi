@@ -3,8 +3,8 @@
 #include "ipmanage.h"
 #include "report.h"
 
-#define BUILD_URUS
-//#define BUILD_DAILYBOSS
+//#define BUILD_URUS
+#define BUILD_DAILYBOSS
 //#define BUILD_CALC
 #define USING_IPRENEWER
 
@@ -37,12 +37,41 @@ main(
 
 		string Uri;
 		int SeqMapleId = 0;
-		int SeqSuccess, SeqFailure = 0;
-		auto LEAVE_LOG = [&Uri, &SeqSuccess, &SeqFailure](std::exception* ce)
+		auto LEAVE_LOG = [&Uri](std::exception* ce)
 		{
-			Write(SNAP_DIR + to_string(++SeqFailure) + ".jpg", SourceImageClient4Colored);
+			if (nullptr != ce)
+			{
+				static int Seq = 0;
+				Write(SNAP_DIR + to_string(++Seq) + ".jpg", SourceImageClient4Colored);
+			}
 			WriteLog(((nullptr != ce) ? LOG_LEVEL::FAILURE : LOG_LEVEL::SUCCESS),
 				(Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
+		};
+
+		auto IsServerLoopCompleted = [](const vector<USERCONF::SERVER_INFO>& VecServers)
+		{
+			for each (const auto & Server in VecServers)
+			{
+				if (!Server.IsCompleted)
+				{
+					return false;
+				}
+			}
+			return true;
+		};
+		auto IsCharacterLoopCompleted = [](const vector<USERCONF::SERVER_INFO>& VecServers)
+		{
+			for each (const auto & Server in VecServers)
+			{
+				for each (const auto & Character in Server.VecCharacter)
+				{
+					if (!Character.IsCompleted)
+					{
+						return false;
+					}
+				}
+			}
+			return true;
 		};
 
 		enum
@@ -50,16 +79,16 @@ main(
 			NORMAL,
 			SERVER_DISCONNECTION,
 			ABNORMAL_CLIENT_TERMINATION,
-			UNHANDLED // force termination
+			UNHANDLED
 		};
 		int LogoutState = NORMAL;
 
-		for each (const auto & NexonAccountInfo in UserInfo.VecNexonAccount)
+		for (auto & NexonAccountInfo : UserInfo.VecNexonAccount)
 		{
-			for each (const auto & MapleIdInfo in NexonAccountInfo.VecMapleId)
+			for (auto & MapleIdInfo : NexonAccountInfo.VecMapleId)
 			{
 				bool IsPlayValid = false;
-				for each (const auto & ServerInfo in MapleIdInfo.VecServer)
+				for each (auto & ServerInfo in MapleIdInfo.VecServer)
 				{
 					if (ServerInfo.VecCharacter.size() > 0)
 					{
@@ -71,12 +100,12 @@ main(
 				{
 					continue;
 				}
-
+				
 				Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id;
 				if (SeqMapleId % 4 == 0)
 				{
 #ifdef USING_IPRENEWER
-					IpManager.Renew(IpInfo.InternetInfo);
+				//	IpManager.Renew(IpInfo.InternetInfo);
 #else
 					if (SeqMapleId > 3)
 					{
@@ -85,33 +114,34 @@ main(
 #endif
 				}
 
+			__BOOTUP__:
 				switch (LogoutState)
 				{
 				case NORMAL:
-				case SERVER_DISCONNECTION:
 					if (SeqMapleId % 4 != 0)
 					{
 						break;
 					}
 
+				case SERVER_DISCONNECTION:
 				case ABNORMAL_CLIENT_TERMINATION:
 				case UNHANDLED:
 					try
 					{
-						ClientApi::BootClient();
+					//	ClientApi::BootClient();
 					}
 					catch (ClientApi::BootFailedException & bfe)
 					{
 						LEAVE_LOG(&bfe);
 
-						goto EXIT_ROUTINE;
+						goto __EXIT__;
 					}
 					break;
 				}
 
 				try
 				{
-					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
+				//	ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 					LogoutState = NORMAL;
 				}
 				catch (MalrangiException & e)
@@ -119,23 +149,22 @@ main(
 					LEAVE_LOG(&e);
 					LogoutState = UNHANDLED;
 
-					goto __LOGOUT;
+					goto __LOGOUT__;
 				}
 
 				try
 				{
-					for each (const auto & ServerInfo in MapleIdInfo.VecServer)
+					for (auto& ServerInfo : MapleIdInfo.VecServer)
 					{
-						if (ServerInfo.VecCharacter.size() == 0)
+						if (ServerInfo.VecCharacter.size() == 0 || ServerInfo.IsCompleted)
 						{
 							continue;
 						}
-
 						Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName;
 
 						try
 						{
-							ClientApi::SelectServer(ServerInfo, 27);
+						//	ClientApi::SelectServer(ServerInfo, 27);
 						}
 						catch (ClientApi::ServerDelayException & e)
 						{
@@ -143,30 +172,58 @@ main(
 							LogoutState = NORMAL;
 							KeybdEvent({ VK_RETURN, VK_ESCAPE });
 
-							goto __LOGOUT;
+							goto __LOGOUT__;
 						}
 
-						ClientApi::SelectCharacter(1);
+						int SeqNotCompletedCharacter = 1;
+						for (; SeqNotCompletedCharacter <= ServerInfo.VecCharacter.size(); SeqNotCompletedCharacter++)
+						{
+							if (ServerInfo.VecCharacter[SeqNotCompletedCharacter].IsCompleted)
+							{
+								continue;
+							}
+							else
+							{
+								break;
+							}
+						}
+					//	ClientApi::SelectCharacter(SeqNotCompletedCharacter);
+
 #if defined(BUILD_URUS)
+					__REPLAY_APPLICATION__:
 						ClientApi::EnterGame(MapleIdInfo);
+
 						try
 						{
 							Worker.Play(ServerInfo.VecCharacter[0]);
+
+							ServerInfo.IsCompleted = true;
 							LEAVE_LOG(nullptr);
 						}
 						catch (AppException & e)
 						{
 							LEAVE_LOG(&e);
+
 							ClientApi::RemoveAllIngameWindows();
+							ClientApi::ExitGame();
+
+							goto __REPLAY_APPLICATION__;
 						}
 
 						ClientApi::ExitGame();
 #elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
-						for each (auto & CharacterInfo in ServerInfo.VecCharacter)
+						
+						for(auto & CharacterInfo : ServerInfo.VecCharacter)
 						{
+							if (CharacterInfo.IsCompleted)
+							{
+								continue;
+							}
 							Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName + "/" + CharacterInfo.ClassName;
 
-							ClientApi::EnterGame(MapleIdInfo);
+						__REPLAY_APPLICATION__:
+						//	ClientApi::EnterGame(MapleIdInfo);
+
 							try
 							{
 #ifdef BUILD_DAILYBOSS
@@ -174,11 +231,20 @@ main(
 #else
 								Worker.Play(MapleIdInfo);
 #endif
+								CharacterInfo.IsCompleted = true;
 							}
-							catch (AppException & e)
+							catch (AppException & ae)
 							{
-								LEAVE_LOG(&e);
+								LEAVE_LOG(&ae);
+								if (!ae.IsRetryAvailable)
+								{
+									CharacterInfo.IsCompleted = true;
+								}
+
 								ClientApi::RemoveAllIngameWindows();
+								ClientApi::ExitGame();
+
+								goto __REPLAY_APPLICATION__;
 							}
 
 							ClientApi::ExitGame();
@@ -198,13 +264,13 @@ main(
 					LEAVE_LOG(&e);
 					LogoutState = ABNORMAL_CLIENT_TERMINATION;
 				}
-				catch (MalrangiException & e)
+				catch (ClientApi::Exception & e)
 				{
 					LEAVE_LOG(&e);
 					LogoutState = UNHANDLED;
 				}
 
-			__LOGOUT:
+			__LOGOUT__:
 				switch (LogoutState)
 				{
 				case NORMAL:
@@ -218,35 +284,49 @@ main(
 						{
 							ClientApi::Logout();
 						}
-						catch (MalrangiException & e)
+						catch (ClientApi::Exception & e)
 						{
 							LEAVE_LOG(&e);
 							LogoutState = UNHANDLED;
 
-							goto __LOGOUT;
+							goto __LOGOUT__;
 						}
 					}
 					break;
 
 				case SERVER_DISCONNECTION:
 				case ABNORMAL_CLIENT_TERMINATION:
+					ClientApi::TerminateClient();
+#if defined(BUILD_URUS)
+					if(!IsServerLoopCompleted(MapleIdInfo.VecServer))
+#elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
+					if(!IsCharacterLoopCompleted(MapleIdInfo.VecServer))
+#endif
+					{
+						goto __BOOTUP__;
+					}
+					else
+					{
+						break;
+					}
+					
+
 				case UNHANDLED:
 					ClientApi::TerminateClient();
 					break;
 
 				default:
-					WriteLog(LOG_LEVEL::CRITICAL, "Invalid logout state.\n");
-					goto EXIT_ROUTINE;
+					WriteLog(LOG_LEVEL::CRITICAL, "INVALID LOGOUT STATE.\n");
+					goto __EXIT__;
 				}
 
 				++SeqMapleId;
 			}
 		}
 
-		WriteLog(LOG_LEVEL::INFO,
-			"All routines have been successfully complete. (Success : %d, Failure : %d)\n");
+		WriteLog(LOG_LEVEL::INFO, "All routines have been successfully complete.");
 
-	EXIT_ROUTINE:
+	__EXIT__:
 		UserInfo.Destroy();
 		IpInfo.Destroy();
 	}

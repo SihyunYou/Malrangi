@@ -8,6 +8,8 @@ user.conf
 *.wz
 *.exe
 *.dll
+target/mapleid/
+Patcher.info
 
 # User-specific files
 *.rsuser

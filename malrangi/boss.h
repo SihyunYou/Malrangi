@@ -3,18 +3,6 @@
 
 #pragma comment(lib,"winmm.lib")
 
-class AppException : public MalrangiException
-{
-public:
-	AppException(void) :
-		MalrangiException(__CLASSNAME__) {}
-	AppException(string Description) :
-		MalrangiException(__CLASSNAME__ + "! " + Description) {}
-	virtual const char* what(void) const throw()
-	{
-		return Message.c_str();
-	}
-};
 
 class BossRaid
 {
@@ -56,6 +44,12 @@ protected:
 
 	inline static const Mat TargetImageItemPlusCoin = Read(TARGET_DIR "item//pluscoin.jpg");
 
+	enum
+	{
+		BATTLE_TIMEOUT = 100,
+		RAID_COMPLETE_FAILED
+	};
+
 public:
 	BossRaid() :
 		SeqSuccess(0), SeqFail(0),
@@ -84,7 +78,7 @@ protected:
 		{
 			if (SKILL::BUF == Skill.Type || SKILL::ONOFF == Skill.Type)
 			{
-				KeybdEvent(Skill.Key, 1200);
+				KeybdEvent(Skill.Key, 1500);
 			}
 		}
 
@@ -165,7 +159,7 @@ protected:
 
 		if (!IsAllowedToBeComplete)
 		{
-			throw AppException(__FEWHAT__);
+			throw BATTLE_TIMEOUT;
 		}
 	}
 
@@ -200,7 +194,7 @@ protected:
 		}
 		else
 		{
-			throw AppException("BeforePickingRoutineError");
+			throw RAID_COMPLETE_FAILED;
 		}
 	}
 };

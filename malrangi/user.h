@@ -18,13 +18,15 @@ public:
 			struct _SERVER_INFO
 			{
 				string ServerName;
+				bool IsCompleted;
 				struct _CHARACTER_INFO
 				{
 					string ClassName;
+					bool IsCompleted;
 					enum
 					{
-						ZACUM,
-						ZACUM_ROOTABYSS
+						ZACUM = 0b01,
+						ROOTABYSS = 0b10,
 					};
 					int Type;
 				};
@@ -42,6 +44,7 @@ public:
 		BYTE Potion;
 		BYTE Party;
 		BYTE Attack;
+		BYTE Talk;
 	}KEYSET_INFO;
 	typedef NEXONAC_INFO::_MAPLEID_INFO MAPLEID_INFO;
 	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO SERVER_INFO;
@@ -75,13 +78,14 @@ private:
 					if (SubLine[SubLine.length() - 1] == '*')
 					{
 						CharacterInfo.ClassName = SubLine.substr(0, SubLine.length() - 1);
-						CharacterInfo.Type = CHARACTER_INFO::ZACUM_ROOTABYSS;
+						CharacterInfo.Type = CHARACTER_INFO::ZACUM | CHARACTER_INFO::ROOTABYSS;
 					}
 					else
 					{
 						CharacterInfo.ClassName = SubLine;
 						CharacterInfo.Type = CHARACTER_INFO::ZACUM;
 					}
+					CharacterInfo.IsCompleted = false;
 
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].
 						VecServer[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].VecServer.size() - 1].
@@ -93,6 +97,7 @@ private:
 
 					Stream >> SubLine;
 					ServerInfo.ServerName = SubLine;
+					ServerInfo.IsCompleted = false;
 
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].
 						VecServer.push_back(ServerInfo);
@@ -130,6 +135,7 @@ private:
 			VirtualKeyset.Potion = VK_CONTROL;
 			VirtualKeyset.SpecialTechnology = 'Y';
 			VirtualKeyset.Attack = VK_OEM_PERIOD;
+			VirtualKeyset.Talk = VK_OEM_COMMA;
 		}
 	}
 	~USERCONF()

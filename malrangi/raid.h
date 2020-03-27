@@ -1,39 +1,62 @@
 #pragma once
 #include "boss.h"
 
-class UrusRaid : protected BossRaid
+class UrusRaid
 {
 private:
 	VALLOC MatchInfo;
 
+public:
+	UrusRaid() : SeqPlay(1) {}
+
 protected:
+	int SeqPlay;
+
+	enum
+	{
+		BUTTON_READY_NOT_FOUND,
+		BATTLE_ENTRY_TIMEOUT,
+		BATTLE_TIMEOUT,
+		EXIT_TO_U3_FAILED,
+		NPC_MASHUR_NOT_FOUND
+	};
 	void Play(
 		const USERCONF::CHARACTER_INFO& CharacterInfo,
-		int SequenceNumber)
+		bool IsTryFirst)
 	{
 		static const Mat TargetImageButtonReady(Read(TARGET_DIR "button//ready.jpg"));
 		static const Mat TargetImageButtonEnter(Read(TARGET_DIR "button//enter.jpg"));
 		static const Mat TargetImagePicUrus(Read(TARGET_DIR "pic//urus.jpg"));
 		static const Mat TargetImageNpcMashur(Read(TARGET_DIR "npc//mashur.jpg"));
-		const static Mat TargetImageMapU3 = Read(TARGET_DIR "map//u3.jpg");
+		static const Mat TargetImageMapU3 = Read(TARGET_DIR "map//u3.jpg");
+		static const Mat TargetImageWindowUrusCompleted = Read(TARGET_DIR "window//urus_completed.jpg");
 
 		/*** 전투 전 ***/
-		if (0 == SequenceNumber)
+		if (1 == SeqPlay)
 		{
 			ClientApi::BreakParty();
 		}
-		MouseEvent({ SequenceNumber != 0 ? 1140 : 892, 626 }, LEFT_CLICK);
+		MouseEvent({ IsTryFirst ? 892 : 1140, 652 }, LEFT_CLICK);
 		MouseEvent({ 440, 710 }, LEFT_CLICK);
 		MouseEvent({ 487, 771 }, LEFT_CLICK);
 		MouseEvent({ 820, 780 }, LEFT_CLICK);
 
-		if (MatchTemplate(SourceImageClient4, TargetImageButtonReady, &MatchInfo))
+		Mat SourceImage = SourceImageClient4;
+		if (MatchTemplate(SourceImage, TargetImageButtonReady, &MatchInfo))
 		{
 			MouseEvent(MatchInfo.Location, LEFT_CLICK);
 		}
 		else
 		{
-			throw AppException("ButtonReadyNotFound");
+			if (MatchTemplate(SourceImage, TargetImageWindowUrusCompleted, &MatchInfo))
+			{
+				KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Talk);
+				return;
+			}
+			else
+			{
+				throw BUTTON_READY_NOT_FOUND;
+			}
 		}
 
 #define Operate(d)		KeybdEventContinued(d, 0x40);	\
@@ -43,17 +66,17 @@ protected:
 		NewRectClient.right -= 700;
 		NewRectClient.bottom -= 500;
 
-		if(!DoUntilMatchingTemplate(
-				NewRectClient,
-				TargetImagePicUrus,
-				[]() 
-				{
-					MouseEvent({ 640, 455 }, LEFT_CLICK, 0x200);
-				},
-				seconds(1800),
+		if (!DoUntilMatchingTemplate(
+			NewRectClient,
+			TargetImagePicUrus,
+			[]()
+			{
+				MouseEvent({ 640, 455 }, LEFT_CLICK, 0x200);
+			},
+			seconds(1800),
 				0))
 		{
-			throw AppException("BattleEntryTimeout");
+			throw BATTLE_ENTRY_TIMEOUT;
 		}
 
 
@@ -69,7 +92,7 @@ protected:
 		if (DoUntilMatchingTemplate(
 			NewRectClient,
 			TargetImageButtonEnter,
-			[&](void) -> void
+			[&](void)
 			{
 				if (duration_cast<seconds>(system_clock::now() - StartTime) > seconds(240))
 				{
@@ -135,14 +158,14 @@ protected:
 		}
 		else
 		{
-			throw AppException("BattleTimeout");
+			throw BATTLE_TIMEOUT;
 		}
 #undef Operate
 
 
 		/*** 전투 후 ***/
-		Write(SNAP_DIR "urus-raid//" + to_string(SeqSuccess) + "_" + to_string(SequenceNumber) + ".jpg", 
-			SourceImageClient4Colored);
+		static int SeqSuccess = 0;
+		Write(SNAP_DIR "urus-raid//" + to_string(++SeqSuccess) + ".jpg", SourceImageClient4Colored);
 		MouseEvent({ 1259, 694 }, LEFT_CLICK);
 
 		if (WaitUntilMatchingTemplate(
@@ -154,19 +177,19 @@ protected:
 		}
 		else
 		{
-			throw AppException("ExitToU3Failed");
+			throw EXIT_TO_U3_FAILED;
 		}
 
-		if (SequenceNumber < 2)
+		if (SeqPlay <= 2)
 		{
 			KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 4000);
-			if(WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMashur, seconds(40)))
+			if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageNpcMashur, seconds(60)))
 			{
 				Sleep(1000);
 			}
 			else
 			{
-				throw AppException("NpcMashurNotFound");
+				throw NPC_MASHUR_NOT_FOUND;
 			}
 		}
 	}
@@ -178,6 +201,10 @@ private:
 	VALLOC MatchInfo;
 
 protected:
+	enum
+	{
+		THROW_EYEOFFIRE_FAILED
+	};
 	void Play(
 		const USERCONF::CHARACTER_INFO& CharacterInfo)
 	{
@@ -361,7 +388,7 @@ protected:
 			RaidCallBoss(
 				[this]()
 				{
-					KeybdEventContinued(VK_RIGHT, 1000);
+					KeybdEventContinued(VK_RIGHT, 0x400);
 					KeybdEvent(KeysetInfo.Inventory);
 
 					if (MatchTemplate(SourceImageClient4, TargetImageEyeOfFire, &MatchInfo))
@@ -382,14 +409,14 @@ protected:
 						}
 						else
 						{
-							throw AppException("ThrowEyeOfFireFailedException");
+							throw THROW_EYEOFFIRE_FAILED;
 						}
 					}
 
 					MouseEvent({ 25, 76 }, LEFT_CLICK);
 					KeybdEvent(KeysetInfo.Inventory, 3600);
 				});
-			
+
 			RaidDoBattle(
 				[]() -> bool
 				{
@@ -399,7 +426,7 @@ protected:
 
 			RaidCompleteRequest(-2000, 5000);
 		}
-		catch (AppException&)
+		catch (int)
 		{
 			Write(SNAP_DIR "zacum-raid//" + to_string(++SeqFail) + ".jpg", SourceImageClient4Colored);
 			throw;
@@ -462,7 +489,7 @@ public:
 					KeybdEvent(KeysetInfo.Attack, 3500);
 				});
 		}
-		catch (AppException&)
+		catch (int)
 		{
 			Write(SNAP_DIR "rootabyss-raid//" + to_string(++SeqFail) + ".jpg", SourceImageClient4Colored);
 			throw;

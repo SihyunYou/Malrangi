@@ -109,24 +109,37 @@ public:
 		RECT RectMinimap;
 	};
 
-	/****************************************************************************
-	* Excetpions handled specifically
-	****************************************************************************/
-	class BootFailedException : public MalrangiException
+	class Exception : public MalrangiException
 	{
 	public:
-		BootFailedException(void) :
+		Exception(void) :
 			MalrangiException(__CLASSNAME__) {}
+		Exception(string Description) :
+			MalrangiException(__CLASSNAME__ + "! " + Description) {}
 		virtual const char* what(void) const throw()
 		{
 			return Message.c_str();
 		}
 	};
-	class ServerDelayException : public MalrangiException
+
+	/****************************************************************************
+	* Excetpions handled specifically
+	****************************************************************************/
+	class BootFailedException : public ClientApi::Exception
+	{
+	public:
+		BootFailedException(void) :
+			ClientApi::Exception(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class ServerDelayException : public ClientApi::Exception
 	{
 	public:
 		ServerDelayException(void) :
-			MalrangiException(__CLASSNAME__) {}
+			ClientApi::Exception(__CLASSNAME__) {}
 		virtual const char* what(void) const throw()
 		{
 			return Message.c_str();
@@ -153,21 +166,21 @@ public:
 			throw MalrangiException(DefaultWhat);
 		}
 	}
-	class ServerDisconnectedException : public MalrangiException
+	class ServerDisconnectedException : public ClientApi::Exception
 	{
 	public:
 		ServerDisconnectedException(void) :
-			MalrangiException(__CLASSNAME__) {}
+			ClientApi::Exception(__CLASSNAME__) {}
 		virtual const char* what(void) const throw()
 		{
 			return Message.c_str();
 		}
 	};
-	class ClientAbnormalTerminationException : public MalrangiException
+	class ClientAbnormalTerminationException : public ClientApi::Exception
 	{
 	public:
 		ClientAbnormalTerminationException(void) :
-			MalrangiException(__CLASSNAME__) {}
+			ClientApi::Exception(__CLASSNAME__) {}
 		virtual const char* what(void) const throw()
 		{
 			return Message.c_str();
@@ -233,7 +246,6 @@ void ClientApi::SET_CLIENT_STDPOS(void)
 		-3, 0,
 		0, 0,
 		SWP_NOSIZE);
-	SetCursorPos(10, 476);
 }
 
 void ClientApi::BootClient(
@@ -271,8 +283,6 @@ void ClientApi::Login(
 	CONST USERCONF::NEXONAC_INFO& AccountInfo,
 	CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 {
-	ClientApi::SET_CLIENT_STDPOS();
-
 	static const Mat TargetImageWindowMapleId = Read(TARGET_DIR "window//mapleid.jpg");
 	auto WriteString = [](const string& s) -> void
 	{
@@ -303,20 +313,20 @@ void ClientApi::Login(
 		throw MalrangiException("NexonLoginFailedException");
 	}
 
-	DWORD SeqId = 0;
-	for each (auto & MapleId in AccountInfo.VecMapleId)
+	
+	VALLOC MatchInfo;
+	for(int i = 0; i < 3; i++)
 	{
-		if (MapleId.Id == MapleIdInfo.Id)
+		if (MatchTemplate(SourceImageClient1, Read(TARGET_DIR "mapleid//" + MapleIdInfo.Id + ".jpg"), &MatchInfo, 0.96))
 		{
 			break;
 		}
-		++SeqId;
+		else
+		{
+			MouseEvent({ 513, 396 }, LEFT_CLICK);
+		}
 	}
-	for (int i = 0; i < SeqId + 1; i++)
-	{
-		KeybdEvent(VK_DOWN);
-	}
-	KeybdEvent(VK_RETURN);
+	MouseEvent(MatchInfo.Location + Point{ 10, 4 }, DLEFT_CLICK);
 
 	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN2, seconds(15)))
 	{
@@ -346,7 +356,7 @@ void ClientApi::SelectServer(
 	}
 	MouseEvent({ 291 + 70 * (ChannelNumber % 5), 255 + 30 * (ChannelNumber / 5) }, DLEFT_CLICK);
 	
-	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN3, seconds(30)))
+	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN3, seconds(60)))
 	{
 		Sleep(0x400);
 	}
