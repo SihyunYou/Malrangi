@@ -63,3 +63,9 @@ public:
 protected:
 	std::string Message;
 };
+
+#define IS_FLAG_ON(_flags, _flag)	((bool)((_flags) & _flag))
+#define ARE_FLAGS_ON(_flags)	((bool)(_flags))
+#define ARE_FLAGS_OFF(_flags)	(!(bool)(_flags))
+#define FALG(_flags, _flag)			((_flags) |= (flag))
+#define UNFLAG(_flags, _flag)		((_flags) &= ~(_flag))

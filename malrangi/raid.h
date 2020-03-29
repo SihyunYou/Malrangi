@@ -15,14 +15,14 @@ protected:
 	enum
 	{
 		BUTTON_READY_NOT_FOUND,
+		PLAY_SEQUENCE_OVER,
 		BATTLE_ENTRY_TIMEOUT,
 		BATTLE_TIMEOUT,
 		EXIT_TO_U3_FAILED,
 		NPC_MASHUR_NOT_FOUND
 	};
 	void Play(
-		const USERCONF::CHARACTER_INFO& CharacterInfo,
-		bool IsTryFirst)
+		const USERCONF::CHARACTER_INFO& CharacterInfo)
 	{
 		static const Mat TargetImageButtonReady(Read(TARGET_DIR "button//ready.jpg"));
 		static const Mat TargetImageButtonEnter(Read(TARGET_DIR "button//enter.jpg"));
@@ -36,7 +36,9 @@ protected:
 		{
 			ClientApi::BreakParty();
 		}
-		MouseEvent({ IsTryFirst ? 892 : 1140, 652 }, LEFT_CLICK);
+		
+		KeybdEventContinued(VK_LEFT, 4000);
+		MouseEvent({ 1140, 630 }, LEFT_CLICK);
 		MouseEvent({ 440, 710 }, LEFT_CLICK);
 		MouseEvent({ 487, 771 }, LEFT_CLICK);
 		MouseEvent({ 820, 780 }, LEFT_CLICK);
@@ -50,8 +52,7 @@ protected:
 		{
 			if (MatchTemplate(SourceImage, TargetImageWindowUrusCompleted, &MatchInfo))
 			{
-				KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Talk);
-				return;
+				throw PLAY_SEQUENCE_OVER;
 			}
 			else
 			{
@@ -388,7 +389,7 @@ protected:
 			RaidCallBoss(
 				[this]()
 				{
-					KeybdEventContinued(VK_RIGHT, 0x400);
+					KeybdEventContinued(VK_RIGHT, 1200);
 					KeybdEvent(KeysetInfo.Inventory);
 
 					if (MatchTemplate(SourceImageClient4, TargetImageEyeOfFire, &MatchInfo))
@@ -450,10 +451,10 @@ public:
 			{
 				"µ¥º¥",
 				{
-					{'1', SKILL::BUF},
-					{'2', SKILL::BUF},
+					{'1', SKILL::BUF, seconds(180)},
+					{'2', SKILL::BUF, seconds(180)},
 					{'3', SKILL::BUF, seconds(60)},
-					{'E', SKILL::ASSIST, seconds(7)},
+					{'E', SKILL::ASSIST, seconds(6)},
 					{'Q', SKILL::UNITARY}
 				}
 			}
@@ -469,7 +470,6 @@ public:
 					{
 						MouseEvent({ 982, 561 }, LEFT_CLICK, 400);
 					}
-					ClientApi::SET_CLIENT_STDPOS();
 				});
 
 			RaidDoBattle(

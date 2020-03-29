@@ -148,6 +148,36 @@ bool WaitUntilMatchingTemplate(
 
 	return false;
 }
+template <class T_DUR = seconds, SIZE_T ArrSize>
+bool WaitUntilMatchingTemplate(
+	const RECT& Area,
+	const array<Mat, ArrSize>& ArrTargetImages,
+	T_DUR Duration,
+	int IdleTime = 256,
+	double Threshold = 0.9)
+{
+	const auto StartTime = system_clock::now();
+	if (IdleTime < 1)
+	{
+		IdleTime = 1;
+	}
+
+	do
+	{
+		Sleep(IdleTime);
+
+		Mat SourceImage = Capture(Area);
+		for (const auto& TargetImage : ArrTargetImages)
+		{
+			if (MatchTemplate(SourceImage, TargetImage, nullptr, Threshold))
+			{
+				return true;
+			}
+		}
+	} while (duration_cast<T_DUR>(system_clock::now() - StartTime) < Duration);
+
+	return false;
+}
 template <class T_LAMBDA, class T_DUR = seconds>
 bool DoUntilMatchingTemplate(
 	const RECT& Area,

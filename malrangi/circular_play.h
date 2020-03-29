@@ -16,6 +16,7 @@ public:
 		return Message.c_str();
 	}
 };
+#define INVALID_MAP_EXCEPTION(_n) "InvalidMapException(MapName = " + to_string(_n) + ")" 
 
 class UrusPlay : private UrusRaid, private Bridge
 {
@@ -23,140 +24,134 @@ public:
 	void Play(
 		const USERCONF::CHARACTER_INFO& CharacterInfo)
 	{
-		if (!AmIIn(Urus))
+		try
 		{
-			try
+			if (FreeMarket == WhereAmI())
 			{
-				switch (int CurrentMap = WhereAmI())
-				{
-				case Zacum2_2:
-				case Zacum2_3:
-					MoveFromAToB(CurrentMap, Zacum1);
-				case Zacum1:
-					MoveFromAToB(Zacum1, Elnas);
-					goto __Elnas_U;
-
-				case RootAbyss1:
-					MoveFromAToB(RootAbyss1, Elnas);
-					goto __Elnas_U;
-				case ElnasMarket:
-					MoveFromAToB(ElnasMarket, Elnas);
-					goto __Elnas_U;
-
-				__Elnas_U:
-				case Elnas:
-					MoveFromAToB(Elnas, Urus);
-					break;
-				}
+				MoveFromAToB(FreeMarket, Unknown);
 			}
-			catch (int ErrorCode)
-			{
-				bool IsRetryAvailable;
-				switch (ErrorCode)
-				{
-				case A_FAIL:
-				case B_FAIL:
-					IsRetryAvailable = true;
-					break;
-				case A_ERRORINPUT:
-				case B_ERRORINPUT:
-				default:
-					IsRetryAvailable = false;
-				}
 
-				throw AppException("MoveAToBFailedException", IsRetryAvailable);
+			switch (int CurrentMap = WhereAmI())
+			{
+			case MeisterVill:
+				MoveFromAToB(MeisterVill, Zacum2_3);
+				CurrentMap = Zacum2_3;
+			case Zacum2_2:
+			case Zacum2_3:
+				MoveFromAToB(CurrentMap, Zacum1);
+			case Zacum1:
+				MoveFromAToB(Zacum1, Elnas);
+				goto __Elnas_U;
+
+			case RootAbyss1:
+				MoveFromAToB(RootAbyss1, Elnas);
+				goto __Elnas_U;
+			case ElnasMarket:
+				MoveFromAToB(ElnasMarket, Elnas);
+				goto __Elnas_U;
+
+			__Elnas_U:
+			case Elnas:
+				MoveFromAToB(Elnas, Urus);
+			case Urus:
+				break;
+
+			default: 
+				throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
 			}
 		}
-
-		bool IsTryFirst = true;
-		for (; SeqPlay <= 3; SeqPlay++)
+		catch (BRIDGE_EXCEPTION_CODE ExceptionCode)
 		{
-			try
+			bool IsRetryAvailable;
+			switch (ExceptionCode)
 			{
-				UrusRaid::Play(CharacterInfo, IsTryFirst);
-				IsTryFirst = false;
+			case BRIDGE_EXCEPTION_CODE::A_FAIL:
+			case BRIDGE_EXCEPTION_CODE::B_FAIL:
+				IsRetryAvailable = true;
+				break;
+			case BRIDGE_EXCEPTION_CODE::A_ERRORINPUT:
+			case BRIDGE_EXCEPTION_CODE::B_ERRORINPUT:
+				IsRetryAvailable = false;
+				break;
 			}
-			catch (int ErrorCode)
+
+			throw AppException("MoveAToBFailedException", IsRetryAvailable);
+		}
+
+		try
+		{
+			for (; SeqPlay <= 3; SeqPlay++)
 			{
-				string Message;
-				bool IsCounted = true;
-
-				switch (ErrorCode)
-				{
-				case BUTTON_READY_NOT_FOUND:
-					Message = "ButtonReadyNotFoundException";
-					IsCounted = false;
-					break;
-				case BATTLE_ENTRY_TIMEOUT:
-					Message = "BattleEntryTimeoutException";
-					break;
-				case BATTLE_TIMEOUT:
-					Message = "BattleTimeoutException";
-					break;
-				case EXIT_TO_U3_FAILED:
-					Message = "ExitToU3FailedException";
-					break;
-				case NPC_MASHUR_NOT_FOUND:
-					Message = "NpcMashurNotFoundException";
-					break;
-
-				default:
-					Message = "UnknownUrusException";
-				}
-
-				if (IsCounted)
-				{
-					++SeqPlay;
-				}
-				throw AppException(Message, SeqPlay <= 2);
+				UrusRaid::Play(CharacterInfo);
 			}
+		}
+		catch (int ExceptionCode)
+		{
+			switch (ExceptionCode)
+			{
+			case PLAY_SEQUENCE_OVER:
+				SeqPlay = 3;
+				break;
+			case BUTTON_READY_NOT_FOUND:
+				break;
+			case BATTLE_ENTRY_TIMEOUT:
+			case BATTLE_TIMEOUT:
+			case EXIT_TO_U3_FAILED:
+			case NPC_MASHUR_NOT_FOUND:
+			default:
+				++SeqPlay;
+			}
+
+			bool IsRetryAvailable = SeqPlay <= 2;
+			if (!IsRetryAvailable)
+			{
+				SeqPlay = 1;
+			}
+
+			throw AppException("UrusRaidException", IsRetryAvailable);
 		}
 
 		SeqPlay = 1;
 	}
 };
-#define INVALID_MAP_EXCEPTION(NumberOfMap) "InvalidMapException(MapName = " + MapFileName[NumberOfMap] + ")" 
+
+
+
 class DailyBossPlay : private ZacumRaid, private RootAbyssRaid, private Bridge
 {
+private:
+	bool IsRetryAvailable(BRIDGE_EXCEPTION_CODE ec, int CharacterType)
+	{
+		switch (ec)
+		{
+		case BRIDGE_EXCEPTION_CODE::A_FAIL:
+		case BRIDGE_EXCEPTION_CODE::B_FAIL:
+			return CharacterType ? true : false;
+			break;
+		case BRIDGE_EXCEPTION_CODE::A_ERRORINPUT:
+		case BRIDGE_EXCEPTION_CODE::B_ERRORINPUT:
+		default:
+			return false;
+		}
+	};
+
 public:
 	void Play(USERCONF::CHARACTER_INFO& CharacterInfo)
 	{
-		int CurrentMap;
-		if (MeisterVill == CurrentMap)
-		{
-			;
-		}
-		else if (FreeMarket == CurrentMap)
-		{
-			;
-		}
-
-	
-		auto IsRetryAvailable = [](EXCEPTION_CODE ec, int CharacterType)
-		{
-			switch (ec)
-			{
-			case EXCEPTION_CODE::A_FAIL:
-			case EXCEPTION_CODE::B_FAIL:
-				return CharacterType ? true : false;
-				break;
-			case EXCEPTION_CODE::A_ERRORINPUT:
-			case EXCEPTION_CODE::B_ERRORINPUT:
-			default:
-				return false;
-			}
-		};
-
 		if (CharacterInfo.Type & USERCONF::CHARACTER_INFO::ROOTABYSS)
 		{
-			bool IsExceptionSafe = true;
 			try
 			{
-				switch (CurrentMap = WhereAmI())
+				if (FreeMarket == WhereAmI())
 				{
-				case Zacum3_2:
-					MoveFromAToB(Zacum3_2, Zacum2_2);
-					CurrentMap = Zacum2_2;
+					MoveFromAToB(FreeMarket, Unknown);
+				}
+
+				switch (int CurrentMap = WhereAmI())
+				{
+				case MeisterVill:
+					MoveFromAToB(MeisterVill, Zacum2_3);
+					CurrentMap = Zacum2_3;
 				case Zacum2_2:
 				case Zacum2_3:
 					MoveFromAToB(CurrentMap, Zacum1);
@@ -175,8 +170,8 @@ public:
 				__Elnas:
 				case Elnas:
 					MoveFromAToB(Elnas, RootAbyss1);
-					IsExceptionSafe = false;
 				case RootAbyss1:
+					UNFLAG(CharacterInfo.Type, USERCONF::CHARACTER_INFO::ROOTABYSS);
 					MoveFromAToB(RootAbyss1, RootAbyss2_1);
 					MoveFromAToB(RootAbyss2_1, RootAbyss3_1);
 					break;
@@ -184,39 +179,38 @@ public:
 				default: throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
 				}
 			}
-			catch (EXCEPTION_CODE ExceptionCode)
+			catch (BRIDGE_EXCEPTION_CODE ExceptionCode)
 			{
-				if (!IsExceptionSafe)
-				{
-					CharacterInfo.Type -= USERCONF::CHARACTER_INFO::ROOTABYSS;
-				}
 				throw AppException("MoveAToBFailedException", IsRetryAvailable(ExceptionCode, CharacterInfo.Type));
 			}
 
 			try
 			{
-				CharacterInfo.Type -= USERCONF::CHARACTER_INFO::ROOTABYSS;
 				RootAbyssRaid::Play(CharacterInfo);
 			}
-			catch (int ErrorCode)
+			catch (int)
 			{
-				throw AppException("RootAbyssRaidFailedException", CharacterInfo.Type ? true : false);
+				throw AppException("RootAbyssRaidFailedException", ARE_FLAGS_ON(CharacterInfo.Type));
 			}
 		}
 
 		if (CharacterInfo.Type & USERCONF::CHARACTER_INFO::ZACUM)
 		{
-			bool IsExceptionSafe = true;
 			try
 			{
-				switch (CurrentMap = WhereAmI())
+				if (FreeMarket == WhereAmI())
+				{
+					MoveFromAToB(FreeMarket, Unknown);
+				}
+
+				bool IsReady = false;
+				switch (int CurrentMap = WhereAmI())
 				{
 				case RootAbyss3_1:
 					MoveFromAToB(RootAbyss3_1, RootAbyss1);
 				case RootAbyss1:
 					MoveFromAToB(RootAbyss1, Elnas);
 					goto __Elnas_Z;
-
 				case Urus:
 					MoveFromAToB(Urus, Elnas);
 					goto __Elnas_Z;
@@ -224,16 +218,25 @@ public:
 				__Elnas_Z:
 				case Elnas:
 					MoveFromAToB(Elnas, ElnasOffice);
+
 				case ElnasOffice:
 					MoveFromAToB(ElnasOffice, Zacum1);
 				__Zacum1_Z:
 				case Zacum1:
 					MoveFromAToB(Zacum1, Zacum2_2);
+					IsReady = true;
 				case Zacum2_2:
-					IsExceptionSafe = false;
+					if (!IsReady)
+					{
+						MoveFromAToB(Zacum2_2, Zacum1);
+						MoveFromAToB(Zacum1, Zacum2_2);
+					}
+					UNFLAG(CharacterInfo.Type, USERCONF::CHARACTER_INFO::ZACUM);
 					MoveFromAToB(Zacum2_2, Zacum3_2);
 					break;
 
+				case MeisterVill:
+					MoveFromAToB(MeisterVill, Zacum2_3);
 				case Zacum2_3:
 					MoveFromAToB(Zacum2_3, Zacum1);
 					goto __Zacum1_Z;
@@ -242,23 +245,18 @@ public:
 					throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
 				}
 			}
-			catch (EXCEPTION_CODE ExceptionCode)
+			catch (BRIDGE_EXCEPTION_CODE ExceptionCode)
 			{
-				if (!IsExceptionSafe)
-				{
-					CharacterInfo.Type -= USERCONF::CHARACTER_INFO::ZACUM;
-				}
 				throw AppException("MoveAToBFailedException", IsRetryAvailable(ExceptionCode, CharacterInfo.Type));
 			}
-			
+
 			try
 			{
-				CharacterInfo.Type -= USERCONF::CHARACTER_INFO::ZACUM;
 				ZacumRaid::Play(CharacterInfo);
 			}
-			catch (int ErrorCode)
+			catch (int)
 			{
-				throw AppException("ZacumRaidFailedException", CharacterInfo.Type ? true : false);
+				throw AppException("RootAbyssRaidFailedException", ARE_FLAGS_ON(CharacterInfo.Type));
 			}
 		}
 	}
@@ -268,27 +266,70 @@ class CalcPlay : private Calc, private Bridge
 public:
 	void Play(const USERCONF::MAPLEID_INFO& MapleIdInfo)
 	{
-		switch (WhereAmI())
+		try
 		{
-		case Urus:
-			MoveFromAToB(Urus, Elnas);
-			MoveFromAToB(Elnas, FreeMarket);
-			Calc::Play(MapleIdInfo);
-			MoveFromAToB(FreeMarket, ElnasMarket);
-			MoveFromAToB(ElnasMarket, Elnas);
-			MoveFromAToB(Elnas, Urus);
-			break;
+			if (FreeMarket == WhereAmI())
+			{
+				MoveFromAToB(FreeMarket, Unknown);
+			}
 
-		case Zacum2_2:
-			MoveFromAToB(Zacum2_2, Zacum1);
-			MoveFromAToB(Zacum1, Zacum2_3);
-		case Zacum2_3:
-			MoveFromAToB(Zacum2_3, MeisterVill);
-			MoveFromAToB(MeisterVill, FreeMarket);
+			switch (WhereAmI())
+			{
+			case Zacum2_2:
+				MoveFromAToB(Zacum2_2, Zacum1);
+			case Zacum1:
+				MoveFromAToB(Zacum1, Zacum2_3);
+			case Zacum2_3:
+				MoveFromAToB(Zacum2_3, MeisterVill);
+				goto __MeisterVill__;
+
+			case Urus:
+				MoveFromAToB(Urus, Elnas);
+				goto __Elnas__;
+			case RootAbyss1:
+				MoveFromAToB(RootAbyss1, Elnas);
+				goto __Elnas__;
+			case ElnasMarket:
+				MoveFromAToB(ElnasMarket, Elnas);
+				goto __Elnas__;
+
+			__Elnas__:
+			case Elnas:
+				MoveFromAToB(Elnas, FreeMarket);
+				break;
+
+			__MeisterVill__:
+			case MeisterVill:
+				MoveFromAToB(MeisterVill, FreeMarket);
+			case FreeMarket:
+				break;
+			}
+		}
+		catch (BRIDGE_EXCEPTION_CODE ExceptionCode)
+		{
+			bool IsRetryAvailable;
+			switch (ExceptionCode)
+			{
+			case BRIDGE_EXCEPTION_CODE::A_FAIL:
+			case BRIDGE_EXCEPTION_CODE::B_FAIL:
+				IsRetryAvailable = true;
+				break;
+			case BRIDGE_EXCEPTION_CODE::A_ERRORINPUT:
+			case BRIDGE_EXCEPTION_CODE::B_ERRORINPUT:
+				IsRetryAvailable = false;
+				break;
+			}
+
+			throw AppException("MoveAToBFailedException", IsRetryAvailable);
+		}
+
+		try
+		{
 			Calc::Play(MapleIdInfo);
-			MoveFromAToB(FreeMarket, MeisterVill);
-			MoveFromAToB(MeisterVill, Zacum2_3);
-			break;
+		}
+		catch (int ErrorCode)
+		{
+			throw AppException("CalcFailedException", true);
 		}
 	}
 };

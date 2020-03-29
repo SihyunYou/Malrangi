@@ -6,31 +6,27 @@
 
 class BossRaid
 {
-protected:
+public:
 	struct SKILL
 	{
 		BYTE Key;
 		enum
 		{
-			UNITARY,
-			RAPID,
-			BUF,
-			ASSIST,
-			ONOFF
+			UNITARY = 0b00000001,
+			RAPID = 0b00000010,
+			BUF = 0b00000100,
+			ASSIST = 0b00001000,
+			ONOFF = 0b00010000
 		};
-		DWORD Type;
+		DWORD Flag;
 		seconds Cooltime;
 		system_clock::time_point LastRenewedTime;
 
 		SKILL() = default;
-		SKILL(BYTE Key, DWORD Type, seconds Cooltime = seconds(180)) :
+		SKILL(BYTE Key, DWORD Flag, seconds Cooltime = seconds(180)) :
 			Key(Key),
-			Type(Type),
-			Cooltime(Cooltime),
-			LastRenewedTime(system_clock::now())
-		{
-
-		}
+			Flag(Flag),
+			Cooltime(Cooltime) { }
 	};
 
 public:
@@ -40,7 +36,6 @@ protected:
 	vector<SKILL>* VecSkills = nullptr;
 	SKILL MainSkill;
 	const USERCONF::KEYSET_INFO& KeysetInfo;
-	bool IsFirstLoop;
 
 	inline static const Mat TargetImageItemPlusCoin = Read(TARGET_DIR "item//pluscoin.jpg");
 
@@ -54,53 +49,79 @@ public:
 	BossRaid() :
 		SeqSuccess(0), SeqFail(0),
 		VecSkills(nullptr),
-		KeysetInfo(USERCONF::GetInstance()->VirtualKeyset),
-		IsFirstLoop(true) { }
+		KeysetInfo(USERCONF::GetInstance()->VirtualKeyset) {}
 
-protected:
+public:
 	void SetSkills(vector<SKILL>* _VecSkills)
 	{
 		VecSkills = _VecSkills;
 
 		for (const auto& Skill : *VecSkills)
 		{
-			if (SKILL::UNITARY == Skill.Type || SKILL::RAPID == Skill.Type)
+			if (IS_FLAG_ON(SKILL::UNITARY | SKILL::RAPID, Skill.Flag))
 			{
 				MainSkill = Skill;
 				return;
 			}
 		}
 	}
+	
+	void UseSkills(vector<SKILL>& VecSkills, int Flags)
+	{
+		auto UseSkill = [this](SKILL & Skill)
+		{
+			auto IsCoolOn = [](const SKILL& Skill)
+			{
+				return duration_cast<seconds>(system_clock::now() - Skill.LastRenewedTime) > Skill.Cooltime;
+			};
+			auto RenewTime = [](SKILL& Skill)
+			{
+				Skill.LastRenewedTime += duration_cast<seconds>(system_clock::now() - Skill.LastRenewedTime);
+			};
+
+			switch (Skill.Flag)
+			{
+			case SKILL::ONOFF:
+				KeybdEventUp(MainSkill.Key);
+				KeybdEvent(Skill.Key, 1000);
+				break;
+
+			case SKILL::ASSIST:
+			case SKILL::BUF:
+				if (IsCoolOn(Skill))
+				{
+					KeybdEventUp(MainSkill.Key);
+					Sleep((SKILL::UNITARY == MainSkill.Flag) ? 800 : 200);
+					RenewTime(Skill);
+					KeybdEvent(Skill.Key, 1200);
+				}
+				break;
+
+			case SKILL::UNITARY:
+			case SKILL::RAPID:
+				KeybdEventDown(Skill.Key);
+				break;
+			}
+		};
+
+		for (auto& Skill : VecSkills)
+		{
+			if (IS_FLAG_ON(Flags, Skill.Flag))
+			{
+				UseSkill(Skill);
+			}
+			Sleep(0x20);
+		}
+	}
 	template <class T_LAMBDA>
 	void RaidCallBoss(T_LAMBDA CallBossRoutine)
 	{
-		for (const auto& Skill : *VecSkills)
-		{
-			if (SKILL::BUF == Skill.Type || SKILL::ONOFF == Skill.Type)
-			{
-				KeybdEvent(Skill.Key, 1500);
-			}
-		}
-
+		UseSkills(*VecSkills, SKILL::BUF | SKILL::ONOFF);
 		CallBossRoutine();
 	}
 	template <class T_LAMBDA>
 	void RaidDoBattle(T_LAMBDA PendingUntilMatchingTemplateRoutine, bool IsFixed)
 	{
-		auto IsCoolOn = [](const SKILL& Skill) -> bool
-		{
-			return duration_cast<seconds>(system_clock::now() - Skill.LastRenewedTime) > Skill.Cooltime;
-		};
-		auto UseBufAssist =
-			[MainKey = MainSkill.Key, Delay = (SKILL::UNITARY == MainSkill.Type) ? 800 : 100]
-		(SKILL& Skill) -> void
-		{
-			KeybdEventUp(MainKey);
-			Sleep(Delay);
-			Skill.LastRenewedTime += duration_cast<seconds>(system_clock::now() - Skill.LastRenewedTime);
-			KeybdEvent(Skill.Key, 800);
-		};
-
 		bool IsAllowedToBeComplete = false;
 		auto ThreadResurrection = thread(
 			[&, this]()
@@ -116,32 +137,7 @@ protected:
 			{
 				do
 				{
-					for (auto& Skill : *VecSkills)
-					{
-						switch (Skill.Type)
-						{
-						case SKILL::ASSIST:
-							if (IsFirstLoop || IsCoolOn(Skill))
-							{
-								IsFirstLoop = false;
-								UseBufAssist(Skill);
-							}
-							break;
-						case SKILL::BUF:
-							if (IsCoolOn(Skill))
-							{
-								UseBufAssist(Skill);
-							}
-							break;
-
-						case SKILL::UNITARY:
-						case SKILL::RAPID:
-							KeybdEventDown(Skill.Key);
-							break;
-						}
-
-						Sleep(0x40);
-					}
+					UseSkills(*VecSkills, SKILL::UNITARY | SKILL::RAPID | SKILL::ASSIST);
 				} while (!IsAllowedToBeComplete);
 			}
 		);
@@ -166,7 +162,6 @@ protected:
 private:
 	void CompleteRaid()
 	{
-		IsFirstLoop = true;
 		for each (const auto & Skill in *VecSkills)
 		{
 			KeybdEventUp(Skill.Key);

@@ -3,7 +3,7 @@
 #include "ipmanage.h"
 #include "report.h"
 
-//#define BUILD_URUS
+//define BUILD_URUS
 #define BUILD_DAILYBOSS
 //#define BUILD_CALC
 #define USING_IPRENEWER
@@ -15,6 +15,30 @@ main(
 {
 	ClientApi::SET_CLIENT_STDPOS();
 	Sleep(0x800);
+
+	BossRaid a;
+	USERCONF::CHARACTER_INFO CharacterInfo;
+	CharacterInfo.ClassName = "데벤";
+	static map<string, vector<BossRaid::SKILL>> MapVecSkills =
+	{
+		{
+			"데벤",
+			{
+				{'1', BossRaid::SKILL::BUF, seconds(180)},
+				{'2', BossRaid::SKILL::BUF, seconds(180)},
+				{'3', BossRaid::SKILL::BUF, seconds(60)},
+				{'E', BossRaid::SKILL::ASSIST, seconds(6)},
+				{'Q', BossRaid::SKILL::UNITARY}
+			}
+		}
+};
+	a.SetSkills(&MapVecSkills[CharacterInfo.ClassName]);
+	a.RaidDoBattle(
+		[]()
+		{
+			return false;
+		},
+		true);
 
 	try
 	{
@@ -105,7 +129,7 @@ main(
 				if (SeqMapleId % 4 == 0)
 				{
 #ifdef USING_IPRENEWER
-				//	IpManager.Renew(IpInfo.InternetInfo);
+					IpManager.Renew(IpInfo.InternetInfo);
 #else
 					if (SeqMapleId > 3)
 					{
@@ -128,7 +152,7 @@ main(
 				case UNHANDLED:
 					try
 					{
-					//	ClientApi::BootClient();
+						ClientApi::BootClient();
 					}
 					catch (ClientApi::BootFailedException & bfe)
 					{
@@ -141,7 +165,7 @@ main(
 
 				try
 				{
-				//	ClientApi::Login(NexonAccountInfo, MapleIdInfo);
+					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 					LogoutState = NORMAL;
 				}
 				catch (MalrangiException & e)
@@ -164,7 +188,7 @@ main(
 
 						try
 						{
-						//	ClientApi::SelectServer(ServerInfo, 27);
+							ClientApi::SelectServer(ServerInfo, 27);
 						}
 						catch (ClientApi::ServerDelayException & e)
 						{
@@ -187,7 +211,7 @@ main(
 								break;
 							}
 						}
-					//	ClientApi::SelectCharacter(SeqNotCompletedCharacter);
+						ClientApi::SelectCharacter(SeqNotCompletedCharacter);
 
 #if defined(BUILD_URUS)
 					__REPLAY_APPLICATION__:
@@ -200,19 +224,26 @@ main(
 							ServerInfo.IsCompleted = true;
 							LEAVE_LOG(nullptr);
 						}
-						catch (AppException & e)
+						catch (AppException & ae)
 						{
-							LEAVE_LOG(&e);
+							LEAVE_LOG(&ae);
 
 							ClientApi::RemoveAllIngameWindows();
 							ClientApi::ExitGame();
 
-							goto __REPLAY_APPLICATION__;
+							if (ae.IsRetryAvailable)
+							{
+								goto __REPLAY_APPLICATION__;
+							}
+							else
+							{
+								ServerInfo.IsCompleted = true;
+							}
 						}
 
 						ClientApi::ExitGame();
 #elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
-						
+						int IndexCharacter = 0;
 						for(auto & CharacterInfo : ServerInfo.VecCharacter)
 						{
 							if (CharacterInfo.IsCompleted)
@@ -222,10 +253,21 @@ main(
 							Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName + "/" + CharacterInfo.ClassName;
 
 						__REPLAY_APPLICATION__:
-						//	ClientApi::EnterGame(MapleIdInfo);
-
-							try
+#ifdef BUILD_DAILYBOSS
+							if (ARE_FLAGS_ON(CharacterInfo.Type))
 							{
+								ClientApi::EnterGame(MapleIdInfo);
+							}
+							else
+							{
+								WriteLog(LOG_LEVEL::WARNING, "All flags are off. Forced to exit game.");
+								CharacterInfo.IsCompleted = true;
+							}
+#else
+							ClientApi::EnterGame(MapleIdInfo);
+#endif
+							try
+							{	
 #ifdef BUILD_DAILYBOSS
 								Worker.Play(CharacterInfo);
 #else
@@ -236,15 +278,23 @@ main(
 							catch (AppException & ae)
 							{
 								LEAVE_LOG(&ae);
-								if (!ae.IsRetryAvailable)
-								{
-									CharacterInfo.IsCompleted = true;
-								}
-
+								
 								ClientApi::RemoveAllIngameWindows();
 								ClientApi::ExitGame();
 
-								goto __REPLAY_APPLICATION__;
+								if (ae.IsRetryAvailable)
+								{
+									goto __REPLAY_APPLICATION__;
+								}
+								else
+								{
+									CharacterInfo.IsCompleted = true;
+								}
+							}
+
+							if (++IndexCharacter == ServerInfo.VecCharacter.size())
+							{
+								ServerInfo.IsCompleted = true;
 							}
 
 							ClientApi::ExitGame();

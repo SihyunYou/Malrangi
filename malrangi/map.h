@@ -71,27 +71,26 @@ public:
 		}
 
 		auto [Seq, Value, Location] = GetHighestMatchedTemplate(Capture(RECT_MAP), ArrTargetImageMap);
-		return Value > 0.96 ? Seq : Unknown;
+		return Value > 0.9 ? Seq : Unknown;
 	}
 	bool AmIIn(int NumberOfMap)
 	{
 		return MatchTemplate(Capture(RECT_MAP), GetMapMat(NumberOfMap), nullptr, 0.96);
 	}
 
-	enum class EXCEPTION_CODE
+	enum class BRIDGE_EXCEPTION_CODE
 	{
 		A_FAIL,
 		A_ERRORINPUT,
 		B_FAIL,
 		B_ERRORINPUT
 	};
-	void MoveFromAToB(int A, int B, bool IsRetry = false)
+	
+	void MoveFromAToB(const int A, const int B, bool IsRetry = false)
 	{
-		bool IsRetryAvailable;
-		auto Cross = [this, A, B, &IsRetryAvailable](auto CrossRoutine)
+		auto Cross = [this, A, B](auto CrossRoutine)
 		{
 			ClientApi::SET_CLIENT_STDPOS();
-			IsRetryAvailable = false;
 			if (AmIIn(A))
 			{
 				CrossRoutine();
@@ -105,12 +104,12 @@ public:
 				}
 				else
 				{
-					throw EXCEPTION_CODE::B_FAIL;
+					throw BRIDGE_EXCEPTION_CODE::B_FAIL;
 				}
 			}
 			else
 			{
-				throw EXCEPTION_CODE::A_FAIL;
+				throw BRIDGE_EXCEPTION_CODE::A_FAIL;
 			}
 		};
 		auto CrossWithMirror = [this, B](void)
@@ -146,7 +145,7 @@ public:
 					});
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case Elnas:
@@ -181,7 +180,7 @@ public:
 					});
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case ElnasOffice:
@@ -196,7 +195,7 @@ public:
 					});
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case Zacum1:
@@ -242,7 +241,7 @@ public:
 					});
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case Zacum2_2:
@@ -271,7 +270,8 @@ public:
 						static const Mat TargetImage = Read(TARGET_DIR "button//meistervill.jpg");
 
 						KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.SpecialTechnology);
-						if (VALLOC MatchInfo; MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
+						if (VALLOC MatchInfo; 
+							MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
 						{
 							MouseEvent(MatchInfo.Location, LEFT_CLICK);
 							KeybdEvent(VK_RETURN);
@@ -280,7 +280,7 @@ public:
 				KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.SpecialTechnology);
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case Zacum3_2:
@@ -294,7 +294,7 @@ public:
 					});
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case MeisterVill:
@@ -312,34 +312,52 @@ public:
 				return;
 
 			case Zacum2_3:
-				Cross(
-					[this]()
-					{
-						static bool IsForward = true;
+				if (AmIIn(A))
+				{
+					static bool IsForward = true;
+					ClientApi::MoveServer(IsForward = (IsForward == true) ? false : true);
 
-						ClientApi::MoveServer(IsForward = (IsForward == true) ? false : true);
-						if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, GetMapMat(MeisterVill), seconds(60)))
+					if (DoUntilMatchingTemplate(
+						ClientApi::RECT_CLIENT4, 
+						GetMapMat(Zacum2_3), 
+						[]()
 						{
-							KeybdEventContinued(VK_UP, 1000);
-						}
-					});
-				return;
+							KeybdEvent(VK_UP, 0x200);
+						},
+						seconds(60)))
+					{
+						Sleep(0x400);
+						return;
+					}
+					throw BRIDGE_EXCEPTION_CODE::B_FAIL;
+				}
+				throw BRIDGE_EXCEPTION_CODE::A_FAIL;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
-
+				
 		case FreeMarket:
 			switch (B)
 			{
 			case MeisterVill:
 			case ElnasMarket:
-				Cross([]()
+			case Unknown:
+				if (AmIIn(FreeMarket))
+				{
+					KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
+					if (WaitUntilMatchingTemplate(
+						ClientApi::RECT_CLIENT4,
+						array<Mat, 2>{ GetMapMat(MeisterVill), GetMapMat(ElnasMarket) },
+						seconds(60)))
 					{
-						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
-					});
-				return;
+						Sleep(0x400);
+						return;
+					}
+					throw BRIDGE_EXCEPTION_CODE::B_FAIL;
+				}
+				throw BRIDGE_EXCEPTION_CODE::A_FAIL;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case ElnasMarket:
@@ -353,7 +371,7 @@ public:
 					});
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case RootAbyss1:
@@ -394,7 +412,7 @@ public:
 					});
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case RootAbyss2_1:
@@ -411,7 +429,7 @@ public:
 					});
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case RootAbyss3_1:
@@ -424,10 +442,10 @@ public:
 					});
 				return;
 
-			default: throw EXCEPTION_CODE::B_ERRORINPUT;
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
-		default: throw EXCEPTION_CODE::A_ERRORINPUT;
+		default: throw BRIDGE_EXCEPTION_CODE::A_ERRORINPUT;
 		}
 	}
 };
