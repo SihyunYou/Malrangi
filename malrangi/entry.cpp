@@ -3,9 +3,9 @@
 #include "ipmanage.h"
 #include "report.h"
 
-//define BUILD_URUS
-#define BUILD_DAILYBOSS
-//#define BUILD_CALC
+//#define BUILD_URUS
+//#define BUILD_DAILYBOSS
+#define BUILD_CALC
 #define USING_IPRENEWER
 
 int
@@ -16,40 +16,9 @@ main(
 	ClientApi::SET_CLIENT_STDPOS();
 	Sleep(0x800);
 
-	BossRaid a;
-	USERCONF::CHARACTER_INFO CharacterInfo;
-	CharacterInfo.ClassName = "데벤";
-	static map<string, vector<BossRaid::SKILL>> MapVecSkills =
-	{
-		{
-			"데벤",
-			{
-				{'1', BossRaid::SKILL::BUF, seconds(180)},
-				{'2', BossRaid::SKILL::BUF, seconds(180)},
-				{'3', BossRaid::SKILL::BUF, seconds(60)},
-				{'E', BossRaid::SKILL::ASSIST, seconds(6)},
-				{'Q', BossRaid::SKILL::UNITARY}
-			}
-		}
-};
-	a.SetSkills(&MapVecSkills[CharacterInfo.ClassName]);
-	a.RaidDoBattle(
-		[]()
-		{
-			return false;
-		},
-		true);
-
 	try
 	{
 		USERCONF& UserInfo = *(USERCONF::GetInstance());
-#if defined(BUILD_URUS)
-		UrusPlay Worker;
-#elif defined(BUILD_DAILYBOSS)
-		DailyBossPlay Worker;
-#elif defined(BUILD_CALC)
-		CalcPlay Worker;
-#endif
 #ifdef USING_IPRENEWER
 		IPCONF& IpInfo = *(IPCONF::GetInstance());
 		IpManage IpManager;
@@ -214,6 +183,7 @@ main(
 						ClientApi::SelectCharacter(SeqNotCompletedCharacter);
 
 #if defined(BUILD_URUS)
+						UrusPlay Worker;
 					__REPLAY_APPLICATION__:
 						ClientApi::EnterGame(MapleIdInfo);
 
@@ -252,6 +222,11 @@ main(
 							}
 							Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName + "/" + CharacterInfo.ClassName;
 
+#ifdef BUILD_DAILYBOSS 
+							DailyBossPlay Worker;
+#else 
+							CalcPlay Worker;
+#endif
 						__REPLAY_APPLICATION__:
 #ifdef BUILD_DAILYBOSS
 							if (ARE_FLAGS_ON(CharacterInfo.Type))

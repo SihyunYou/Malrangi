@@ -10,6 +10,7 @@ user.conf
 *.dll
 target/mapleid/
 Patcher.info
+packages/
 
 # User-specific files
 *.rsuser

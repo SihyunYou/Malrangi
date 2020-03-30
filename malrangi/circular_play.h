@@ -59,8 +59,13 @@ public:
 			default: 
 				throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
 			}
+
+			for (; SeqPlay <= 3; SeqPlay++)
+			{
+				UrusRaid::Play(CharacterInfo);
+			}
 		}
-		catch (BRIDGE_EXCEPTION_CODE ExceptionCode)
+		catch (BRIDGE_EXCEPTION_CODE& ExceptionCode)
 		{
 			bool IsRetryAvailable;
 			switch (ExceptionCode)
@@ -77,27 +82,19 @@ public:
 
 			throw AppException("MoveAToBFailedException", IsRetryAvailable);
 		}
-
-		try
-		{
-			for (; SeqPlay <= 3; SeqPlay++)
-			{
-				UrusRaid::Play(CharacterInfo);
-			}
-		}
-		catch (int ExceptionCode)
+		catch (URUSRAID_EXCEPTION_CODE& ExceptionCode)
 		{
 			switch (ExceptionCode)
 			{
-			case PLAY_SEQUENCE_OVER:
+			case URUSRAID_EXCEPTION_CODE::PLAY_SEQUENCE_OVER:
 				SeqPlay = 3;
 				break;
-			case BUTTON_READY_NOT_FOUND:
+			case URUSRAID_EXCEPTION_CODE::BUTTON_READY_NOT_FOUND:
 				break;
-			case BATTLE_ENTRY_TIMEOUT:
-			case BATTLE_TIMEOUT:
-			case EXIT_TO_U3_FAILED:
-			case NPC_MASHUR_NOT_FOUND:
+			case URUSRAID_EXCEPTION_CODE::BATTLE_ENTRY_TIMEOUT:
+			case URUSRAID_EXCEPTION_CODE::BATTLE_TIMEOUT:
+			case URUSRAID_EXCEPTION_CODE::EXIT_TO_U3_FAILED:
+			case URUSRAID_EXCEPTION_CODE::NPC_MASHUR_NOT_FOUND:
 			default:
 				++SeqPlay;
 			}
@@ -110,37 +107,16 @@ public:
 
 			throw AppException("UrusRaidException", IsRetryAvailable);
 		}
-
-		SeqPlay = 1;
 	}
 };
-
-
-
 class DailyBossPlay : private ZacumRaid, private RootAbyssRaid, private Bridge
 {
-private:
-	bool IsRetryAvailable(BRIDGE_EXCEPTION_CODE ec, int CharacterType)
-	{
-		switch (ec)
-		{
-		case BRIDGE_EXCEPTION_CODE::A_FAIL:
-		case BRIDGE_EXCEPTION_CODE::B_FAIL:
-			return CharacterType ? true : false;
-			break;
-		case BRIDGE_EXCEPTION_CODE::A_ERRORINPUT:
-		case BRIDGE_EXCEPTION_CODE::B_ERRORINPUT:
-		default:
-			return false;
-		}
-	};
-
 public:
 	void Play(USERCONF::CHARACTER_INFO& CharacterInfo)
 	{
-		if (CharacterInfo.Type & USERCONF::CHARACTER_INFO::ROOTABYSS)
+		try
 		{
-			try
+			if (CharacterInfo.Type & USERCONF::CHARACTER_INFO::ROOTABYSS)
 			{
 				if (FreeMarket == WhereAmI())
 				{
@@ -178,25 +154,11 @@ public:
 
 				default: throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
 				}
-			}
-			catch (BRIDGE_EXCEPTION_CODE ExceptionCode)
-			{
-				throw AppException("MoveAToBFailedException", IsRetryAvailable(ExceptionCode, CharacterInfo.Type));
-			}
 
-			try
-			{
 				RootAbyssRaid::Play(CharacterInfo);
 			}
-			catch (int)
-			{
-				throw AppException("RootAbyssRaidFailedException", ARE_FLAGS_ON(CharacterInfo.Type));
-			}
-		}
 
-		if (CharacterInfo.Type & USERCONF::CHARACTER_INFO::ZACUM)
-		{
-			try
+			if (CharacterInfo.Type & USERCONF::CHARACTER_INFO::ZACUM)
 			{
 				if (FreeMarket == WhereAmI())
 				{
@@ -244,20 +206,34 @@ public:
 				default:
 					throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
 				}
-			}
-			catch (BRIDGE_EXCEPTION_CODE ExceptionCode)
-			{
-				throw AppException("MoveAToBFailedException", IsRetryAvailable(ExceptionCode, CharacterInfo.Type));
-			}
 
-			try
-			{
 				ZacumRaid::Play(CharacterInfo);
 			}
-			catch (int)
+		}
+		catch (BRIDGE_EXCEPTION_CODE ExceptionCode)
+		{
+			bool IsRetryAvailable;
+			switch (ExceptionCode)
 			{
-				throw AppException("RootAbyssRaidFailedException", ARE_FLAGS_ON(CharacterInfo.Type));
+			case BRIDGE_EXCEPTION_CODE::A_FAIL:
+			case BRIDGE_EXCEPTION_CODE::B_FAIL:
+				IsRetryAvailable = CharacterInfo.Type ? true : false;
+				break;
+			case BRIDGE_EXCEPTION_CODE::A_ERRORINPUT:
+			case BRIDGE_EXCEPTION_CODE::B_ERRORINPUT:
+			default:
+				IsRetryAvailable = false;
 			}
+
+			throw AppException("MoveAToBFailedException", IsRetryAvailable);
+		}
+		catch (BOSSRAID_EXCEPTION_CODE & ExceptionCode)
+		{
+			throw AppException("BossRaidException", ARE_FLAGS_ON(CharacterInfo.Type));
+		}
+		catch (ZACUMRAID_EXCEPTION_CODE & ExceptionCode)
+		{
+			throw AppException("ZacumRaidException", ARE_FLAGS_ON(CharacterInfo.Type));
 		}
 	}
 };

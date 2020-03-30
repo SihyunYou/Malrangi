@@ -6,7 +6,7 @@
 
 class BossRaid
 {
-public:
+protected:
 	struct SKILL
 	{
 		BYTE Key;
@@ -39,7 +39,7 @@ protected:
 
 	inline static const Mat TargetImageItemPlusCoin = Read(TARGET_DIR "item//pluscoin.jpg");
 
-	enum
+	enum class BOSSRAID_EXCEPTION_CODE
 	{
 		BATTLE_TIMEOUT = 100,
 		RAID_COMPLETE_FAILED
@@ -51,7 +51,7 @@ public:
 		VecSkills(nullptr),
 		KeysetInfo(USERCONF::GetInstance()->VirtualKeyset) {}
 
-public:
+protected:
 	void SetSkills(vector<SKILL>* _VecSkills)
 	{
 		VecSkills = _VecSkills;
@@ -65,7 +65,6 @@ public:
 			}
 		}
 	}
-	
 	void UseSkills(vector<SKILL>& VecSkills, int Flags)
 	{
 		auto UseSkill = [this](SKILL & Skill)
@@ -113,6 +112,7 @@ public:
 			Sleep(0x20);
 		}
 	}
+
 	template <class T_LAMBDA>
 	void RaidCallBoss(T_LAMBDA CallBossRoutine)
 	{
@@ -155,7 +155,7 @@ public:
 
 		if (!IsAllowedToBeComplete)
 		{
-			throw BATTLE_TIMEOUT;
+			throw BOSSRAID_EXCEPTION_CODE::BATTLE_TIMEOUT;
 		}
 	}
 
@@ -189,7 +189,7 @@ protected:
 		}
 		else
 		{
-			throw RAID_COMPLETE_FAILED;
+			throw BOSSRAID_EXCEPTION_CODE::RAID_COMPLETE_FAILED;
 		}
 	}
 };

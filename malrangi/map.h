@@ -363,11 +363,13 @@ public:
 		case ElnasMarket:
 			switch (B)
 			{
-			case Elnas: // 재조정필요
+			case Elnas:
 				Cross(
 					[](){
-						KeybdEventContinued(VK_LEFT, 3800);
-						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1400);
+						ClientApi::MinimapRecognizer Recognizer({ 10, 80, 260, 150 });
+						Recognizer.MoveToRelativeCriteria(20);
+
+						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
 					});
 				return;
 

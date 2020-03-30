@@ -12,7 +12,7 @@ public:
 protected:
 	int SeqPlay;
 
-	enum
+	enum class URUSRAID_EXCEPTION_CODE
 	{
 		BUTTON_READY_NOT_FOUND,
 		PLAY_SEQUENCE_OVER,
@@ -52,11 +52,11 @@ protected:
 		{
 			if (MatchTemplate(SourceImage, TargetImageWindowUrusCompleted, &MatchInfo))
 			{
-				throw PLAY_SEQUENCE_OVER;
+				throw URUSRAID_EXCEPTION_CODE::PLAY_SEQUENCE_OVER;
 			}
 			else
 			{
-				throw BUTTON_READY_NOT_FOUND;
+				throw URUSRAID_EXCEPTION_CODE::BUTTON_READY_NOT_FOUND;
 			}
 		}
 
@@ -72,12 +72,17 @@ protected:
 			TargetImagePicUrus,
 			[]()
 			{
-				MouseEvent({ 640, 455 }, LEFT_CLICK, 0x200);
+				for (int i = 0; i < 3; i++)
+				{
+					Operate(VK_LEFT);
+					Operate(VK_RIGHT);
+				}
+				MouseEvent({ 640, 455 }, LEFT_CLICK, 0);
 			},
 			seconds(1800),
 				0))
 		{
-			throw BATTLE_ENTRY_TIMEOUT;
+			throw URUSRAID_EXCEPTION_CODE::BATTLE_ENTRY_TIMEOUT;
 		}
 
 
@@ -135,7 +140,7 @@ protected:
 					CountNullOfCurrentDir = 0;
 				}
 
-				if ((NULL == LastDir && NULL == CurrentDir) || CountInitialOperation < 24)
+				if ((NULL == LastDir && NULL == CurrentDir) || CountInitialOperation < 12)
 				{
 					Operate(VK_LEFT);
 					Operate(VK_RIGHT);
@@ -159,7 +164,7 @@ protected:
 		}
 		else
 		{
-			throw BATTLE_TIMEOUT;
+			throw URUSRAID_EXCEPTION_CODE::BATTLE_TIMEOUT;
 		}
 #undef Operate
 
@@ -178,7 +183,7 @@ protected:
 		}
 		else
 		{
-			throw EXIT_TO_U3_FAILED;
+			throw URUSRAID_EXCEPTION_CODE::EXIT_TO_U3_FAILED;
 		}
 
 		if (SeqPlay <= 2)
@@ -190,7 +195,7 @@ protected:
 			}
 			else
 			{
-				throw NPC_MASHUR_NOT_FOUND;
+				throw URUSRAID_EXCEPTION_CODE::NPC_MASHUR_NOT_FOUND;
 			}
 		}
 	}
@@ -202,7 +207,7 @@ private:
 	VALLOC MatchInfo;
 
 protected:
-	enum
+	enum class ZACUMRAID_EXCEPTION_CODE
 	{
 		THROW_EYEOFFIRE_FAILED
 	};
@@ -313,7 +318,8 @@ protected:
 		};
 		MapVecSkills["ÆÒÅÒ"] =
 		{
-			{'Q', SKILL::RAPID }
+			{'Q', SKILL::RAPID },
+			{'1', SKILL::BUF}
 		};
 		MapVecSkills["Àº¿ù"] =
 		{
@@ -410,7 +416,7 @@ protected:
 						}
 						else
 						{
-							throw THROW_EYEOFFIRE_FAILED;
+							throw ZACUMRAID_EXCEPTION_CODE::THROW_EYEOFFIRE_FAILED;
 						}
 					}
 
