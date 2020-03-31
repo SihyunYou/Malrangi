@@ -107,6 +107,8 @@ public:
 
 			throw AppException("UrusRaidException", IsRetryAvailable);
 		}
+
+		SeqPlay = 1;
 	}
 };
 class DailyBossPlay : private ZacumRaid, private RootAbyssRaid, private Bridge

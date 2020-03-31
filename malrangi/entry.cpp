@@ -3,9 +3,9 @@
 #include "ipmanage.h"
 #include "report.h"
 
-//#define BUILD_URUS
+#define BUILD_URUS
 //#define BUILD_DAILYBOSS
-#define BUILD_CALC
+//#define BUILD_CALC
 #define USING_IPRENEWER
 
 int
@@ -19,6 +19,13 @@ main(
 	try
 	{
 		USERCONF& UserInfo = *(USERCONF::GetInstance());
+#if defined(BUILD_URUS)	
+		UrusPlay Worker;
+#elif defined(BUILD_DAILYBOSS)	
+		DailyBossPlay Worker;
+#elif defined(BUILD_CALC)	
+		CalcPlay Worker;
+#endif
 #ifdef USING_IPRENEWER
 		IPCONF& IpInfo = *(IPCONF::GetInstance());
 		IpManage IpManager;
@@ -183,7 +190,6 @@ main(
 						ClientApi::SelectCharacter(SeqNotCompletedCharacter);
 
 #if defined(BUILD_URUS)
-						UrusPlay Worker;
 					__REPLAY_APPLICATION__:
 						ClientApi::EnterGame(MapleIdInfo);
 
@@ -222,11 +228,6 @@ main(
 							}
 							Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName + "/" + CharacterInfo.ClassName;
 
-#ifdef BUILD_DAILYBOSS 
-							DailyBossPlay Worker;
-#else 
-							CalcPlay Worker;
-#endif
 						__REPLAY_APPLICATION__:
 #ifdef BUILD_DAILYBOSS
 							if (ARE_FLAGS_ON(CharacterInfo.Type))
@@ -237,6 +238,9 @@ main(
 							{
 								WriteLog(LOG_LEVEL::WARNING, "All flags are off. Forced to exit game.");
 								CharacterInfo.IsCompleted = true;
+								KeybdEvent(VK_RIGHT);
+
+								continue;
 							}
 #else
 							ClientApi::EnterGame(MapleIdInfo);
@@ -264,6 +268,8 @@ main(
 								else
 								{
 									CharacterInfo.IsCompleted = true;
+									KeybdEvent(VK_RIGHT);
+									continue;
 								}
 							}
 

@@ -341,21 +341,19 @@ void ClientApi::SelectServer(
 	const USERCONF::SERVER_INFO& ServerInfo,
 	int ChannelNumber)
 {
-	ClientApi::SET_CLIENT_STDPOS();
-
-	static const string ServerNames[] = { "스카니아", "베라", "루나", "제니스", "크로아", "유니온", "엘리시움", "이노시스", "레드", "오로라", "아케인", "노바" };
 	static const Mat TargetImageWindowServerDelay = Read(TARGET_DIR "window//server-delay.jpg");
-
-	for (int i = 0; i < sizeof(ServerNames) / sizeof(string); i++)
-	{
-		if (ServerNames[i] == ServerInfo.ServerName)
-		{
-			MouseEvent({ 745, 32 + 94 + i * 32 }, LEFT_CLICK);
-			break;
-		}
-	}
-	MouseEvent({ 291 + 70 * (ChannelNumber % 5), 255 + 30 * (ChannelNumber / 5) }, DLEFT_CLICK);
 	
+	if(VALLOC MatchInfo;
+		MatchTemplate(Capture(ClientApi::RECT_CLIENT1), Read(TARGET_DIR "server//" + ServerInfo.ServerName + ".jpg"), &MatchInfo))
+	{
+		MouseEvent(MatchInfo.Location, LEFT_CLICK);
+		MouseEvent({ 291 + 70 * (ChannelNumber % 5), 255 + 30 * (ChannelNumber / 5) }, DLEFT_CLICK);
+	}
+	else
+	{
+		throw MalrangiException("SelectServerFailedException");
+	}
+
 	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN3, seconds(60)))
 	{
 		Sleep(0x400);
