@@ -134,7 +134,7 @@ protected:
 					LastDir = CurrentDir = (Score < 0) ? VK_LEFT : VK_RIGHT;
 				}
 
-				if (CountNullOfCurrentDir > 120)
+				if (CountNullOfCurrentDir > 40)
 				{
 					LastDir = (LastDir == VK_LEFT) ? VK_RIGHT : VK_LEFT;
 					CountNullOfCurrentDir = 0;
@@ -433,7 +433,12 @@ protected:
 
 			RaidCompleteRequest(-2000, 5000);
 		}
-		catch (int)
+		catch (BOSSRAID_EXCEPTION_CODE& ExceptionCode)
+		{
+			Write(SNAP_DIR "zacum-raid//" + to_string(++SeqFail) + ".jpg", SourceImageClient4Colored);
+			throw;
+		}
+		catch (ZACUMRAID_EXCEPTION_CODE & ExceptionCode)
 		{
 			Write(SNAP_DIR "zacum-raid//" + to_string(++SeqFail) + ".jpg", SourceImageClient4Colored);
 			throw;

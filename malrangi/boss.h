@@ -122,27 +122,28 @@ protected:
 	template <class T_LAMBDA>
 	void RaidDoBattle(T_LAMBDA PendingUntilMatchingTemplateRoutine, bool IsFixed)
 	{
-		bool IsAllowedToBeComplete = false;
+		bool IsThreadJoinable = false;
 		auto ThreadResurrection = thread(
-			[&, this]()
+			[&IsThreadJoinable]()
 			{
-				while (!IsAllowedToBeComplete)
+				while (!IsThreadJoinable)
 				{
 					MouseEvent({ 800, 320 }, LEFT_CLICK, 0x80);
 				}
 			}
 		);
 		auto ThreadBattle = thread(
-			[&, this]()
+			[&IsThreadJoinable, this]()
 			{
 				do
 				{
 					UseSkills(*VecSkills, SKILL::UNITARY | SKILL::RAPID | SKILL::ASSIST);
-				} while (!IsAllowedToBeComplete);
+				} while (!IsThreadJoinable);
 			}
 		);
 
-		IsAllowedToBeComplete = PendingUntilMatchingTemplateRoutine();
+		bool IsRaidCompleteSuccessfully = PendingUntilMatchingTemplateRoutine();
+		IsThreadJoinable = true;
 
 		if (ThreadBattle.joinable())
 		{
@@ -153,33 +154,28 @@ protected:
 			ThreadResurrection.join();
 		}
 
-		if (!IsAllowedToBeComplete)
-		{
-			throw BOSSRAID_EXCEPTION_CODE::BATTLE_TIMEOUT;
-		}
-	}
-
-private:
-	void CompleteRaid()
-	{
 		for each (const auto & Skill in *VecSkills)
 		{
 			KeybdEventUp(Skill.Key);
 		}
+
+		if (!IsRaidCompleteSuccessfully)
+		{
+			CompleteRaid();
+			throw BOSSRAID_EXCEPTION_CODE::BATTLE_TIMEOUT;
+		}
 	}
+
 protected: 
 #define ArrowKeyFromInteger(_x) (_x < 0 ? VK_LEFT : VK_RIGHT)
 	void RaidCompleteRequest(int PickingMilliseconds1, int PickingMilliseconds2)
 	{
-		CompleteRaid();
-
 		KeybdEventContinuedWithSubKey(ArrowKeyFromInteger(PickingMilliseconds1), KeysetInfo.Picking, std::labs(PickingMilliseconds1));
 		KeybdEventContinuedWithSubKey(ArrowKeyFromInteger(PickingMilliseconds2), KeysetInfo.Picking, std::labs(PickingMilliseconds2));
 	}
 	template <class T_LAMBDA>
 	void RaidCompleteRequest(int PickingMilliseconds1, int PickingMilliseconds2, T_LAMBDA BeforePickingRoutine)
 	{
-		CompleteRaid();
 		BeforePickingRoutine();
 	
 		if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageItemPlusCoin, seconds(10)))

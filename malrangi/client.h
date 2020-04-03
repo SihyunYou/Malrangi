@@ -25,14 +25,27 @@ public:
 	inline static const Mat TARGETIMAGE_INTERN = Read(TARGET_DIR "button//meilege.jpg");
 
 public:
+	class Exception : public MalrangiException
+	{
+	public:
+		Exception(void) :
+			MalrangiException(__CLASSNAME__) {}
+		Exception(string Description) :
+			MalrangiException(__CLASSNAME__ + "! " + Description) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+
 	class MinimapRecognizer
 	{
 	public:
-		class CharacterNotFoundException : public MalrangiException
+		class CharacterNotFoundException : public ClientApi::Exception
 		{
 		public:
 			CharacterNotFoundException(void) 
-				: MalrangiException(__CLASSNAME__) {}
+				: ClientApi::Exception(__CLASSNAME__) {}
 			virtual const char* CharacterNotFoundException::what(void)
 			{
 				return Message.c_str();
@@ -109,18 +122,7 @@ public:
 		RECT RectMinimap;
 	};
 
-	class Exception : public MalrangiException
-	{
-	public:
-		Exception(void) :
-			MalrangiException(__CLASSNAME__) {}
-		Exception(string Description) :
-			MalrangiException(__CLASSNAME__ + "! " + Description) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
+	
 
 	/****************************************************************************
 	* Excetpions handled specifically
@@ -163,7 +165,7 @@ public:
 		}
 		else
 		{
-			throw MalrangiException(DefaultWhat);
+			throw ClientApi::Exception(DefaultWhat);
 		}
 	}
 	class ServerDisconnectedException : public ClientApi::Exception
@@ -310,7 +312,7 @@ void ClientApi::Login(
 	}
 	else
 	{
-		throw MalrangiException("NexonLoginFailedException");
+		throw ClientApi::Exception("NexonLoginFailedException");
 	}
 
 	
@@ -334,7 +336,7 @@ void ClientApi::Login(
 	}
 	else
 	{
-		throw MalrangiException("MapleLoginFailedException");
+		throw ClientApi::Exception("MapleLoginFailedException");
 	}
 }
 void ClientApi::SelectServer(
@@ -351,7 +353,7 @@ void ClientApi::SelectServer(
 	}
 	else
 	{
-		throw MalrangiException("SelectServerFailedException");
+		throw ClientApi::Exception("SelectServerFailedException");
 	}
 
 	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN3, seconds(60)))
