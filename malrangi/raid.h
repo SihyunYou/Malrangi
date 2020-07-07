@@ -14,6 +14,7 @@ protected:
 
 	enum class URUSRAID_EXCEPTION_CODE
 	{
+		PARTY_UNBREAKABLE,
 		BUTTON_READY_NOT_FOUND,
 		PLAY_SEQUENCE_OVER,
 		BATTLE_ENTRY_TIMEOUT,
@@ -30,14 +31,22 @@ protected:
 		static const Mat TargetImageNpcMashur(Read(TARGET_DIR "npc//mashur.jpg"));
 		static const Mat TargetImageMapU3 = Read(TARGET_DIR "map//u3.jpg");
 		static const Mat TargetImageWindowUrusCompleted = Read(TARGET_DIR "window//urus_completed.jpg");
-
+		static const Mat TargetImageWindowUrusPartyNotBroken = Read(TARGET_DIR "window//urus_party_not_broken.jpg");
+		
 		/*** 전투 전 ***/
 		if (1 == SeqPlay)
 		{
 			ClientApi::BreakParty();
 		}
-		
+		else if (3 < SeqPlay)
+		{
+			return;
+		}
+
 		KeybdEventContinued(VK_LEFT, 4000);
+
+		bool IsRetry = false;
+	__RETRY__:
 		MouseEvent({ 1140, 630 }, LEFT_CLICK);
 		MouseEvent({ 440, 710 }, LEFT_CLICK);
 		MouseEvent({ 487, 771 }, LEFT_CLICK);
@@ -50,6 +59,22 @@ protected:
 		}
 		else
 		{
+			if (MatchTemplate(SourceImage, TargetImageWindowUrusPartyNotBroken, &MatchInfo))
+			{
+				if (IsRetry)
+				{
+					throw URUSRAID_EXCEPTION_CODE::PARTY_UNBREAKABLE;
+				}
+				else
+				{
+					KeybdEvent(VK_ESCAPE);
+					ClientApi::BreakParty();
+
+					IsRetry = true;
+					goto __RETRY__;
+				}
+			}
+
 			if (MatchTemplate(SourceImage, TargetImageWindowUrusCompleted, &MatchInfo))
 			{
 				throw URUSRAID_EXCEPTION_CODE::PLAY_SEQUENCE_OVER;
@@ -66,21 +91,20 @@ protected:
 		NewRectClient.left += 100;
 		NewRectClient.right -= 700;
 		NewRectClient.bottom -= 500;
+		int p = 0;
 
 		if (!DoUntilMatchingTemplate(
 			NewRectClient,
 			TargetImagePicUrus,
-			[]()
+			[&p]()
 			{
-				for (int i = 0; i < 3; i++)
+				if ((++p % 0x20) == 0)
 				{
-					Operate(VK_LEFT);
-					Operate(VK_RIGHT);
+					KeybdEvent(VK_RETURN, 0);
 				}
-				MouseEvent({ 640, 455 }, LEFT_CLICK, 0);
 			},
-			seconds(1800),
-				0))
+			seconds(600),
+			1))
 		{
 			throw URUSRAID_EXCEPTION_CODE::BATTLE_ENTRY_TIMEOUT;
 		}
@@ -134,16 +158,17 @@ protected:
 					LastDir = CurrentDir = (Score < 0) ? VK_LEFT : VK_RIGHT;
 				}
 
-				if (CountNullOfCurrentDir > 40)
+				if (CountNullOfCurrentDir > 36)
 				{
 					LastDir = (LastDir == VK_LEFT) ? VK_RIGHT : VK_LEFT;
 					CountNullOfCurrentDir = 0;
 				}
 
-				if ((NULL == LastDir && NULL == CurrentDir) || CountInitialOperation < 12)
+				if ((NULL == LastDir && NULL == CurrentDir) || CountInitialOperation < 32)
 				{
 					Operate(VK_LEFT);
 					Operate(VK_RIGHT);
+					++CountNullOfCurrentDir;
 					++CountInitialOperation;
 				}
 				else if (NULL != LastDir && NULL == CurrentDir)
@@ -215,8 +240,6 @@ protected:
 		const USERCONF::CHARACTER_INFO& CharacterInfo)
 	{
 		static const Mat TargetImageEyeOfFire = Read(TARGET_DIR "item//eye_of_fire1.jpg");
-		static const Mat TargetImageInventoryBar = Read(TARGET_DIR "window//inventory_bar.jpg");
-		static const Mat TargetImageButtonExpandingInventory = Read(TARGET_DIR "button//expanding_inventory.jpg");
 
 		static map<string, vector<SKILL>> MapVecSkills;
 		MapVecSkills["닼나"] =
@@ -395,50 +418,26 @@ protected:
 			RaidCallBoss(
 				[this]()
 				{
+					Sleep(500);
 					KeybdEventContinued(VK_RIGHT, 1200);
-					KeybdEvent(KeysetInfo.Inventory);
-
-					if (MatchTemplate(SourceImageClient4, TargetImageEyeOfFire, &MatchInfo))
+					
+					if (-1 == ClientApi::ThrowItem(TargetImageEyeOfFire))
 					{
-						MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
+						throw ZACUMRAID_EXCEPTION_CODE::THROW_EYEOFFIRE_FAILED;
 					}
-					else
-					{
-						Mat SourceImage = SourceImageClient4;
-						MatchTemplate(SourceImage, TargetImageInventoryBar, &MatchInfo);
-						MouseEvent(MatchInfo.Location + Point{ 40 * 2, 40 }, LEFT_CLICK, 600);
-						MatchTemplate(SourceImage, TargetImageButtonExpandingInventory, &MatchInfo);
-						MouseEvent(MatchInfo.Location + Point{ 6, 6 }, LEFT_CLICK, 600);
-
-						if (MatchTemplate(SourceImageClient4, TargetImageEyeOfFire, &MatchInfo))
-						{
-							MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
-						}
-						else
-						{
-							throw ZACUMRAID_EXCEPTION_CODE::THROW_EYEOFFIRE_FAILED;
-						}
-					}
-
-					MouseEvent({ 25, 76 }, LEFT_CLICK);
-					KeybdEvent(KeysetInfo.Inventory, 3600);
 				});
 
 			RaidDoBattle(
 				[]() -> bool
 				{
-					return WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageItemPlusCoin, seconds(120));
+					return WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageBossTimer, seconds(120));
 				},
+				200,
 				true);
 
-			RaidCompleteRequest(-2000, 5000);
+			RaidCompleteRequest(-3000, 5000);
 		}
-		catch (BOSSRAID_EXCEPTION_CODE& ExceptionCode)
-		{
-			Write(SNAP_DIR "zacum-raid//" + to_string(++SeqFail) + ".jpg", SourceImageClient4Colored);
-			throw;
-		}
-		catch (ZACUMRAID_EXCEPTION_CODE & ExceptionCode)
+		catch (int)
 		{
 			Write(SNAP_DIR "zacum-raid//" + to_string(++SeqFail) + ".jpg", SourceImageClient4Colored);
 			throw;
@@ -456,48 +455,363 @@ public:
 	void Play(
 		const USERCONF::CHARACTER_INFO& CharacterInfo)
 	{
-		static const Mat TargetImageRootAbyssBox = Read(TARGET_DIR "pic//rootabyss_box.jpg");
+		static const Mat TargetImageNpcPetrick = Read(TARGET_DIR "npc//petrick.jpg");
+		static const Mat ArrTargetImageItem1[] =
+		{
+			Read(TARGET_DIR "item//mastery_book20.jpg", IMREAD_COLOR),
+			Read(TARGET_DIR "item//red_potion.jpg", IMREAD_COLOR),
+			Read(TARGET_DIR "item//blue_potion.jpg", IMREAD_COLOR),
+			Read(TARGET_DIR "item//reinforce.jpg", IMREAD_COLOR),
+			Read(TARGET_DIR "item//mineral_pocket.jpg", IMREAD_COLOR),
+			Read(TARGET_DIR "item//hub_pocket.jpg", IMREAD_COLOR)
+		};
+		static const Mat ArrTargetImageItem2[] =
+		{
+			Read(TARGET_DIR "item//crystal2.jpg", IMREAD_COLOR),
+			Read(TARGET_DIR "item//crystal3.jpg", IMREAD_COLOR)
+		};
+		static map<string, unsigned int> MapCharacterSpeed =
+		{
+			{"닼나", 150},
+			{"불독", 140},
+			{"썬콜", 140},
+			{"비숍", 128},
+			{"보마", 160},
+			{"신궁", 160},
+			{"나로", 138},
+			{"듀블", 139},
+			{"바이퍼", 160},
+			{"소마", 160},
+			{"플위", 140},
+			{"윈브", 160},
+			{"나워", 137},
+			{"스커", 160},
+			{"미하일", 140},
+			{"아란", 160},
+			{"메세", 165},
+			{"팬텀", 160},
+			{"은월", 140},
+			{"데슬", 140},
+			{"데벤", 160},
+			{"블래", 160},
+			{"배메", 170},
+			{"제논", 160},
+			{"메카닉", 140},
+			{"엔버", 165},
+			{"제로", 129},
+			{"키네", 160},
+			{"아크", 165},
+		};
 		static map<string, vector<SKILL>> MapVecSkills =
 		{
 			{
-				"데벤",
+				"닼나",
+				{
+					{'E', SKILL::ASSIST, seconds(10)},
+					{'W', SKILL::UNITARY}
+				}
+			},
+			{
+				"불독",
 				{
 					{'1', SKILL::BUF, seconds(180)},
 					{'2', SKILL::BUF, seconds(180)},
-					{'3', SKILL::BUF, seconds(60)},
+					{'3', SKILL::BUF, seconds(180)},
+					{VK_F1, SKILL::BUF, seconds(180)},
+					{'W', SKILL::ASSIST, seconds(10)},
+					{'L', SKILL::ONOFF},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"썬콜",
+				{
+					{VK_F1, SKILL::BUF, seconds(180)},
+					{'T', SKILL::ASSIST, seconds(180)},
+					{'W', SKILL::ASSIST, seconds(6)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"비숍",
+				{
+					{'L', SKILL::ONOFF},
+					{'R', SKILL::ASSIST, seconds(180)},
+					{'1', SKILL::BUF, seconds(180)},
+					{'2', SKILL::BUF, seconds(180)},
+					{VK_F2, SKILL::BUF, seconds(180)},
+					{'W', SKILL::UNITARY}
+				}
+			},
+			{
+				"보마",
+				{
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"신궁",
+				{
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"소마",
+				{
+					{'R', SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"윈브",
+				{
+					{'2', SKILL::BUF, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"나워",
+				{
+					{'1', SKILL::BUF, seconds(180)},
+					{VK_F1, SKILL::BUF, seconds(180)},
+					{'W', SKILL::ASSIST, seconds(9)},
+					{VK_F2, SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"스커",
+				{
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"팬텀",
+				{
+					{'A', SKILL::UNITARY}
+				}
+			},
+			{
+				"아크",
+				{
+				{'T', SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"제로",
+				{
+					{VK_DELETE, SKILL::ASSIST, seconds(180)},
+				//	{'T', SKILL::ASSIST, seconds(180)},
+					{'Z', SKILL::UNITARY}
+				}
+			},
+			{
+				"메카닉",
+				{
+					{'E', SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"은월",
+				{
+					{'T', SKILL::ASSIST, seconds(180)},
+					{'W', SKILL::UNITARY}
+				}
+			},
+			{
+				"배메",
+				{
+					{'Q', SKILL::UNITARY}
+				}
+			},
+				{
+				"키네",
+				{
+					{'W', SKILL::ASSIST, seconds(180)},
+					{'T', SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+				{
+				"블래",
+				{
+					{'R', SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"엔버",
+				{
+					{'4', SKILL::BUF, seconds(180)},
+					{'D', SKILL::UNITARY}
+				}
+			},
+			{
+				"데슬",
+				{
+					{'2', SKILL::BUF, seconds(180)},
+					{'3', SKILL::BUF, seconds(180)},
+					{'T', SKILL::ASSIST, seconds(180)},
+					{'W', SKILL::UNITARY}
+				}
+			},
+			{
+				"아란",
+				{
+					{VK_F2, SKILL::BUF, seconds(180)},
+					{'R', SKILL::ASSIST, seconds(20)},
+					{'Z', SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"바이퍼",
+				{
+				{'L', SKILL::BUF, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"플위",
+				{
+					{'W', SKILL::ASSIST, seconds(6)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+				{
+				"메세",
+				{
+					{'2', SKILL::BUF, seconds(180)},
+					{VK_F1, SKILL::BUF, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+				},
+				{
+				"제논",
+				{
+					{'2', SKILL::BUF, seconds(180)},
+					{VK_F2, SKILL::BUF, seconds(180)},
+					{'4', SKILL::BUF, seconds(180)},
+					{VK_F1, SKILL::BUF, seconds(180)},
+					{'T', SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+				},
+				{
+				"미하일",
+				{
+					{'L', SKILL::ONOFF},
+					{'Q', SKILL::UNITARY}
+				}
+				},
+				{
+				"듀블",
+				{
+					{'2', SKILL::BUF, seconds(180)},
+					{'Z', SKILL::ASSIST, seconds(180)},
+					{'S', SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+				{
+				"나로",
+				{
+					{'2', SKILL::BUF, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
+				"데벤",
+				{
+					{'T', SKILL::ASSIST, seconds(180)},
 					{'E', SKILL::ASSIST, seconds(6)},
 					{'Q', SKILL::UNITARY}
 				}
-			}
+			},
 		};
 		SetSkills(&MapVecSkills[CharacterInfo.ClassName]);
 
+#define GET_DURATION(_d, _s) (_d / _s)
 		try
 		{
 			RaidCallBoss(
-				[]()
+				[this, &CharacterInfo]()
 				{
-					for (int i = 0; i < 9; i++)
+					if ("제로" == CharacterInfo.ClassName)
 					{
-						MouseEvent({ 982, 561 }, LEFT_CLICK, 400);
+						KeybdEventContinued(VK_RIGHT, GET_DURATION(210000, 159));
+					}
+					else
+					{
+						KeybdEventContinued(VK_RIGHT, GET_DURATION(210000, MapCharacterSpeed[CharacterInfo.ClassName]));
+					}
+
+					Sleep(1500);
+					for (int i = 0; i < 12; i++)
+					{
+						MouseEvent({ 870, 561 }, LEFT_CLICK, 290);
 					}
 				});
 
 			RaidDoBattle(
 				[]() -> bool
 				{
-					return WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageRootAbyssBox, seconds(120));
+					return WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageBossTimer, seconds(120));
 				},
+				7000,
 				true);
 
 			RaidCompleteRequest(
 				2500,
-				-5000,
-				[this]()
+				-4500,
+				[this, &CharacterInfo]()
 				{
 					Sleep(1000);
-					KeybdEvent('C', 1500);
-					KeybdEvent(KeysetInfo.Attack, 3500);
+
+					KeybdEventContinued(VK_LEFT, 8000);
+					KeybdEventContinued(VK_RIGHT, GET_DURATION(672000, MapCharacterSpeed[CharacterInfo.ClassName]));
+					Sleep(1000);
+
+					if (VALLOC MatchInfo;
+						MatchTemplate(SourceImageClient4, TargetImageNpcPetrick, &MatchInfo))
+					{
+						MouseEvent(MatchInfo.Location, LEFT_CLICK);
+
+						for (const auto& TargetImage : ArrTargetImageItem1)
+						{
+							if (MatchTemplate(Capture({ 0, 0, 600, 750 }, IMREAD_COLOR), TargetImage, &MatchInfo))
+							{
+								MouseEvent(MatchInfo.Location, DLEFT_CLICK);
+								KeybdEvent({ VK_RETURN, VK_RETURN }, 400);
+							}
+						}
+						
+						for (const auto& TargetImage : ArrTargetImageItem2)
+						{
+							if (MatchTemplate(Capture({ 0, 0, 600, 750 }, IMREAD_COLOR), TargetImage, &MatchInfo))
+							{
+								MouseEvent(MatchInfo.Location, DLEFT_CLICK);
+								KeybdEvent({ '3', '0', VK_RETURN, VK_RETURN }, 400);
+							}
+						}
+						
+						KeybdEvent(VK_ESCAPE);
+					}
+
+					if ("데슬" == CharacterInfo.ClassName || "아란" == CharacterInfo.ClassName)
+					{
+						KeybdEvent('Q', 3000);
+					}
+					else if ("엔버" == CharacterInfo.ClassName)
+					{
+						KeybdEventContinued(KeysetInfo.Attack, 3000);
+					}
+					else
+					{
+						KeybdEvent(KeysetInfo.Attack, 3000);
+					}
 				});
 		}
 		catch (int)

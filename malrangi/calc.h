@@ -7,20 +7,26 @@ private:
 	VALLOC MatchInfo;
 
 protected:
+	enum class CALC_EXCEPTION_CODE
+	{
+
+	};
+
 	void Play(
 		const USERCONF::MAPLEID_INFO& MapleIdInfo)
 	{
+		static const Mat TargetImageNpcCollector(Read(TARGET_DIR "npc//collector.jpg"));
 		static const Mat TargetImageItemCrystal(Read(TARGET_DIR "item//crystal1.jpg"));
 		static const Mat TargetImageItem100lv(Read(TARGET_DIR "item//100lv.jpg"));
 		static const Mat TargetImageItem110lv(Read(TARGET_DIR "item//110lv.jpg"));
 		static const Mat TargetImageItemCube(Read(TARGET_DIR "item//cube.jpg"));
 
-
 		/*** 아이템 팔기(콜렉터) ***/
-		MouseEvent({ 980, 360 }, LEFT_CLICK);
+		MatchTemplate(SourceImageClient4, TargetImageNpcCollector, &MatchInfo);
+		MouseEvent(MatchInfo.Location, LEFT_CLICK);
 
 		// 장비창
-		for (int i = 0; i < 40; i++)
+		for (int i = 0; i < 45; i++)
 		{
 			MouseEvent({ 735, 305 }, RIGHT_CLICK, 300);
 		}
@@ -63,8 +69,7 @@ protected:
 			{
 				for (int i = 0; i < 8; i++)
 				{
-					ClientApi::SET_CLIENT_STDPOS();
-
+					MouseEvent(POS_VOID, CURSOR_MOVE, 0x100);
 					if (MatchTemplate(Capture(NewRectClient), TargetImage, &MatchInfo))
 					{
 						MouseEvent(MatchInfo.Location + Point{ NewRectClient.left, NewRectClient.top }, DLEFT_CLICK);
@@ -77,12 +82,13 @@ protected:
 				}
 			}
 
+			goto __RETURN;
+
 			// 소비템 넣기(수큐)
 			MouseEvent({ 740, 290 }, LEFT_CLICK);
 			for (int i = 0; i < 3; i++)
 			{
-				ClientApi::SET_CLIENT_STDPOS();
-
+				MouseEvent(POS_VOID, CURSOR_MOVE, 0x100);
 				if (MatchTemplate(Capture(NewRectClient), TargetImageItemCube, &MatchInfo))
 				{
 					MouseEvent(MatchInfo.Location + Point{ NewRectClient.left, NewRectClient.top }, DLEFT_CLICK);
@@ -98,8 +104,12 @@ protected:
 			MouseEvent({ 715, 600 }, LEFT_CLICK);
 			KeybdEvent(VK_RETURN);
 
+			__RETURN:
+		
 			// 창고 창 닫기
+
 			MouseEvent({ 640, 230 }, LEFT_CLICK);
+			MouseEvent(POS_VOID, LEFT_CLICK);
 		}
 	}
 };

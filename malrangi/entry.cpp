@@ -16,6 +16,34 @@ main(
 	ClientApi::SET_CLIENT_STDPOS();
 	Sleep(0x800);
 
+	/*BossRaid a;
+	static map<string, vector<BossRaid::SKILL>> MapVecSkills =
+	{
+		{
+			"데벤",
+	{
+		{'2', BossRaid::SKILL::BUF, seconds(180)},
+		{'3', BossRaid::SKILL::BUF, seconds(25)},
+				{'E', BossRaid::SKILL::ASSIST, seconds(7)},
+				{'R', BossRaid::SKILL::ASSIST, seconds(9)},
+			}
+		}
+	};
+	a.SetSkills(&MapVecSkills["데벤"]);
+
+	BYTE q = VK_LEFT;
+	int i = 0;
+	while (true)
+	{
+		a.UseSkills(MapVecSkills["데벤"], BossRaid::SKILL::BUF | BossRaid::SKILL::ASSIST);
+
+		if (i++ % 30 == 0)
+		{
+
+			KeybdEventContinued(q == VK_LEFT ? q = VK_RIGHT : q = VK_LEFT, 75);
+		}
+	}*/
+
 	try
 	{
 		USERCONF& UserInfo = *(USERCONF::GetInstance());
@@ -144,7 +172,7 @@ main(
 					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 					LogoutState = NORMAL;
 				}
-				catch (MalrangiException & e)
+				catch (ClientApi::Exception &e)
 				{
 					LEAVE_LOG(&e);
 					LogoutState = UNHANDLED;
@@ -164,7 +192,7 @@ main(
 
 						try
 						{
-							ClientApi::SelectServer(ServerInfo, 27);
+						ClientApi::SelectServer(ServerInfo, 27);
 						}
 						catch (ClientApi::ServerDelayException & e)
 						{
@@ -249,8 +277,9 @@ main(
 							{	
 #ifdef BUILD_DAILYBOSS
 								Worker.Play(CharacterInfo);
+								
 #else
-								Worker.Play(MapleIdInfo);
+								Worker.Play(MapleIdInfo, CharacterInfo);
 #endif
 								CharacterInfo.IsCompleted = true;
 							}
@@ -329,9 +358,9 @@ main(
 				case ABNORMAL_CLIENT_TERMINATION:
 					ClientApi::TerminateClient();
 #if defined(BUILD_URUS)
-					if(!IsServerLoopCompleted(MapleIdInfo.VecServer))
+					if (!IsServerLoopCompleted(MapleIdInfo.VecServer))
 #elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
-					if(!IsCharacterLoopCompleted(MapleIdInfo.VecServer))
+					if (!IsCharacterLoopCompleted(MapleIdInfo.VecServer))
 #endif
 					{
 						goto __BOOTUP__;
@@ -340,7 +369,6 @@ main(
 					{
 						break;
 					}
-					
 
 				case UNHANDLED:
 					ClientApi::TerminateClient();
@@ -366,7 +394,7 @@ main(
 		WriteLog(LOG_LEVEL::CRITICAL, me.what());
 	}
 
-	Sleep(10000000);
+	system("shutdown -s -t 60");
+
 	return EXIT_SUCCESS;
 }
-

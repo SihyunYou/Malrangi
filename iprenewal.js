@@ -22,7 +22,18 @@ objIE.document.getElementsByName('hw_dynamic2')[0].value = 45;
 objIE.document.getElementsByName('hw_dynamic3')[0].value = 20;
 objIE.document.getElementsByName('hw_dynamic4')[0].value = 81;
 objIE.document.getElementsByName('hw_dynamic5')[0].value = 37;
-objIE.document.getElementsByName('hw_dynamic6')[0].value = WScript.arguments(0);
+var t = objIE.document.getElementsByName('hw_dynamic6')[0].value
+t *= 1
+var a = 0
+if(t >= 99)
+{
+	a = 10
+}
+else 
+{
+	a = t + 1
+}
+objIE.document.getElementsByName('hw_dynamic6')[0].value = a
 objIE.document.getElementById('appbtn').click();
 
 while(objIE.busy);

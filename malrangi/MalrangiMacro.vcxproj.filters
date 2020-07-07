@@ -13,9 +13,6 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\application">
-      <UniqueIdentifier>{49c7eb76-f74a-43b6-9a69-14f2ee540a9f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\api">
       <UniqueIdentifier>{cddce19a-c6ff-4cf7-ba38-cbb76c82f82c}</UniqueIdentifier>
     </Filter>
@@ -25,13 +22,16 @@
     <Filter Include="Header Files\util%28wrap%29">
       <UniqueIdentifier>{39620a75-ea97-4281-80c4-53bbf5268ae7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\application\client">
+    <Filter Include="Header Files\api\application">
+      <UniqueIdentifier>{49c7eb76-f74a-43b6-9a69-14f2ee540a9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\api\application\client">
       <UniqueIdentifier>{ff75f9d6-f3c7-4802-a675-3cbc60ffbe3a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\application\external">
+    <Filter Include="Header Files\api\application\external">
       <UniqueIdentifier>{aced61f3-37a3-42fa-9a69-a31149f8ff5a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\application\log">
+    <Filter Include="Header Files\api\application\log">
       <UniqueIdentifier>{6490278e-f3d0-4c09-bfee-cac06b72f709}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -55,31 +55,31 @@
       <Filter>Header Files\api</Filter>
     </ClInclude>
     <ClInclude Include="report.h">
-      <Filter>Header Files\application\external</Filter>
+      <Filter>Header Files\api\application\external</Filter>
     </ClInclude>
     <ClInclude Include="ipmanage.h">
-      <Filter>Header Files\application\external</Filter>
+      <Filter>Header Files\api\application\external</Filter>
     </ClInclude>
     <ClInclude Include="malrangi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="calc.h">
-      <Filter>Header Files\application\client</Filter>
+      <Filter>Header Files\api\application\client</Filter>
     </ClInclude>
     <ClInclude Include="circular_play.h">
-      <Filter>Header Files\application\client</Filter>
+      <Filter>Header Files\api\application\client</Filter>
     </ClInclude>
     <ClInclude Include="raid.h">
-      <Filter>Header Files\application\client</Filter>
+      <Filter>Header Files\api\application\client</Filter>
     </ClInclude>
     <ClInclude Include="map.h">
-      <Filter>Header Files\application\client</Filter>
+      <Filter>Header Files\api\application\client</Filter>
     </ClInclude>
     <ClInclude Include="boss.h">
-      <Filter>Header Files\application\client</Filter>
+      <Filter>Header Files\api\application\client</Filter>
     </ClInclude>
     <ClInclude Include="log.h">
-      <Filter>Header Files\application\log</Filter>
+      <Filter>Header Files\api\application\log</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

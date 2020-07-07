@@ -16,6 +16,7 @@ public:
 #define SourceImageClient1				(Capture(ClientApi::RECT_CLIENT1))
 #define SourceImageClient4				(Capture(ClientApi::RECT_CLIENT4))
 #define SourceImageClient4Colored		(Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR))
+#define POS_VOID		(Point{10, 480})
 	static void SET_CLIENT_STDPOS(void);
 	inline static const RECT RECT_CLIENT1 = { 0, 0, 800, 600 + 26 };
 	inline static const RECT RECT_CLIENT4 = { 0, 0, 1366, 768 + 26 };
@@ -122,7 +123,7 @@ public:
 		RECT RectMinimap;
 	};
 
-	
+
 
 	/****************************************************************************
 	* Excetpions handled specifically
@@ -232,6 +233,7 @@ public:
 	static void MoveServer(bool);
 	static void RemoveAllIngameWindows(void);
 	static void ExitGame(void);
+	static int ThrowItem(Mat);
 };
 
 void ClientApi::SET_CLIENT_STDPOS(void)
@@ -446,6 +448,7 @@ void ClientApi::EnterGame(
 		Sleep(0x400);
 
 		// Remove tooltips
+		MouseEvent({ 904, 204 }, LEFT_CLICK);
 		MouseEvent({ 902, 363 }, LEFT_CLICK);
 		KeybdEvent(VK_ESCAPE);
 		KeybdEvent(VK_ESCAPE);
@@ -458,14 +461,38 @@ void ClientApi::EnterGame(
 void ClientApi::SelectCharacter(
 	unsigned int Seq)
 {
+	static const array<Mat, 5> ArrTargetImageTextCharacterSelect =
+	{
+		Read(TARGET_DIR "text//character_select_p1.jpg"),
+		Read(TARGET_DIR "text//character_select_p2.jpg"),
+		Read(TARGET_DIR "text//character_select_p3.jpg"),
+		Read(TARGET_DIR "text//character_select_p4.jpg"),
+		Read(TARGET_DIR "text//character_select_p5.jpg")
+	};
+
 	for (int i = 0; i < 46; i++)
 	{
 		KeybdEvent(VK_LEFT, 120);
 	}
-	for (int i = 0; i < Seq - 1; i++)
+
+	/*const auto [CurrentPage, Value, Location] = GetHighestMatchedTemplate(Capture({ 0, 0, 315, 515 }), ArrTargetImageTextCharacterSelect);
+	int DirectionCount = (Seq - 1) / 8 - CurrentPage;
+	cout << CurrentPage << " " << DirectionCount << endl;
+
+	for (int p = 0; p < std::abs(DirectionCount); p++)
 	{
-		KeybdEvent(VK_RIGHT, 240);
+		MouseEvent({ DirectionCount >= 0 ? 505 : 120, 545 }, LEFT_CLICK);
 	}
+	MouseEvent({ 135 + (((Seq - 1) % 8) % 4) * 125, 235 + (((Seq % 8) <= 4 && (Seq % 8) >= 1)? 0 : 1) * 200 }, LEFT_CLICK);*/
+
+	for (int i = 0; i < (Seq - 1) / 8; i++)
+	{
+		MouseEvent({ 505, 545 }, LEFT_CLICK, 10000);
+	}
+	MouseEvent(
+		{ 135 + (((Seq - 1) % 8) % 4) * 125, 
+		235 + (((Seq % 8) <= 4 && (Seq % 8) >= 1) ? 0 : 1) * 200 }, 
+		DLEFT_CLICK);
 }
 void ClientApi::RemoveAllIngameWindows(
 	void)
@@ -477,11 +504,11 @@ void ClientApi::RemoveAllIngameWindows(
 
 	for (int i = 0; i < 4; i++)
 	{
-		KeybdEvent(VK_RETURN);
+		KeybdEvent(VK_RETURN, 400);
 	}
 	for (int i = 0; i < 4; i++)
 	{
-		KeybdEvent(VK_ESCAPE);
+		KeybdEvent(VK_ESCAPE, 400);
 	}
 	MouseEvent({ 10, 476 }, LEFT_CLICK);
 }
@@ -635,4 +662,56 @@ void ClientApi::DownJump(
 	keybd_event(VK_DOWN, MapVirtualKey(VK_DOWN, 0), 0, 0);
 	KeybdEvent(VK_MENU, MilliSecondsRestTime);
 	keybd_event(VK_DOWN, MapVirtualKey(VK_DOWN, 0), KEYEVENTF_KEYUP, 0);
+}
+int ClientApi::ThrowItem(
+	Mat TargetImage
+)
+{
+	static const Mat TargetImageButtonEtc = Read(TARGET_DIR "button//etc.jpg");
+	static const Mat TargetImageButtonExpandingInventory = Read(TARGET_DIR "button//expanding_inventory.jpg");
+
+	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Inventory);
+
+	if (VALLOC MatchInfo;
+		MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
+	{
+		MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
+	}
+	else
+	{
+		if (MatchTemplate(SourceImageClient4, TargetImageButtonEtc, &MatchInfo))
+		{
+			MouseEvent(MatchInfo.Location + Point{ 5, 5 }, LEFT_CLICK, 600);
+		}
+		
+		if (MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
+		{
+			MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
+		}
+		else
+		{
+			if (MatchTemplate(SourceImageClient4, TargetImageButtonExpandingInventory, &MatchInfo))
+			{
+				MouseEvent(MatchInfo.Location + Point{ 6, 6 }, LEFT_CLICK, 600);
+			}
+			else
+			{
+				return -1;
+			}
+
+			if (MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
+			{
+				MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
+			}
+			else
+			{
+				return -1;
+			}
+		}
+	}
+
+	MouseEvent(POS_VOID, LEFT_CLICK);
+	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Inventory);
+
+	return 0;
 }

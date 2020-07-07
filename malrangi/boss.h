@@ -3,10 +3,59 @@
 
 #pragma comment(lib,"winmm.lib")
 
+class MobDetect
+{
+public:
+	MobDetect()
+	{
+
+	}
+
+public:
+	DWORD GetRelativeDirection(cv::InputArray LowerScalar, cv::InputArray UpperScalar)
+	{
+		Mat Mask;
+
+		if (InRange(Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR), LowerScalar, UpperScalar, Mask))
+		{
+			DWORD EvaluatedDirection = NULL;
+			int ScoreX = 0;
+
+			for (int y = 0; y < Mask.rows; ++y)
+			{
+				for (int x = 0; x < Mask.cols; ++x)
+				{
+					if (Mask.at<BYTE>(y, x) == 255)
+					{
+						if (x < 683)
+						{
+							--ScoreX;
+						}
+						else
+						{
+							++ScoreX;
+						}
+					}
+				}
+			}
+
+			if (ScoreX < 0)
+			{
+				EvaluatedDirection = VK_LEFT;
+			}
+			else if(ScoreX > 0)
+			{
+				EvaluatedDirection = VK_RIGHT;
+			}
+		} 
+
+		return NULL;
+	}
+};
 
 class BossRaid
 {
-protected:
+public:
 	struct SKILL
 	{
 		BYTE Key;
@@ -16,7 +65,8 @@ protected:
 			RAPID = 0b00000010,
 			BUF = 0b00000100,
 			ASSIST = 0b00001000,
-			ONOFF = 0b00010000
+			ONOFF = 0b00010000,
+			CHARGING = 0b00100000
 		};
 		DWORD Flag;
 		seconds Cooltime;
@@ -32,12 +82,13 @@ protected:
 public:
 	int SeqSuccess, SeqFail;
 
-protected:
+public:
 	vector<SKILL>* VecSkills = nullptr;
 	SKILL MainSkill;
 	const USERCONF::KEYSET_INFO& KeysetInfo;
 
 	inline static const Mat TargetImageItemPlusCoin = Read(TARGET_DIR "item//pluscoin.jpg");
+	inline static const Mat TargetImageBossTimer = Read(TARGET_DIR "window//boss_timer.jpg");
 
 	enum class BOSSRAID_EXCEPTION_CODE
 	{
@@ -51,7 +102,7 @@ public:
 		VecSkills(nullptr),
 		KeysetInfo(USERCONF::GetInstance()->VirtualKeyset) {}
 
-protected:
+public:
 	void SetSkills(vector<SKILL>* _VecSkills)
 	{
 		VecSkills = _VecSkills;
@@ -83,6 +134,14 @@ protected:
 			case SKILL::ONOFF:
 				KeybdEventUp(MainSkill.Key);
 				KeybdEvent(Skill.Key, 1000);
+				break;
+
+			case SKILL::CHARGING:
+				if (IsCoolOn(Skill))
+				{
+					KeybdEventContinued(Skill.Key, 4000);
+				}
+				KeybdEventUp(Skill.Key);
 				break;
 
 			case SKILL::ASSIST:
@@ -120,15 +179,15 @@ protected:
 		CallBossRoutine();
 	}
 	template <class T_LAMBDA>
-	void RaidDoBattle(T_LAMBDA PendingUntilMatchingTemplateRoutine, bool IsFixed)
+	void RaidDoBattle(T_LAMBDA PendingUntilMatchingTemplateRoutine, int ResurectionTimeCycle, bool IsFixed)
 	{
 		bool IsThreadJoinable = false;
 		auto ThreadResurrection = thread(
-			[&IsThreadJoinable]()
+			[&IsThreadJoinable, ResurectionTimeCycle]()
 			{
 				while (!IsThreadJoinable)
 				{
-					MouseEvent({ 800, 320 }, LEFT_CLICK, 0x80);
+					MouseEvent({ 800, 320 }, LEFT_CLICK, ResurectionTimeCycle);
 				}
 			}
 		);
@@ -161,7 +220,6 @@ protected:
 
 		if (!IsRaidCompleteSuccessfully)
 		{
-			CompleteRaid();
 			throw BOSSRAID_EXCEPTION_CODE::BATTLE_TIMEOUT;
 		}
 	}
