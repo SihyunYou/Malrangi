@@ -148,6 +148,26 @@ public:
 			return Message.c_str();
 		}
 	};
+	class BlockFromCapchaException : public ClientApi::Exception
+	{
+	public:
+		BlockFromCapchaException(void) :
+			ClientApi::Exception(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class SecondPasswordNotLiftException : public ClientApi::Exception
+	{
+	public:
+		SecondPasswordNotLiftException(void) :
+			ClientApi::Exception(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
 
 	/****************************************************************************
 	* Exceptions handled commonly
@@ -202,7 +222,7 @@ public:
 		int); 
 	static void SelectCharacter(
 		unsigned int); 
-	static void UnlockSecondPassword(
+	static bool UnlockSecondPassword(
 		const string&); 
 	static void ExitCharacterWindow(void);
 	static void Logout(void);
@@ -374,7 +394,7 @@ void ClientApi::SelectServer(
 		}
 	}
 }
-void ClientApi::UnlockSecondPassword(
+bool ClientApi::UnlockSecondPassword(
 	const string& Password)
 {
 	ClientApi::SET_CLIENT_STDPOS();
@@ -425,15 +445,26 @@ void ClientApi::UnlockSecondPassword(
 		}
 	}
 	KeybdEvent(VK_RETURN);
+
+	return true;
 }
 void ClientApi::EnterGame(
 	CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 {
-	KeybdEvent(VK_RETURN, 0x400);
+__REUNLOCK__:
+	KeybdEvent(VK_RETURN);
 
+	int t = 0;
 	if(MatchTemplate(Capture(ClientApi::RECT_CLIENT1), Read(TARGET_DIR "button//2pwd//1.jpg")))
 	{
-		ClientApi::UnlockSecondPassword(MapleIdInfo.SecondPassword);
+		if(t < 2)
+		{
+			ClientApi::UnlockSecondPassword(MapleIdInfo.SecondPassword);
+		}
+		else
+		{
+			throw SecondPasswordNotLiftException();
+		}
 	}
 
 	if (DoUntilMatchingTemplate(
@@ -443,19 +474,29 @@ void ClientApi::EnterGame(
 		{
 			ClientApi::SET_CLIENT_STDPOS();
 		},
-		seconds(150)))
+		seconds(180)))
 	{
 		Sleep(0x400);
 
 		// Remove tooltips
-		MouseEvent({ 904, 204 }, LEFT_CLICK);
-		MouseEvent({ 902, 363 }, LEFT_CLICK);
-		KeybdEvent(VK_ESCAPE);
-		KeybdEvent(VK_ESCAPE);
+		KeybdEvent({ VK_ESCAPE, VK_ESCAPE, VK_ESCAPE });
+		MouseEvent(POS_VOID, LEFT_CLICK);
 	}
 	else
 	{
-		ThrowLowException(__FEWHAT__);
+		static const Mat TargetImageWindow2pwdNotEqual = Read(TARGET_DIR "window//2pwd_not_equal.jpg");
+		if (MatchTemplate(Capture(ClientApi::RECT_CLIENT1), TargetImageWindow2pwdNotEqual))
+		{
+			++t;
+			KeybdEvent(VK_RETURN);
+
+			goto __REUNLOCK__;
+		}
+		else
+		{
+			throw BlockFromCapchaException();
+		}
+		//ThrowLowException(__FEWHAT__);
 	}
 }
 void ClientApi::SelectCharacter(
@@ -492,7 +533,7 @@ void ClientApi::SelectCharacter(
 	MouseEvent(
 		{ 135 + (((Seq - 1) % 8) % 4) * 125, 
 		235 + (((Seq % 8) <= 4 && (Seq % 8) >= 1) ? 0 : 1) * 200 }, 
-		DLEFT_CLICK);
+		LEFT_CLICK);
 }
 void ClientApi::RemoveAllIngameWindows(
 	void)

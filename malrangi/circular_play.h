@@ -26,11 +26,6 @@ public:
 	{
 		try
 		{
-			if (FreeMarket == WhereAmI())
-			{
-				MoveFromAToB(FreeMarket, Unknown, CharacterInfo);
-			}
-
 			switch (int CurrentMap = WhereAmI())
 			{
 			case Zacum2_2:
@@ -42,6 +37,8 @@ public:
 			case RootAbyss1:
 				MoveFromAToB(RootAbyss1, Elnas, CharacterInfo);
 				goto __Elnas_U;
+			case FreeMarket:
+				MoveFromAToB(FreeMarket, ElnasMarket, CharacterInfo);
 			case ElnasMarket:
 				MoveFromAToB(ElnasMarket, Elnas, CharacterInfo);
 				goto __Elnas_U;

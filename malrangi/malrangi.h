@@ -24,11 +24,9 @@ using namespace cv;
 #define CONF_DIR					"conf//"
 #define TMP_DIR					"tmp//"
 #define USERCONF_FILENAME	"user.conf"
-#define IPCONF_FILENAME		"ip.conf"
 
-#define IPMANAGER_PATH		"iprenewal.js"
+#define IPMANAGER_PATH		"renouveler_ip.py"
 #define USERCONF_PATH			CONF_DIR USERCONF_FILENAME
-#define IPCONF_PATH				CONF_DIR IPCONF_FILENAME
 
 string GetClassTypeId(
 	const char* lpFunctionMacro)

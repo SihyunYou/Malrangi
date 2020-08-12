@@ -441,6 +441,11 @@ public:
 							KeybdEvent('W', 1000);
 							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
 						}
+						else if ("닼나" == CharacterInfo.ClassName)
+						{
+							KeybdEvent('A', 1200);
+							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
+						}
 						else if ("썬콜" == CharacterInfo.ClassName || "불독" == CharacterInfo.ClassName || "비숍" == CharacterInfo.ClassName)
 						{
 							KeybdEvent('A', 1000);
@@ -449,6 +454,11 @@ public:
 								KeybdEvent('Q');
 								KeybdEventContinued(VK_RIGHT, 1000);
 							}
+						}
+						else if ("바이퍼" == CharacterInfo.ClassName)
+						{
+							KeybdEvent('E', 1000);
+							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
 						}
 						else if ("신궁" == CharacterInfo.ClassName)
 						{
@@ -474,11 +484,6 @@ public:
 							KeybdEvent('W', 1100);
 							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C'}, 1000);
 						}
-						else if ("닼나" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('A', 1200);
-							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
-						}
 						else if ("스커" == CharacterInfo.ClassName)
 						{
 							KeybdEventContinued(VK_LEFT, 400);
@@ -503,7 +508,7 @@ public:
 						{
 							KeybdEventContinued(VK_LEFT, 800);
 							KeybdEventContinued(VK_RIGHT, 100);
-							KeybdEvent({ 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'E', 'W', 'W', 'E'}, 1500);
+							KeybdEvent({ 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'Z'}, 1400);
 						}
 						else if ("메카닉" == CharacterInfo.ClassName)
 						{
@@ -524,15 +529,11 @@ public:
 						}
 						else if ("배메" == CharacterInfo.ClassName)
 						{
-							KeybdEvent('O', 1000);
 							KeybdEvent('E');
-							KeybdEventDown(VK_RIGHT);
-							for (int q = 0; q < 15; q++)
+							for (int q = 0; q < 9; q++)
 							{
-								KeybdEvent('C', 400);
-								KeybdEvent('Q');
+								KeybdEvent({ 'X', 'Z' }, 900);
 							}
-							KeybdEventUp(VK_RIGHT);
 						}
 						else if ("키네" == CharacterInfo.ClassName)
 						{
@@ -576,17 +577,11 @@ public:
 						}
 						else if ("아란" == CharacterInfo.ClassName)
 						{
-							KeybdEvent('A', 1000);
-							for (int q = 0; q < 13; q++)
+							for (int q = 0; q < 15; q++)
 							{
-								KeybdEvent('W', 1000);
-								KeybdEventContinued(VK_RIGHT, 1200);
+								KeybdEvent('A');
+								KeybdEventContinued(VK_RIGHT, 900);
 							}
-						}
-						else if ("바이퍼" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('E', 1000);
-							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C'}, 1000);
 						}
 						else if ("플위" == CharacterInfo.ClassName)
 						{
@@ -606,7 +601,7 @@ public:
 						KeybdEvent('W');
 						for (int q = 0; q < 20; q++)
 						{
-							KeybdEvent('Q');
+							KeybdEvent('A');
 							KeybdEventContinued(VK_RIGHT, 800);
 						}
 						}

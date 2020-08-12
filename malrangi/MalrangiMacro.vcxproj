@@ -169,16 +169,14 @@
     <ClInclude Include="user.h" />
     <ClInclude Include="cvwrap.h" />
     <ClInclude Include="client.h" />
-    <ClInclude Include="ip.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="report.h" />
     <ClInclude Include="tesseract-binary-wrap.h" />
     <ClInclude Include="winevent.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\conf\ip.conf" />
     <None Include="..\conf\user.conf" />
-    <None Include="..\iprenewal.js" />
+    <None Include="..\renouveler_ip.py" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -32,15 +32,12 @@ enum LOG_LEVEL
 
 #define __FILENAME__		(strrchr(__FILE__,'\\')+1)
 #define WriteLog(_lv, _fm, ...)	{																									\
-											MutexLocker.lock();																			\
 											NumberOfLine = __LINE__;															\
 											FileName = __FILENAME__;															\
 											VWriteLog(_lv, _fm, __VA_ARGS__);												\
-											MutexLocker.unlock();																		\
 										}
 INT NumberOfLine;
 LPCSTR FileName;
-mutex MutexLocker;
 ofstream LogFile{ SNAP_DIR "log.txt", ios::out || ios::trunc };
 
 void VWriteLog(LOG_LEVEL LogLevel, LPCSTR lpFormat, ...)

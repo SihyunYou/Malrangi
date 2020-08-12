@@ -16,34 +16,6 @@ main(
 	ClientApi::SET_CLIENT_STDPOS();
 	Sleep(0x800);
 
-	/*BossRaid a;
-	static map<string, vector<BossRaid::SKILL>> MapVecSkills =
-	{
-		{
-			"데벤",
-	{
-		{'2', BossRaid::SKILL::BUF, seconds(180)},
-		{'3', BossRaid::SKILL::BUF, seconds(25)},
-				{'E', BossRaid::SKILL::ASSIST, seconds(7)},
-				{'R', BossRaid::SKILL::ASSIST, seconds(9)},
-			}
-		}
-	};
-	a.SetSkills(&MapVecSkills["데벤"]);
-
-	BYTE q = VK_LEFT;
-	int i = 0;
-	while (true)
-	{
-		a.UseSkills(MapVecSkills["데벤"], BossRaid::SKILL::BUF | BossRaid::SKILL::ASSIST);
-
-		if (i++ % 30 == 0)
-		{
-
-			KeybdEventContinued(q == VK_LEFT ? q = VK_RIGHT : q = VK_LEFT, 75);
-		}
-	}*/
-
 	try
 	{
 		USERCONF& UserInfo = *(USERCONF::GetInstance());
@@ -55,7 +27,6 @@ main(
 		CalcPlay Worker;
 #endif
 #ifdef USING_IPRENEWER
-		IPCONF& IpInfo = *(IPCONF::GetInstance());
 		IpManage IpManager;
 #else
 		WriteLog(LOG_LEVEL::WARNING,
@@ -70,10 +41,11 @@ main(
 			if (nullptr != ce)
 			{
 				static int Seq = 0;
-				Write(SNAP_DIR + to_string(++Seq) + ".jpg", SourceImageClient4Colored);
+			//	Write(SNAP_DIR + to_string(++Seq) + ".jpg", SourceImageClient4Colored);
 			}
-			WriteLog(((nullptr != ce) ? LOG_LEVEL::FAILURE : LOG_LEVEL::SUCCESS),
-				(Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
+			//WriteLog(((nullptr != ce) ? LOG_LEVEL::FAILURE : LOG_LEVEL::SUCCESS),
+				//(Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
+			printf((Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
 		};
 
 		auto IsServerLoopCompleted = [](const vector<USERCONF::SERVER_INFO>& VecServers)
@@ -107,13 +79,15 @@ main(
 			NORMAL,
 			SERVER_DISCONNECTION,
 			ABNORMAL_CLIENT_TERMINATION,
+			FORCE_TERMINATION_FOR_BOOTUP,
+			FORCE_TERMINATION_FOR_IPRENEWAL,
 			UNHANDLED
 		};
 		int LogoutState = NORMAL;
 
-		for (auto & NexonAccountInfo : UserInfo.VecNexonAccount)
+		for (auto& NexonAccountInfo : UserInfo.VecNexonAccount)
 		{
-			for (auto & MapleIdInfo : NexonAccountInfo.VecMapleId)
+			for (auto& MapleIdInfo : NexonAccountInfo.VecMapleId)
 			{
 				bool IsPlayValid = false;
 				for each (auto & ServerInfo in MapleIdInfo.VecServer)
@@ -128,12 +102,14 @@ main(
 				{
 					continue;
 				}
-				
+
 				Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id;
+
+			__IP_RENEWAL__:
 				if (SeqMapleId % 4 == 0)
 				{
 #ifdef USING_IPRENEWER
-					IpManager.Renew(IpInfo.InternetInfo);
+					IpManager.Renew();
 #else
 					if (SeqMapleId > 3)
 					{
@@ -150,19 +126,20 @@ main(
 					{
 						break;
 					}
-
 				case SERVER_DISCONNECTION:
 				case ABNORMAL_CLIENT_TERMINATION:
+				case FORCE_TERMINATION_FOR_BOOTUP:
+				case FORCE_TERMINATION_FOR_IPRENEWAL:
 				case UNHANDLED:
 					try
 					{
 						ClientApi::BootClient();
 					}
-					catch (ClientApi::BootFailedException & bfe)
+					catch (ClientApi::BootFailedException & ec)
 					{
-						LEAVE_LOG(&bfe);
+						LEAVE_LOG(&ec);
 
-						goto __EXIT__;
+						goto __LOGOUT__;
 					}
 					break;
 				}
@@ -172,7 +149,7 @@ main(
 					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 					LogoutState = NORMAL;
 				}
-				catch (ClientApi::Exception &e)
+				catch (ClientApi::Exception & e)
 				{
 					LEAVE_LOG(&e);
 					LogoutState = UNHANDLED;
@@ -192,7 +169,7 @@ main(
 
 						try
 						{
-						ClientApi::SelectServer(ServerInfo, 27);
+							ClientApi::SelectServer(ServerInfo, 27);
 						}
 						catch (ClientApi::ServerDelayException & e)
 						{
@@ -204,10 +181,11 @@ main(
 						}
 
 						int SeqNotCompletedCharacter = 1;
-						for (; SeqNotCompletedCharacter <= ServerInfo.VecCharacter.size(); SeqNotCompletedCharacter++)
+						for (auto& CharacterInfo : ServerInfo.VecCharacter)
 						{
-							if (ServerInfo.VecCharacter[SeqNotCompletedCharacter].IsCompleted)
+							if (CharacterInfo.IsCompleted)
 							{
+								++SeqNotCompletedCharacter;
 								continue;
 							}
 							else
@@ -218,8 +196,25 @@ main(
 						ClientApi::SelectCharacter(SeqNotCompletedCharacter);
 
 #if defined(BUILD_URUS)
-					__REPLAY_APPLICATION__:
-						ClientApi::EnterGame(MapleIdInfo);
+						__REPLAY_APPLICATION__:
+						try
+						{
+							ClientApi::EnterGame(MapleIdInfo);
+						}
+						catch (ClientApi::BlockFromCapchaException & ec)
+						{
+							LEAVE_LOG(&ec);
+
+							LogoutState = FORCE_TERMINATION_FOR_IPRENEWAL;
+							goto __LOGOUT__;
+						}
+						catch (ClientApi::SecondPasswordNotLiftException & ec)
+						{
+							LEAVE_LOG(&ec);
+
+							LogoutState = UNHANDLED;
+							goto __LOGOUT__;
+						}
 
 						try
 						{
@@ -243,12 +238,12 @@ main(
 							{
 								ServerInfo.IsCompleted = true;
 							}
-						}
+					}
 
 						ClientApi::ExitGame();
 #elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 						int IndexCharacter = 0;
-						for(auto & CharacterInfo : ServerInfo.VecCharacter)
+						for (auto& CharacterInfo : ServerInfo.VecCharacter)
 						{
 							if (CharacterInfo.IsCompleted)
 							{
@@ -260,7 +255,24 @@ main(
 #ifdef BUILD_DAILYBOSS
 							if (ARE_FLAGS_ON(CharacterInfo.Type))
 							{
-								ClientApi::EnterGame(MapleIdInfo);
+								try
+								{
+									ClientApi::EnterGame(MapleIdInfo);
+								}
+								catch (ClientApi::BlockFromCapchaException & ec)
+								{
+									LEAVE_LOG(&ec);
+
+									LogoutState = FORCE_TERMINATION_FOR_IPRENEWAL;
+									goto __LOGOUT__;
+								}
+								catch (ClientApi::SecondPasswordNotLiftException & ec)
+								{
+									LEAVE_LOG(&ec);
+
+									LogoutState = UNHANDLED;
+									goto __LOGOUT__;
+								}
 							}
 							else
 							{
@@ -271,13 +283,30 @@ main(
 								continue;
 							}
 #else
-							ClientApi::EnterGame(MapleIdInfo);
+							try
+							{
+								ClientApi::EnterGame(MapleIdInfo);
+							}
+							catch (ClientApi::BlockFromCapchaException & ec)
+							{
+								LEAVE_LOG(&ec);
+
+								LogoutState = FORCE_TERMINATION_FOR_IPRENEWAL;
+								goto __LOGOUT__;
+							}
+							catch (ClientApi::SecondPasswordNotLiftException & ec)
+							{
+								LEAVE_LOG(&ec);
+
+								LogoutState = UNHANDLED;
+								goto __LOGOUT__;
+							}
 #endif
 							try
-							{	
+							{
 #ifdef BUILD_DAILYBOSS
 								Worker.Play(CharacterInfo);
-								
+
 #else
 								Worker.Play(MapleIdInfo, CharacterInfo);
 #endif
@@ -286,7 +315,7 @@ main(
 							catch (AppException & ae)
 							{
 								LEAVE_LOG(&ae);
-								
+
 								ClientApi::RemoveAllIngameWindows();
 								ClientApi::ExitGame();
 
@@ -302,13 +331,15 @@ main(
 								}
 							}
 
-							if (++IndexCharacter == ServerInfo.VecCharacter.size())
+							if (CharacterInfo.IsLastElement && (SeqMapleId % 4 == 3))
 							{
-								ServerInfo.IsCompleted = true;
+								goto __LOGOUT__;
 							}
-
-							ClientApi::ExitGame();
-							KeybdEvent(VK_RIGHT);
+							else
+							{
+								ClientApi::ExitGame();
+								KeybdEvent(VK_RIGHT);
+							}
 						}
 #endif
 						ClientApi::ExitCharacterWindow();
@@ -354,6 +385,10 @@ main(
 					}
 					break;
 
+				case FORCE_TERMINATION_FOR_IPRENEWAL:
+					SeqMapleId = 0;
+					continue;
+
 				case SERVER_DISCONNECTION:
 				case ABNORMAL_CLIENT_TERMINATION:
 					ClientApi::TerminateClient();
@@ -369,6 +404,10 @@ main(
 					{
 						break;
 					}
+
+				case FORCE_TERMINATION_FOR_BOOTUP:
+					ClientApi::TerminateClient();
+					goto __BOOTUP__;
 
 				case UNHANDLED:
 					ClientApi::TerminateClient();
@@ -387,7 +426,6 @@ main(
 
 	__EXIT__:
 		UserInfo.Destroy();
-		IpInfo.Destroy();
 	}
 	catch (MalrangiException & me)
 	{
@@ -397,4 +435,4 @@ main(
 	system("shutdown -s -t 60");
 
 	return EXIT_SUCCESS;
-}
+	}

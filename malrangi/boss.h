@@ -43,11 +43,11 @@ public:
 			{
 				EvaluatedDirection = VK_LEFT;
 			}
-			else if(ScoreX > 0)
+			else if (ScoreX > 0)
 			{
 				EvaluatedDirection = VK_RIGHT;
 			}
-		} 
+		}
 
 		return NULL;
 	}
@@ -118,7 +118,7 @@ public:
 	}
 	void UseSkills(vector<SKILL>& VecSkills, int Flags)
 	{
-		auto UseSkill = [this](SKILL & Skill)
+		auto UseSkill = [this](SKILL& Skill)
 		{
 			auto IsCoolOn = [](const SKILL& Skill)
 			{
@@ -224,7 +224,7 @@ public:
 		}
 	}
 
-protected: 
+protected:
 #define ArrowKeyFromInteger(_x) (_x < 0 ? VK_LEFT : VK_RIGHT)
 	void RaidCompleteRequest(int PickingMilliseconds1, int PickingMilliseconds2)
 	{
@@ -235,7 +235,7 @@ protected:
 	void RaidCompleteRequest(int PickingMilliseconds1, int PickingMilliseconds2, T_LAMBDA BeforePickingRoutine)
 	{
 		BeforePickingRoutine();
-	
+
 		if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageItemPlusCoin, seconds(10)))
 		{
 			KeybdEventContinuedWithSubKey(ArrowKeyFromInteger(PickingMilliseconds1), KeysetInfo.Picking, std::labs(PickingMilliseconds1));

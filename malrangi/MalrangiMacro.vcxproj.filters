@@ -45,9 +45,6 @@
     <ClInclude Include="user.h">
       <Filter>Header Files\conf</Filter>
     </ClInclude>
-    <ClInclude Include="ip.h">
-      <Filter>Header Files\conf</Filter>
-    </ClInclude>
     <ClInclude Include="winevent.h">
       <Filter>Header Files\util%28wrap%29</Filter>
     </ClInclude>
@@ -88,15 +85,12 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\conf\ip.conf">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\conf\user.conf">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\iprenewal.js">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="packages.config" />
+    <None Include="..\renouveler_ip.py">
+      <Filter>Header Files\api\application\external</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -114,6 +114,7 @@ protected:
 		const auto StartTime = system_clock::now();
 		BYTE CurrentDir, LastDir = NULL;
 		int CountNullOfCurrentDir, CountInitialOperation = 0;
+		int CountMaximumNullOfCurrentDir = 24;
 		NewRectClient = ClientApi::RECT_CLIENT4;
 		NewRectClient.left += 900;
 		NewRectClient.top += 530;
@@ -158,13 +159,14 @@ protected:
 					LastDir = CurrentDir = (Score < 0) ? VK_LEFT : VK_RIGHT;
 				}
 
-				if (CountNullOfCurrentDir > 36)
+				if (CountNullOfCurrentDir > CountMaximumNullOfCurrentDir)
 				{
 					LastDir = (LastDir == VK_LEFT) ? VK_RIGHT : VK_LEFT;
 					CountNullOfCurrentDir = 0;
+					CountMaximumNullOfCurrentDir += 12;
 				}
 
-				if ((NULL == LastDir && NULL == CurrentDir) || CountInitialOperation < 32)
+				if ((NULL == LastDir && NULL == CurrentDir) || CountInitialOperation < 24)
 				{
 					Operate(VK_LEFT);
 					Operate(VK_RIGHT);
@@ -425,6 +427,7 @@ protected:
 					{
 						throw ZACUMRAID_EXCEPTION_CODE::THROW_EYEOFFIRE_FAILED;
 					}
+					Sleep(3000);
 				});
 
 			RaidDoBattle(
@@ -514,11 +517,13 @@ public:
 			{
 				"불독",
 				{
-					{'1', SKILL::BUF, seconds(180)},
-					{'2', SKILL::BUF, seconds(180)},
-					{'3', SKILL::BUF, seconds(180)},
-					{VK_F1, SKILL::BUF, seconds(180)},
+					{'1', SKILL::BUF},
+					{'2', SKILL::BUF},
+					{'3', SKILL::BUF},
+					{VK_F1, SKILL::BUF},
+					{'R', SKILL::ASSIST, seconds(50)},
 					{'W', SKILL::ASSIST, seconds(10)},
+					{'O', SKILL::ONOFF},
 					{'L', SKILL::ONOFF},
 					{'Q', SKILL::UNITARY}
 				}
@@ -526,7 +531,7 @@ public:
 			{
 				"썬콜",
 				{
-					{VK_F1, SKILL::BUF, seconds(180)},
+					{VK_F1, SKILL::BUF},
 					{'T', SKILL::ASSIST, seconds(180)},
 					{'W', SKILL::ASSIST, seconds(6)},
 					{'Q', SKILL::UNITARY}
@@ -535,12 +540,12 @@ public:
 			{
 				"비숍",
 				{
-					{'L', SKILL::ONOFF},
 					{'R', SKILL::ASSIST, seconds(180)},
-					{'1', SKILL::BUF, seconds(180)},
-					{'2', SKILL::BUF, seconds(180)},
-					{VK_F2, SKILL::BUF, seconds(180)},
-					{'W', SKILL::UNITARY}
+					{'1', SKILL::BUF},
+					{'2', SKILL::BUF},
+					{VK_F2, SKILL::BUF},
+					{'D', SKILL::BUF},
+					{'Q', SKILL::UNITARY}
 				}
 			},
 			{
@@ -556,6 +561,15 @@ public:
 				}
 			},
 			{
+				"듀블",
+				{
+					{'2', SKILL::BUF},
+					{'Z', SKILL::ASSIST, seconds(180)},
+					{'S', SKILL::ASSIST, seconds(180)},
+					{'Q', SKILL::UNITARY}
+				}
+			},
+			{
 				"소마",
 				{
 					{'R', SKILL::ASSIST, seconds(180)},
@@ -565,15 +579,15 @@ public:
 			{
 				"윈브",
 				{
-					{'2', SKILL::BUF, seconds(180)},
+					{'2', SKILL::BUF},
 					{'Q', SKILL::UNITARY}
 				}
 			},
 			{
 				"나워",
 				{
-					{'1', SKILL::BUF, seconds(180)},
-					{VK_F1, SKILL::BUF, seconds(180)},
+					{'1', SKILL::BUF},
+					{VK_F1, SKILL::BUF},
 					{'W', SKILL::ASSIST, seconds(9)},
 					{VK_F2, SKILL::ASSIST, seconds(180)},
 					{'Q', SKILL::UNITARY}
@@ -589,13 +603,6 @@ public:
 				"팬텀",
 				{
 					{'A', SKILL::UNITARY}
-				}
-			},
-			{
-				"아크",
-				{
-				{'T', SKILL::ASSIST, seconds(180)},
-					{'Q', SKILL::UNITARY}
 				}
 			},
 			{
@@ -623,6 +630,13 @@ public:
 			{
 				"배메",
 				{
+					{'1', SKILL::BUF},
+					{VK_F2, SKILL::BUF},
+					{VK_F3, SKILL::BUF},
+					{'F', SKILL::BUF},
+					{'D', SKILL::BUF},
+					{'R', SKILL::BUF},
+					{'L', SKILL::ONOFF},
 					{'Q', SKILL::UNITARY}
 				}
 			},
@@ -644,15 +658,15 @@ public:
 			{
 				"엔버",
 				{
-					{'4', SKILL::BUF, seconds(180)},
+					{'4', SKILL::BUF},
 					{'D', SKILL::UNITARY}
 				}
 			},
 			{
 				"데슬",
 				{
-					{'2', SKILL::BUF, seconds(180)},
-					{'3', SKILL::BUF, seconds(180)},
+					{'2', SKILL::BUF},
+					{'3', SKILL::BUF},
 					{'T', SKILL::ASSIST, seconds(180)},
 					{'W', SKILL::UNITARY}
 				}
@@ -660,7 +674,7 @@ public:
 			{
 				"아란",
 				{
-					{VK_F2, SKILL::BUF, seconds(180)},
+					{VK_F2, SKILL::BUF},
 					{'R', SKILL::ASSIST, seconds(20)},
 					{'Z', SKILL::ASSIST, seconds(180)},
 					{'Q', SKILL::UNITARY}
@@ -669,7 +683,7 @@ public:
 			{
 				"바이퍼",
 				{
-				{'L', SKILL::BUF, seconds(180)},
+				{'L', SKILL::BUF},
 					{'Q', SKILL::UNITARY}
 				}
 			},
@@ -683,18 +697,18 @@ public:
 				{
 				"메세",
 				{
-					{'2', SKILL::BUF, seconds(180)},
-					{VK_F1, SKILL::BUF, seconds(180)},
+					{'2', SKILL::BUF},
+					{VK_F1, SKILL::BUF},
 					{'Q', SKILL::UNITARY}
 				}
 				},
 				{
 				"제논",
 				{
-					{'2', SKILL::BUF, seconds(180)},
-					{VK_F2, SKILL::BUF, seconds(180)},
-					{'4', SKILL::BUF, seconds(180)},
-					{VK_F1, SKILL::BUF, seconds(180)},
+					{'2', SKILL::BUF},
+					{VK_F2, SKILL::BUF},
+					{'4', SKILL::BUF},
+					{VK_F1, SKILL::BUF},
 					{'T', SKILL::ASSIST, seconds(180)},
 					{'Q', SKILL::UNITARY}
 				}
@@ -705,26 +719,29 @@ public:
 					{'L', SKILL::ONOFF},
 					{'Q', SKILL::UNITARY}
 				}
-				},
+			},	
+			{
+				"나로",
 				{
-				"듀블",
-				{
-					{'2', SKILL::BUF, seconds(180)},
-					{'Z', SKILL::ASSIST, seconds(180)},
-					{'S', SKILL::ASSIST, seconds(180)},
+					{'2', SKILL::BUF},
 					{'Q', SKILL::UNITARY}
 				}
 			},
+			{
+				"아크",
 				{
-				"나로",
-				{
-					{'2', SKILL::BUF, seconds(180)},
-					{'Q', SKILL::UNITARY}
+				//	{'T', SKILL::ASSIST, seconds(180)},
+					{'R', SKILL::ASSIST, seconds(180)},
+					{'A', SKILL::UNITARY}
 				}
 			},
 			{
 				"데벤",
 				{
+					{'1', SKILL::BUF},
+					{'2', SKILL::BUF},
+					{'3', SKILL::BUF},
+					{'4', SKILL::BUF},
 					{'T', SKILL::ASSIST, seconds(180)},
 					{'E', SKILL::ASSIST, seconds(6)},
 					{'Q', SKILL::UNITARY}
@@ -739,19 +756,12 @@ public:
 			RaidCallBoss(
 				[this, &CharacterInfo]()
 				{
-					if ("제로" == CharacterInfo.ClassName)
-					{
-						KeybdEventContinued(VK_RIGHT, GET_DURATION(210000, 159));
-					}
-					else
-					{
-						KeybdEventContinued(VK_RIGHT, GET_DURATION(210000, MapCharacterSpeed[CharacterInfo.ClassName]));
-					}
+					KeybdEventContinued(VK_RIGHT, GET_DURATION(212000, MapCharacterSpeed[CharacterInfo.ClassName]));
+					Sleep(1000);
 
-					Sleep(1500);
-					for (int i = 0; i < 12; i++)
+					for (int i = 0; i < 10; i++)
 					{
-						MouseEvent({ 870, 561 }, LEFT_CLICK, 290);
+						MouseEvent({ 870, 561 }, LEFT_CLICK, 300);
 					}
 				});
 
@@ -773,7 +783,7 @@ public:
 					KeybdEventContinued(VK_LEFT, 8000);
 					KeybdEventContinued(VK_RIGHT, GET_DURATION(672000, MapCharacterSpeed[CharacterInfo.ClassName]));
 					Sleep(1000);
-
+					
 					if (VALLOC MatchInfo;
 						MatchTemplate(SourceImageClient4, TargetImageNpcPetrick, &MatchInfo))
 					{
