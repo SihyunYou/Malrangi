@@ -8,6 +8,7 @@
 #include "winevent.h"
 #include "cvwrap.h"
 #include "user.h"
+#include "ipmanage.h"
 
 class ClientApi
 {
@@ -16,7 +17,7 @@ public:
 #define SourceImageClient1				(Capture(ClientApi::RECT_CLIENT1))
 #define SourceImageClient4				(Capture(ClientApi::RECT_CLIENT4))
 #define SourceImageClient4Colored		(Capture(ClientApi::RECT_CLIENT4, IMREAD_COLOR))
-#define POS_VOID		(Point{10, 480})
+#define POS_VOID		(Point{793, 737})
 	static void SET_CLIENT_STDPOS(void);
 	inline static const RECT RECT_CLIENT1 = { 0, 0, 800, 600 + 26 };
 	inline static const RECT RECT_CLIENT4 = { 0, 0, 1366, 768 + 26 };
@@ -128,6 +129,36 @@ public:
 	/****************************************************************************
 	* Excetpions handled specifically
 	****************************************************************************/
+	class GameNotConnectableException : public ClientApi::Exception
+	{
+	public:
+		GameNotConnectableException(void) :
+			ClientApi::Exception(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class NexonLoginFailedException : public ClientApi::Exception
+	{
+	public:
+		NexonLoginFailedException(void) :
+			ClientApi::Exception(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
+	class NetworkDisconnectedException : public ClientApi::Exception
+	{
+	public:
+		NetworkDisconnectedException(void) :
+			ClientApi::Exception(__CLASSNAME__) {}
+		virtual const char* what(void) const throw()
+		{
+			return Message.c_str();
+		}
+	};
 	class BootFailedException : public ClientApi::Exception
 	{
 	public:
@@ -184,6 +215,11 @@ public:
 		{
 			throw ClientApi::ServerDisconnectedException();
 		}
+		else if (IpManage Manager;
+			!Manager.IsNetworkConnected())
+		{
+			throw ClientApi::NetworkDisconnectedException();
+		}
 		else
 		{
 			throw ClientApi::Exception(DefaultWhat);
@@ -221,7 +257,7 @@ public:
 		const USERCONF::SERVER_INFO&,
 		int); 
 	static void SelectCharacter(
-		unsigned int); 
+		const USERCONF::SERVER_INFO&);
 	static bool UnlockSecondPassword(
 		const string&); 
 	static void ExitCharacterWindow(void);
@@ -275,6 +311,7 @@ void ClientApi::SET_CLIENT_STDPOS(void)
 void ClientApi::BootClient(
 	void)
 {
+	ClientApi::TerminateClient();
 	ShellExecute(NULL, TEXT("open"), TEXT("C:\\Nexon\\Maple\\MapleStory.exe"), TEXT("GameLaunching"), NULL, SW_SHOW);
 	if (DoUntilMatchingTemplate(
 		ClientApi::RECT_CLIENT1,
@@ -288,6 +325,12 @@ void ClientApi::BootClient(
 	}
 	else
 	{
+		if (IpManage Manager;
+			!Manager.IsNetworkConnected())
+		{
+			throw NetworkDisconnectedException();
+		}
+
 		throw BootFailedException();
 	}
 }
@@ -320,6 +363,9 @@ void ClientApi::Login(
 		}
 	};
 	
+	bool IsThrowable = false;
+
+	__NEXON_LOGIN__:
 	MouseEvent({ 334, 282 }, LEFT_CLICK);
 	MouseEvent({ 452, 282 }, LEFT_CLICK);
 	WriteString(AccountInfo.Id);
@@ -334,10 +380,43 @@ void ClientApi::Login(
 	}
 	else
 	{
-		throw ClientApi::Exception("NexonLoginFailedException");
+		if (!IsThrowable)
+		{
+			IsThrowable = true;
+			KeybdEvent(VK_RETURN);
+			ClientApi::SET_CLIENT_STDPOS();
+
+			goto __NEXON_LOGIN__;
+		}
+		else
+		{
+		//	static const Mat TargetImageWindowNexonLoginGameNotConnectable = Read(TARGET_DIR "window//login_game_not_connectable.jpg");
+			static const Mat TargetImageWindowNexonLogin[] =
+			{
+				Read(TARGET_DIR "window//login_wrong_emailjpg"),
+				Read(TARGET_DIR "window//login_id_not_registered.jpg"),
+				Read(TARGET_DIR "window//login_wrong_password.jpg")
+			};
+
+		/*	if (VALLOC MatchInfo;
+				MatchTemplate(Capture(ClientApi::RECT_CLIENT1), TargetImageWindowNexonLoginGameNotConnectable))
+			{
+				throw GameNotConnectableException();
+			}*/
+			for (const auto& TargetImage : TargetImageWindowNexonLogin)
+			{
+				if (VALLOC MatchInfo;
+					MatchTemplate(Capture(ClientApi::RECT_CLIENT1), TargetImage))
+				{
+					throw NexonLoginFailedException();
+				}
+			}
+			throw ClientApi::Exception("NexonLoginFailedException");
+		}
 	}
 
-	
+
+__MAPLE_LOGIN__:
 	VALLOC MatchInfo;
 	for(int i = 0; i < 3; i++)
 	{
@@ -378,7 +457,7 @@ void ClientApi::SelectServer(
 		throw ClientApi::Exception("SelectServerFailedException");
 	}
 
-	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN3, seconds(60)))
+	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN3, seconds(90)))
 	{
 		Sleep(0x400);
 	}
@@ -496,11 +575,12 @@ __REUNLOCK__:
 		{
 			throw BlockFromCapchaException();
 		}
-		//ThrowLowException(__FEWHAT__);
+		
+		ThrowLowException(__FEWHAT__);
 	}
 }
 void ClientApi::SelectCharacter(
-	unsigned int Seq)
+	const USERCONF::SERVER_INFO& ServerInfo)
 {
 	static const array<Mat, 5> ArrTargetImageTextCharacterSelect =
 	{
@@ -511,20 +591,23 @@ void ClientApi::SelectCharacter(
 		Read(TARGET_DIR "text//character_select_p5.jpg")
 	};
 
-	for (int i = 0; i < 46; i++)
+	int Seq = 1;
+	for (auto& CharacterInfo : ServerInfo.VecCharacter)
+	{
+		if (CharacterInfo.IsCompleted)
+		{
+			++Seq;
+			continue;
+		}
+		else
+		{
+			break;
+		}
+	}
+	for (int i = 0; i < ServerInfo.VecCharacter.size() + 2; i++)
 	{
 		KeybdEvent(VK_LEFT, 120);
 	}
-
-	/*const auto [CurrentPage, Value, Location] = GetHighestMatchedTemplate(Capture({ 0, 0, 315, 515 }), ArrTargetImageTextCharacterSelect);
-	int DirectionCount = (Seq - 1) / 8 - CurrentPage;
-	cout << CurrentPage << " " << DirectionCount << endl;
-
-	for (int p = 0; p < std::abs(DirectionCount); p++)
-	{
-		MouseEvent({ DirectionCount >= 0 ? 505 : 120, 545 }, LEFT_CLICK);
-	}
-	MouseEvent({ 135 + (((Seq - 1) % 8) % 4) * 125, 235 + (((Seq % 8) <= 4 && (Seq % 8) >= 1)? 0 : 1) * 200 }, LEFT_CLICK);*/
 
 	for (int i = 0; i < (Seq - 1) / 8; i++)
 	{

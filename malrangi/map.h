@@ -508,7 +508,7 @@ public:
 						{
 							KeybdEventContinued(VK_LEFT, 800);
 							KeybdEventContinued(VK_RIGHT, 100);
-							KeybdEvent({ 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'Z'}, 1400);
+							KeybdEvent({ 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'E', 'W', 'W', 'Z'}, 1300);
 						}
 						else if ("¸ÞÄ«´Ð" == CharacterInfo.ClassName)
 						{

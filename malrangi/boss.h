@@ -55,6 +55,9 @@ public:
 
 class BossRaid
 {
+protected:
+	VALLOC MatchInfo;
+
 public:
 	struct SKILL
 	{
@@ -65,18 +68,35 @@ public:
 			RAPID = 0b00000010,
 			BUF = 0b00000100,
 			ASSIST = 0b00001000,
-			ONOFF = 0b00010000,
-			CHARGING = 0b00100000
+			ONOFF = 0b00010000
 		};
 		DWORD Flag;
 		seconds Cooltime;
+		milliseconds Delay;
+		seconds Reserved1; // Charging time
 		system_clock::time_point LastRenewedTime;
-
+		
+#define IS_SKILL_CHARGING(_k) (seconds(-1) != (_k).Reserved1) 
 		SKILL() = default;
-		SKILL(BYTE Key, DWORD Flag, seconds Cooltime = seconds(180)) :
+		SKILL(BYTE Key, DWORD Flag, 
+			milliseconds Delay = milliseconds(1000), seconds Cooltime = seconds(180), seconds Reserved1 = seconds(-1)) :
 			Key(Key),
 			Flag(Flag),
-			Cooltime(Cooltime) { }
+			Cooltime(Cooltime)
+		{
+			switch (Flag)
+			{
+			case UNITARY:
+				Delay = milliseconds(800); break;
+			case RAPID:
+				Delay = milliseconds(200); break;
+			case BUF:
+			case ASSIST:
+			case ONOFF:
+			default:
+				Delay = milliseconds(1000); break;
+			}
+		}
 	};
 
 public:
@@ -84,7 +104,7 @@ public:
 
 public:
 	vector<SKILL>* VecSkills = nullptr;
-	SKILL MainSkill;
+	SKILL LastSkill;
 	const USERCONF::KEYSET_INFO& KeysetInfo;
 
 	inline static const Mat TargetImageItemPlusCoin = Read(TARGET_DIR "item//pluscoin.jpg");
@@ -100,25 +120,17 @@ public:
 	BossRaid() :
 		SeqSuccess(0), SeqFail(0),
 		VecSkills(nullptr),
-		KeysetInfo(USERCONF::GetInstance()->VirtualKeyset) {}
+		KeysetInfo(USERCONF::GetInstance()->VirtualKeyset),
+		LastSkill(NULL, NULL) {}
 
 public:
 	void SetSkills(vector<SKILL>* _VecSkills)
 	{
 		VecSkills = _VecSkills;
-
-		for (const auto& Skill : *VecSkills)
-		{
-			if (IS_FLAG_ON(SKILL::UNITARY | SKILL::RAPID, Skill.Flag))
-			{
-				MainSkill = Skill;
-				return;
-			}
-		}
 	}
 	void UseSkills(vector<SKILL>& VecSkills, int Flags)
 	{
-		auto UseSkill = [this](SKILL& Skill)
+		auto UseSkill = [this](SKILL& CurrentSkill)
 		{
 			auto IsCoolOn = [](const SKILL& Skill)
 			{
@@ -128,38 +140,46 @@ public:
 			{
 				Skill.LastRenewedTime += duration_cast<seconds>(system_clock::now() - Skill.LastRenewedTime);
 			};
-
-			switch (Skill.Flag)
+		
+		
+			if (LastSkill.Key != NULL)
 			{
-			case SKILL::ONOFF:
-				KeybdEventUp(MainSkill.Key);
-				KeybdEvent(Skill.Key, 1000);
-				break;
-
-			case SKILL::CHARGING:
-				if (IsCoolOn(Skill))
+				if (SKILL::UNITARY != CurrentSkill.Flag && SKILL::RAPID != CurrentSkill.Flag)
 				{
-					KeybdEventContinued(Skill.Key, 4000);
+					KeybdEventUp(LastSkill.Key);
 				}
-				KeybdEventUp(Skill.Key);
-				break;
-
-			case SKILL::ASSIST:
-			case SKILL::BUF:
-				if (IsCoolOn(Skill))
-				{
-					KeybdEventUp(MainSkill.Key);
-					Sleep((SKILL::UNITARY == MainSkill.Flag) ? 800 : 200);
-					RenewTime(Skill);
-					KeybdEvent(Skill.Key, 1200);
-				}
-				break;
-
-			case SKILL::UNITARY:
-			case SKILL::RAPID:
-				KeybdEventDown(Skill.Key);
-				break;
+				Sleep(LastSkill.Delay.count());
 			}
+
+			if (SKILL::ASSIST == CurrentSkill.Flag || SKILL::BUF == CurrentSkill.Flag)
+			{
+				if (IsCoolOn(CurrentSkill))
+				{
+					RenewTime(CurrentSkill);
+				}
+				else
+				{
+					return;
+				}
+			}
+
+			if (IS_SKILL_CHARGING(CurrentSkill))
+			{
+				KeybdEventContinued(CurrentSkill.Key, CurrentSkill.Reserved1.count());
+			}
+			else
+			{
+				if (SKILL::UNITARY == CurrentSkill.Flag || SKILL::RAPID == CurrentSkill.Flag)
+				{
+					KeybdEventDown(CurrentSkill.Key);
+				}
+				else
+				{
+					KeybdEvent(CurrentSkill.Key, 0);
+				}
+			}
+
+			LastSkill = CurrentSkill;
 		};
 
 		for (auto& Skill : VecSkills)
@@ -168,7 +188,7 @@ public:
 			{
 				UseSkill(Skill);
 			}
-			Sleep(0x20);
+			Sleep(0x10);
 		}
 	}
 

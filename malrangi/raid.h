@@ -3,9 +3,6 @@
 
 class UrusRaid
 {
-private:
-	VALLOC MatchInfo;
-
 public:
 	UrusRaid() : SeqPlay(1) {}
 
@@ -32,7 +29,8 @@ protected:
 		static const Mat TargetImageMapU3 = Read(TARGET_DIR "map//u3.jpg");
 		static const Mat TargetImageWindowUrusCompleted = Read(TARGET_DIR "window//urus_completed.jpg");
 		static const Mat TargetImageWindowUrusPartyNotBroken = Read(TARGET_DIR "window//urus_party_not_broken.jpg");
-		
+		VALLOC MatchInfo;
+
 		/*** 전투 전 ***/
 		if (1 == SeqPlay)
 		{
@@ -50,6 +48,7 @@ protected:
 		MouseEvent({ 1140, 630 }, LEFT_CLICK);
 		MouseEvent({ 440, 710 }, LEFT_CLICK);
 		MouseEvent({ 487, 771 }, LEFT_CLICK);
+		MouseEvent({ 820, 780 }, LEFT_CLICK);
 		MouseEvent({ 820, 780 }, LEFT_CLICK);
 
 		Mat SourceImage = SourceImageClient4;
@@ -230,9 +229,6 @@ protected:
 
 class ZacumRaid : protected BossRaid
 {
-private:
-	VALLOC MatchInfo;
-
 protected:
 	enum class ZACUMRAID_EXCEPTION_CODE
 	{
@@ -451,9 +447,6 @@ protected:
 
 class RootAbyssRaid : protected BossRaid
 {
-private:
-	VALLOC MatchInfo;
-
 public:
 	void Play(
 		const USERCONF::CHARACTER_INFO& CharacterInfo)
@@ -551,6 +544,10 @@ public:
 			{
 				"보마",
 				{
+					{'O', SKILL::ONOFF},
+					{'2', SKILL::BUF},
+					{'3', SKILL::BUF},
+					{VK_F2, SKILL::BUF},
 					{'Q', SKILL::UNITARY}
 				}
 			},
@@ -586,10 +583,12 @@ public:
 			{
 				"나워",
 				{
+					{'P', SKILL::ONOFF},
 					{'1', SKILL::BUF},
+					{'2', SKILL::BUF},
 					{VK_F1, SKILL::BUF},
-					{'W', SKILL::ASSIST, seconds(9)},
 					{VK_F2, SKILL::ASSIST, seconds(180)},
+					{'W', SKILL::ASSIST, seconds(9)},
 					{'Q', SKILL::UNITARY}
 				}
 			},
@@ -723,7 +722,10 @@ public:
 			{
 				"나로",
 				{
+					{'P', SKILL::ONOFF},		
 					{'2', SKILL::BUF},
+					{'R', SKILL::BUF},
+					{VK_F3, SKILL::BUF},
 					{'Q', SKILL::UNITARY}
 				}
 			},
@@ -756,12 +758,12 @@ public:
 			RaidCallBoss(
 				[this, &CharacterInfo]()
 				{
-					KeybdEventContinued(VK_RIGHT, GET_DURATION(212000, MapCharacterSpeed[CharacterInfo.ClassName]));
-					Sleep(1000);
+					KeybdEventContinued(VK_RIGHT, GET_DURATION(214000, MapCharacterSpeed[CharacterInfo.ClassName]));
+					Sleep(800);
 
-					for (int i = 0; i < 10; i++)
+					for (int i = 0; i < 9; i++)
 					{
-						MouseEvent({ 870, 561 }, LEFT_CLICK, 300);
+						MouseEvent({ 870, 561 }, LEFT_CLICK, 280);
 					}
 				});
 
@@ -785,7 +787,7 @@ public:
 					Sleep(1000);
 					
 					if (VALLOC MatchInfo;
-						MatchTemplate(SourceImageClient4, TargetImageNpcPetrick, &MatchInfo))
+						MatchTemplate(SourceImageClient4, TargetImageNpcPetrick, &MatchInfo), 0.8)
 					{
 						MouseEvent(MatchInfo.Location, LEFT_CLICK);
 

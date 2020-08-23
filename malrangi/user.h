@@ -29,7 +29,6 @@ public:
 						ROOTABYSS = 0b10,
 					};
 					int Type;
-					bool IsLastElement;
 				};
 				vector<struct _CHARACTER_INFO> VecCharacter;
 			};
@@ -87,7 +86,6 @@ private:
 						CharacterInfo.Type = CHARACTER_INFO::ZACUM;
 					}
 					CharacterInfo.IsCompleted = false;
-					CharacterInfo.IsLastElement = false;
 
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].
 						VecServer[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].VecServer.size() - 1].
@@ -130,17 +128,6 @@ private:
 				}
 			}
 			File.close();
-
-			for (auto& NexonAccountInfo : VecNexonAccount)
-			{
-				for (auto& MapleIdInfo : NexonAccountInfo.VecMapleId)
-				{
-					for (auto& ServerInfo : MapleIdInfo.VecServer)
-					{
-						ServerInfo.VecCharacter[ServerInfo.VecCharacter.size() - 1].IsLastElement = true;
-					}
-				}
-			}
 
 			VirtualKeyset.Inventory = 'I';
 			VirtualKeyset.Party = VK_OEM_4;

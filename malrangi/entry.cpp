@@ -3,10 +3,9 @@
 #include "ipmanage.h"
 #include "report.h"
 
-#define BUILD_URUS
-//#define BUILD_DAILYBOSS
+//#define BUILD_URUS
+#define BUILD_DAILYBOSS
 //#define BUILD_CALC
-#define USING_IPRENEWER
 
 int
 main(
@@ -15,7 +14,31 @@ main(
 {
 	ClientApi::SET_CLIENT_STDPOS();
 	Sleep(0x800);
+	BossRaid a;
+	static map<string, vector<BossRaid::SKILL>> MapVecSkills =
+	{
+		{
+				"데벤",
+				{
+					{'1', BossRaid::SKILL::BUF},
+					{'2', BossRaid::SKILL::BUF},
+					{'3', BossRaid::SKILL::BUF},
+					{'4', BossRaid::SKILL::BUF},
+					{'T', BossRaid::SKILL::ASSIST, seconds(180)},
+					{'E', BossRaid::SKILL::ASSIST, seconds(6)},
+					{'Q', BossRaid::SKILL::UNITARY}
+				}
+			}
+	};
+	a.SetSkills(&MapVecSkills["데벤"]);
 
+	a.RaidDoBattle(
+		[]() -> bool
+		{
+			return false;
+		},
+7000,
+true);
 	try
 	{
 		USERCONF& UserInfo = *(USERCONF::GetInstance());
@@ -26,16 +49,10 @@ main(
 #elif defined(BUILD_CALC)	
 		CalcPlay Worker;
 #endif
-#ifdef USING_IPRENEWER
 		IpManage IpManager;
-#else
-		WriteLog(LOG_LEVEL::WARNING,
-			"This program does not support ip renewal. (Flag USING_IPRENEWER is not defined.)"
-			"The number of accounts written in conf file more than 5 is ignored and this program will be terminated itself.\n");
-#endif
-
 		string Uri;
 		int SeqMapleId = 0;
+		int UnhandledCount = 0;
 		auto LEAVE_LOG = [&Uri](std::exception* ce)
 		{
 			if (nullptr != ce)
@@ -47,7 +64,6 @@ main(
 				//(Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
 			printf((Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
 		};
-
 		auto IsServerLoopCompleted = [](const vector<USERCONF::SERVER_INFO>& VecServers)
 		{
 			for each (const auto & Server in VecServers)
@@ -79,9 +95,10 @@ main(
 			NORMAL,
 			SERVER_DISCONNECTION,
 			ABNORMAL_CLIENT_TERMINATION,
-			FORCE_TERMINATION_FOR_BOOTUP,
+			FORCE_TERMINATION_FOR_NETWORK_RECONNECT,
 			FORCE_TERMINATION_FOR_IPRENEWAL,
-			UNHANDLED
+			UNHANDLED,
+			UNHANDLABLE,
 		};
 		int LogoutState = NORMAL;
 
@@ -89,8 +106,9 @@ main(
 		{
 			for (auto& MapleIdInfo : NexonAccountInfo.VecMapleId)
 			{
+				Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id;
 				bool IsPlayValid = false;
-				for each (auto & ServerInfo in MapleIdInfo.VecServer)
+				for (auto & ServerInfo : MapleIdInfo.VecServer)
 				{
 					if (ServerInfo.VecCharacter.size() > 0)
 					{
@@ -102,23 +120,18 @@ main(
 				{
 					continue;
 				}
-
-				Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id;
-
-			__IP_RENEWAL__:
+				
+			__BOOTUP_PREPROCESSING__:
+				if (FORCE_TERMINATION_FOR_NETWORK_RECONNECT == LogoutState)
+				{
+					IpManager.ConnectNetwork();
+				}
 				if (SeqMapleId % 4 == 0)
 				{
-#ifdef USING_IPRENEWER
 					IpManager.Renew();
-#else
-					if (SeqMapleId > 3)
-					{
-						goto EXIT_ROUTINE;
-					}
-#endif
+					SeqMapleId = 0;
 				}
 
-			__BOOTUP__:
 				switch (LogoutState)
 				{
 				case NORMAL:
@@ -128,17 +141,25 @@ main(
 					}
 				case SERVER_DISCONNECTION:
 				case ABNORMAL_CLIENT_TERMINATION:
-				case FORCE_TERMINATION_FOR_BOOTUP:
+				case FORCE_TERMINATION_FOR_NETWORK_RECONNECT:
 				case FORCE_TERMINATION_FOR_IPRENEWAL:
 				case UNHANDLED:
 					try
 					{
 						ClientApi::BootClient();
 					}
+					catch (ClientApi::NetworkDisconnectedException & ec)
+					{
+						LEAVE_LOG(&ec);
+
+						LogoutState = FORCE_TERMINATION_FOR_NETWORK_RECONNECT;
+						goto __LOGOUT__;
+					}
 					catch (ClientApi::BootFailedException & ec)
 					{
 						LEAVE_LOG(&ec);
 
+						LogoutState = UNHANDLED;
 						goto __LOGOUT__;
 					}
 					break;
@@ -147,7 +168,23 @@ main(
 				try
 				{
 					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
+
+					++SeqMapleId;
 					LogoutState = NORMAL;
+				}
+				catch (ClientApi::GameNotConnectableException & e)
+				{
+					LEAVE_LOG(&e);
+					LogoutState = FORCE_TERMINATION_FOR_NETWORK_RECONNECT;
+
+					goto __LOGOUT__;
+				}
+				catch (ClientApi::NexonLoginFailedException & e)
+				{
+					LEAVE_LOG(&e);
+					LogoutState = UNHANDLED;
+
+					goto __LOGOUT__;
 				}
 				catch (ClientApi::Exception & e)
 				{
@@ -180,20 +217,7 @@ main(
 							goto __LOGOUT__;
 						}
 
-						int SeqNotCompletedCharacter = 1;
-						for (auto& CharacterInfo : ServerInfo.VecCharacter)
-						{
-							if (CharacterInfo.IsCompleted)
-							{
-								++SeqNotCompletedCharacter;
-								continue;
-							}
-							else
-							{
-								break;
-							}
-						}
-						ClientApi::SelectCharacter(SeqNotCompletedCharacter);
+						ClientApi::SelectCharacter(ServerInfo);
 
 #if defined(BUILD_URUS)
 						__REPLAY_APPLICATION__:
@@ -238,8 +262,7 @@ main(
 							{
 								ServerInfo.IsCompleted = true;
 							}
-					}
-
+						}
 						ClientApi::ExitGame();
 #elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 						int IndexCharacter = 0;
@@ -259,18 +282,18 @@ main(
 								{
 									ClientApi::EnterGame(MapleIdInfo);
 								}
-								catch (ClientApi::BlockFromCapchaException & ec)
-								{
-									LEAVE_LOG(&ec);
-
-									LogoutState = FORCE_TERMINATION_FOR_IPRENEWAL;
-									goto __LOGOUT__;
-								}
 								catch (ClientApi::SecondPasswordNotLiftException & ec)
 								{
 									LEAVE_LOG(&ec);
 
 									LogoutState = UNHANDLED;
+									goto __LOGOUT__;
+								}
+								catch (ClientApi::BlockFromCapchaException & ec)
+								{
+									LEAVE_LOG(&ec);
+
+									LogoutState = FORCE_TERMINATION_FOR_IPRENEWAL;
 									goto __LOGOUT__;
 								}
 							}
@@ -306,7 +329,6 @@ main(
 							{
 #ifdef BUILD_DAILYBOSS
 								Worker.Play(CharacterInfo);
-
 #else
 								Worker.Play(MapleIdInfo, CharacterInfo);
 #endif
@@ -331,7 +353,17 @@ main(
 								}
 							}
 
-							if (CharacterInfo.IsLastElement && (SeqMapleId % 4 == 3))
+							ServerInfo.IsCompleted = true;
+							for (const auto& CharacterInfo : ServerInfo.VecCharacter)
+							{
+								if (!CharacterInfo.IsCompleted)
+								{
+									ServerInfo.IsCompleted = false;
+									break;
+								}
+							}
+
+							if (ServerInfo.IsCompleted && (SeqMapleId % 4 == 3))
 							{
 								goto __LOGOUT__;
 							}
@@ -342,6 +374,7 @@ main(
 							}
 						}
 #endif
+						ServerInfo.IsCompleted = true;
 						ClientApi::ExitCharacterWindow();
 					}
 				}
@@ -349,6 +382,11 @@ main(
 				{
 					LEAVE_LOG(&e);
 					LogoutState = SERVER_DISCONNECTION;
+				}
+				catch (ClientApi::NetworkDisconnectedException & e)
+				{
+					LEAVE_LOG(&e);
+					LogoutState = FORCE_TERMINATION_FOR_NETWORK_RECONNECT;
 				}
 				catch (ClientApi::ClientAbnormalTerminationException & e)
 				{
@@ -362,6 +400,12 @@ main(
 				}
 
 			__LOGOUT__:
+				if (UnhandledCount > 2)
+				{
+					LogoutState = UNHANDLABLE;
+					UnhandledCount = 0;
+				}
+
 				switch (LogoutState)
 				{
 				case NORMAL:
@@ -387,10 +431,15 @@ main(
 
 				case FORCE_TERMINATION_FOR_IPRENEWAL:
 					SeqMapleId = 0;
-					continue;
-
+				case FORCE_TERMINATION_FOR_NETWORK_RECONNECT:
 				case SERVER_DISCONNECTION:
 				case ABNORMAL_CLIENT_TERMINATION:
+				case UNHANDLED:
+					if (UNHANDLED == LogoutState)
+					{
+						++UnhandledCount;
+					}
+
 					ClientApi::TerminateClient();
 #if defined(BUILD_URUS)
 					if (!IsServerLoopCompleted(MapleIdInfo.VecServer))
@@ -398,18 +447,15 @@ main(
 					if (!IsCharacterLoopCompleted(MapleIdInfo.VecServer))
 #endif
 					{
-						goto __BOOTUP__;
+						goto __BOOTUP_PREPROCESSING__;
 					}
 					else
 					{
 						break;
 					}
-
-				case FORCE_TERMINATION_FOR_BOOTUP:
-					ClientApi::TerminateClient();
-					goto __BOOTUP__;
-
-				case UNHANDLED:
+				
+				case UNHANDLABLE:
+					LogoutState = UNHANDLED;
 					ClientApi::TerminateClient();
 					break;
 
@@ -417,8 +463,6 @@ main(
 					WriteLog(LOG_LEVEL::CRITICAL, "INVALID LOGOUT STATE.\n");
 					goto __EXIT__;
 				}
-
-				++SeqMapleId;
 			}
 		}
 
@@ -435,4 +479,4 @@ main(
 	system("shutdown -s -t 60");
 
 	return EXIT_SUCCESS;
-	}
+}
