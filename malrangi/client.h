@@ -24,7 +24,7 @@ public:
 	inline static const Mat TARGETIMAGE_EXTERN1 = Read(TARGET_DIR "window//initial_logo.jpg");
 	inline static const Mat TARGETIMAGE_EXTERN2 = Read(TARGET_DIR "window//world-channel_select.jpg");
 	inline static const Mat TARGETIMAGE_EXTERN3 = Read(TARGET_DIR "window//character_select.jpg");
-	inline static const Mat TARGETIMAGE_INTERN = Read(TARGET_DIR "button//meilege.jpg");
+	inline static const Mat TARGETIMAGE_INTERN = Read(TARGET_DIR "button//quest.jpg");
 
 public:
 	class Exception : public MalrangiException
@@ -129,40 +129,10 @@ public:
 	/****************************************************************************
 	* Excetpions handled specifically
 	****************************************************************************/
-	class GameNotConnectableException : public ClientApi::Exception
-	{
-	public:
-		GameNotConnectableException(void) :
-			ClientApi::Exception(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class NexonLoginFailedException : public ClientApi::Exception
-	{
-	public:
-		NexonLoginFailedException(void) :
-			ClientApi::Exception(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
 	class NetworkDisconnectedException : public ClientApi::Exception
 	{
 	public:
 		NetworkDisconnectedException(void) :
-			ClientApi::Exception(__CLASSNAME__) {}
-		virtual const char* what(void) const throw()
-		{
-			return Message.c_str();
-		}
-	};
-	class BootFailedException : public ClientApi::Exception
-	{
-	public:
-		BootFailedException(void) :
 			ClientApi::Exception(__CLASSNAME__) {}
 		virtual const char* what(void) const throw()
 		{
@@ -203,7 +173,7 @@ public:
 	/****************************************************************************
 	* Exceptions handled commonly
 	****************************************************************************/
-	static void ThrowLowException(const char* DefaultWhat)
+	[[ noreturn ]] static void ThrowLowException(const char* DefaultWhat)
 	{
 		static const Mat TargetImageWindowServerDisconnection = Read(TARGET_DIR "window//server-disconnection.jpg");
 
@@ -290,6 +260,7 @@ public:
 	static void RemoveAllIngameWindows(void);
 	static void ExitGame(void);
 	static int ThrowItem(Mat);
+	static void SupprimerBuf(int);
 };
 
 void ClientApi::SET_CLIENT_STDPOS(void)
@@ -331,7 +302,7 @@ void ClientApi::BootClient(
 			throw NetworkDisconnectedException();
 		}
 
-		throw BootFailedException();
+		throw ClientApi::Exception("BootFailedException");
 	}
 }
 void ClientApi::TerminateClient(
@@ -390,27 +361,6 @@ void ClientApi::Login(
 		}
 		else
 		{
-		//	static const Mat TargetImageWindowNexonLoginGameNotConnectable = Read(TARGET_DIR "window//login_game_not_connectable.jpg");
-			static const Mat TargetImageWindowNexonLogin[] =
-			{
-				Read(TARGET_DIR "window//login_wrong_emailjpg"),
-				Read(TARGET_DIR "window//login_id_not_registered.jpg"),
-				Read(TARGET_DIR "window//login_wrong_password.jpg")
-			};
-
-		/*	if (VALLOC MatchInfo;
-				MatchTemplate(Capture(ClientApi::RECT_CLIENT1), TargetImageWindowNexonLoginGameNotConnectable))
-			{
-				throw GameNotConnectableException();
-			}*/
-			for (const auto& TargetImage : TargetImageWindowNexonLogin)
-			{
-				if (VALLOC MatchInfo;
-					MatchTemplate(Capture(ClientApi::RECT_CLIENT1), TargetImage))
-				{
-					throw NexonLoginFailedException();
-				}
-			}
 			throw ClientApi::Exception("NexonLoginFailedException");
 		}
 	}
@@ -531,7 +481,7 @@ void ClientApi::EnterGame(
 	CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 {
 __REUNLOCK__:
-	KeybdEvent(VK_RETURN);
+	KeybdEvent(VK_RETURN, 0x400);
 
 	int t = 0;
 	if(MatchTemplate(Capture(ClientApi::RECT_CLIENT1), Read(TARGET_DIR "button//2pwd//1.jpg")))
@@ -558,7 +508,7 @@ __REUNLOCK__:
 		Sleep(0x400);
 
 		// Remove tooltips
-		KeybdEvent({ VK_ESCAPE, VK_ESCAPE, VK_ESCAPE });
+		KeybdEvent({ VK_ESCAPE, VK_ESCAPE, VK_ESCAPE }, 600);
 		MouseEvent(POS_VOID, LEFT_CLICK);
 	}
 	else
@@ -578,6 +528,12 @@ __REUNLOCK__:
 		
 		ThrowLowException(__FEWHAT__);
 	}
+
+	if (VALLOC MatchInfo;
+		MatchTemplate(Capture(ClientApi::RECT_CLIENT4), Read(TARGET_DIR "button//diminuer_chat.png"), &MatchInfo))
+	{
+		MouseEvent({ MatchInfo.Location.x + 2, MatchInfo.Location.y + 2 }, LEFT_CLICK);
+	}
 }
 void ClientApi::SelectCharacter(
 	const USERCONF::SERVER_INFO& ServerInfo)
@@ -586,11 +542,27 @@ void ClientApi::SelectCharacter(
 	{
 		Read(TARGET_DIR "text//character_select_p1.jpg"),
 		Read(TARGET_DIR "text//character_select_p2.jpg"),
+
+
 		Read(TARGET_DIR "text//character_select_p3.jpg"),
 		Read(TARGET_DIR "text//character_select_p4.jpg"),
 		Read(TARGET_DIR "text//character_select_p5.jpg")
 	};
 
+	for (int i = 0; 
+#if defined(BUILD_URUS)
+		i < ServerInfo.NombreDeCharacter + 2;
+#elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
+		i < ServerInfo.VecCharacter.size() + 2;
+#endif
+		i++)
+	{
+		KeybdEvent(VK_LEFT, 120);
+	}
+
+#if defined(BUILD_URUS)
+	MouseEvent({ 135, 235 }, LEFT_CLICK);
+#elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 	int Seq = 1;
 	for (auto& CharacterInfo : ServerInfo.VecCharacter)
 	{
@@ -604,19 +576,15 @@ void ClientApi::SelectCharacter(
 			break;
 		}
 	}
-	for (int i = 0; i < ServerInfo.VecCharacter.size() + 2; i++)
-	{
-		KeybdEvent(VK_LEFT, 120);
-	}
 
 	for (int i = 0; i < (Seq - 1) / 8; i++)
 	{
-		MouseEvent({ 505, 545 }, LEFT_CLICK, 10000);
+		MouseEvent({ 505, 545 }, LEFT_CLICK, 8000);
 	}
 	MouseEvent(
-		{ 135 + (((Seq - 1) % 8) % 4) * 125, 
-		235 + (((Seq % 8) <= 4 && (Seq % 8) >= 1) ? 0 : 1) * 200 }, 
+		{ (135 + (((Seq - 1) % 8) % 4) * 125), (235 + (((Seq % 8) <= 4 && (Seq % 8) >= 1) ? 0 : 1) * 200) },
 		LEFT_CLICK);
+#endif
 }
 void ClientApi::RemoveAllIngameWindows(
 	void)
@@ -628,13 +596,13 @@ void ClientApi::RemoveAllIngameWindows(
 
 	for (int i = 0; i < 4; i++)
 	{
-		KeybdEvent(VK_RETURN, 400);
+		KeybdEvent(VK_RETURN, 256);
 	}
 	for (int i = 0; i < 4; i++)
 	{
-		KeybdEvent(VK_ESCAPE, 400);
+		KeybdEvent(VK_ESCAPE, 256);
 	}
-	MouseEvent({ 10, 476 }, LEFT_CLICK);
+	MouseEvent(POS_VOID, LEFT_CLICK);
 }
 void ClientApi::ExitGame(
 	void)
@@ -799,24 +767,24 @@ int ClientApi::ThrowItem(
 	if (VALLOC MatchInfo;
 		MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
 	{
-		MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
+		MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK);
 	}
 	else
 	{
 		if (MatchTemplate(SourceImageClient4, TargetImageButtonEtc, &MatchInfo))
 		{
-			MouseEvent(MatchInfo.Location + Point{ 5, 5 }, LEFT_CLICK, 600);
+			MouseEvent(MatchInfo.Location + Point{ 5, 5 }, LEFT_CLICK);
 		}
 		
 		if (MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
 		{
-			MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
+			MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK);
 		}
 		else
 		{
 			if (MatchTemplate(SourceImageClient4, TargetImageButtonExpandingInventory, &MatchInfo))
 			{
-				MouseEvent(MatchInfo.Location + Point{ 6, 6 }, LEFT_CLICK, 600);
+				MouseEvent(MatchInfo.Location + Point{ 6, 6 }, LEFT_CLICK);
 			}
 			else
 			{
@@ -825,7 +793,7 @@ int ClientApi::ThrowItem(
 
 			if (MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
 			{
-				MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK, 600);
+				MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK);
 			}
 			else
 			{
@@ -838,4 +806,11 @@ int ClientApi::ThrowItem(
 	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Inventory);
 
 	return 0;
+}
+void ClientApi::SupprimerBuf(int n)
+{
+	for (int p = 0; p < n; p++)
+	{
+		MouseEvent({ 1350, 45 }, RIGHT_CLICK, 1000);
+	}
 }

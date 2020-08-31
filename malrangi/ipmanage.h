@@ -5,8 +5,9 @@ class IpManage
 {
 
 public:
-	void Renew(void)
+	void Renouveler(void)
 	{
+        system("taskkill /im py.exe >nul 2>nul");
 		ShellExecuteA(NULL, "open", IPMANAGER_PATH, NULL, NULL, SW_SHOW);
 		Sleep(8000);
 	}

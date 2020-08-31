@@ -20,7 +20,7 @@ enum
 	YELLOW,
 	WHITE
 };
-enum LOG_LEVEL
+enum NIVEAU_DE_LOG
 {
 	INFO = WHITE,
 	WARNING = YELLOW,
@@ -40,7 +40,7 @@ INT NumberOfLine;
 LPCSTR FileName;
 ofstream LogFile{ SNAP_DIR "log.txt", ios::out || ios::trunc };
 
-void VWriteLog(LOG_LEVEL LogLevel, LPCSTR lpFormat, ...)
+void VWriteLog(NIVEAU_DE_LOG LogLevel, LPCSTR lpFormat, ...)
 {
 	auto GetCurrentDateTimeString = [](void) -> string
 	{

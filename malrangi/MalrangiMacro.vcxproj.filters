@@ -66,17 +66,17 @@
     <ClInclude Include="circular_play.h">
       <Filter>Header Files\api\application\client</Filter>
     </ClInclude>
-    <ClInclude Include="raid.h">
-      <Filter>Header Files\api\application\client</Filter>
-    </ClInclude>
     <ClInclude Include="map.h">
-      <Filter>Header Files\api\application\client</Filter>
-    </ClInclude>
-    <ClInclude Include="boss.h">
       <Filter>Header Files\api\application\client</Filter>
     </ClInclude>
     <ClInclude Include="log.h">
       <Filter>Header Files\api\application\log</Filter>
+    </ClInclude>
+    <ClInclude Include="urus.h">
+      <Filter>Header Files\api\application\client</Filter>
+    </ClInclude>
+    <ClInclude Include="dailyboss.h">
+      <Filter>Header Files\api\application\client</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

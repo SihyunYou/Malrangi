@@ -1,6 +1,4 @@
 #pragma once
-#include "raid.h"
-#include "calc.h"
 #include "map.h"
 
 class AppException : public MalrangiException
@@ -16,49 +14,54 @@ public:
 		return Message.c_str();
 	}
 };
-#define INVALID_MAP_EXCEPTION(_n) "InvalidMapException(MapName = " + to_string(_n) + ")" 
+#define INVALID_MAP_EXCEPTION(_n) "InvalidMapException(MapName = " + to_string(_n) + ")"
+
+#if defined(BUILD_URUS)
+#include "urus.h"
 
 class UrusPlay : private UrusRaid, private Bridge
 {
 public:
 	void Play(
-		const USERCONF::CHARACTER_INFO& CharacterInfo)
+		const bool IsQuickCompletionMode)
 	{
 		try
 		{
+			bool EstGauche = false;
 			switch (int CurrentMap = WhereAmI())
 			{
 			case Zacum2_2:
-				MoveFromAToB(Zacum2_2, Zacum1, CharacterInfo);
+				BougerDeAAB(Zacum2_2, Zacum1);
 			case Zacum1:
-				MoveFromAToB(Zacum1, Elnas, CharacterInfo);
+				BougerDeAAB(Zacum1, Elnas);
 				goto __Elnas_U;
 
 			case RootAbyss1:
-				MoveFromAToB(RootAbyss1, Elnas, CharacterInfo);
+				BougerDeAAB(RootAbyss1, Elnas);
 				goto __Elnas_U;
 			case FreeMarket:
-				MoveFromAToB(FreeMarket, ElnasMarket, CharacterInfo);
+				BougerDeAAB(FreeMarket, ElnasMarket);
 			case ElnasMarket:
-				MoveFromAToB(ElnasMarket, Elnas, CharacterInfo);
+				BougerDeAAB(ElnasMarket, Elnas);
 				goto __Elnas_U;
 
 			__Elnas_U:
 			case Elnas:
-				MoveFromAToB(Elnas, Urus, CharacterInfo);
+				EstGauche = true;
+				BougerDeAAB(Elnas, Urus);
 			case Urus:
 				break;
 
-			default: 
+			default:
 				throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
 			}
 
 			for (; SeqPlay <= 3; SeqPlay++)
 			{
-				UrusRaid::Play(CharacterInfo);
+				UrusRaid::Play(IsQuickCompletionMode, EstGauche);
 			}
 		}
-		catch (BRIDGE_EXCEPTION_CODE& ExceptionCode)
+		catch (BRIDGE_EXCEPTION_CODE & ExceptionCode)
 		{
 			bool IsRetryAvailable;
 			switch (ExceptionCode)
@@ -75,7 +78,7 @@ public:
 
 			throw AppException("MoveAToBFailedException", IsRetryAvailable);
 		}
-		catch (URUSRAID_EXCEPTION_CODE& ExceptionCode)
+		catch (URUSRAID_EXCEPTION_CODE & ExceptionCode)
 		{
 			switch (ExceptionCode)
 			{
@@ -105,11 +108,16 @@ public:
 		SeqPlay = 1;
 	}
 };
-class DailyBossPlay : private ZacumRaid, private RootAbyssRaid, private Bridge
+#endif
+#if defined(BUILD_DAILYBOSS)
+#include "dailyboss.h"
+
+class DailyBossPlay : private ZacumRaid, private RootAbyssBloodyQueenRaid, private RootAbyssVonBanRaid, private Bridge
 {
 public:
 	void Play(USERCONF::CHARACTER_INFO& CharacterInfo)
 	{
+	__CIRCULAR_REPLAY__:
 		try
 		{
 			int Priority; // ÀÚÄñ / ºí·¯µðÄý
@@ -129,7 +137,7 @@ public:
 			case ElnasMarket:
 			case FreeMarket:
 			default:
-				Priority = USERCONF::CHARACTER_INFO::ROOTABYSS;
+				Priority = USERCONF::CHARACTER_INFO::ROOTABYSS_BLOODYQUEEN;
 				break;
 			}
 
@@ -138,77 +146,119 @@ public:
 				goto __BEGIN_ZACUM;
 			}
 
-			while (CharacterInfo.Type)
+			while (CharacterInfo.Flag)
 			{
-				if (CharacterInfo.Type & USERCONF::CHARACTER_INFO::ROOTABYSS)
+				if (CharacterInfo.Flag & USERCONF::CHARACTER_INFO::ROOTABYSS_BLOODYQUEEN)
 				{
 					switch (int CurrentMap = WhereAmI())
 					{
 					case Zacum3_2:
-						MoveFromAToB(Zacum3_2, Zacum2_2, CharacterInfo);
+						BougerDeAAB(Zacum3_2, Zacum2_2);
 					case Zacum2_2:
-						MoveFromAToB(Zacum2_2, Zacum1, CharacterInfo);
-					__Zacum1:
+						BougerDeAAB(Zacum2_2, Zacum1);
 					case Zacum1:
-						MoveFromAToB(Zacum1, Elnas, CharacterInfo);
+						BougerDeAAB(Zacum1, Elnas);
 						goto __Elnas;
 
 					case Urus:
-						MoveFromAToB(Urus, Elnas, CharacterInfo);
+						BougerDeAAB(Urus, Elnas);
 						goto __Elnas;
 
 					case FreeMarket:
-						MoveFromAToB(FreeMarket, ElnasMarket, CharacterInfo);
+						BougerDeAAB(FreeMarket, ElnasMarket);
 					case ElnasMarket:
-						MoveFromAToB(ElnasMarket, Elnas, CharacterInfo);
+						BougerDeAAB(ElnasMarket, Elnas);
 						goto __Elnas;
 
 					__Elnas:
 					case Elnas:
-						MoveFromAToB(Elnas, RootAbyss1, CharacterInfo);
+						BougerDeAAB(Elnas, RootAbyss1);
 					case RootAbyss1:
-						UNFLAG(CharacterInfo.Type, USERCONF::CHARACTER_INFO::ROOTABYSS);
-						MoveFromAToB(RootAbyss1, RootAbyss2_1, CharacterInfo);
-						MoveFromAToB(RootAbyss2_1, RootAbyss3_1, CharacterInfo);
+						UNFLAG(CharacterInfo.Flag, USERCONF::CHARACTER_INFO::ROOTABYSS_BLOODYQUEEN);
+						BougerDeAAB(RootAbyss1, RootAbyss2_1, &CharacterInfo);
+						BougerDeAAB(RootAbyss2_1, RootAbyss3_1, &CharacterInfo);
 						break;
 
 					default: throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
 					}
 
-					RootAbyssRaid::Play(CharacterInfo);
+					RootAbyssBloodyQueenRaid::Play(CharacterInfo);
+				}
+
+				if (CharacterInfo.Flag & USERCONF::CHARACTER_INFO::ROOTABYSS_VONBAN)
+				{
+					switch (int CurrentMap = WhereAmI())
+					{
+					case Zacum3_2:
+						BougerDeAAB(Zacum3_2, Zacum2_2);
+					case Zacum2_2:
+						BougerDeAAB(Zacum2_2, Zacum1);
+					case Zacum1:
+						BougerDeAAB(Zacum1, Elnas);
+						goto __Elnas_;
+
+					case Urus:
+						BougerDeAAB(Urus, Elnas);
+						goto __Elnas_;
+
+					case FreeMarket:
+						BougerDeAAB(FreeMarket, ElnasMarket);
+					case ElnasMarket:
+						BougerDeAAB(ElnasMarket, Elnas);
+						goto __Elnas_;
+
+					case RootAbyss3_1:
+						BougerDeAAB(RootAbyss3_1, RootAbyss1);
+						goto __RootAbyss1;
+
+					__Elnas_:
+					case Elnas:
+						BougerDeAAB(Elnas, RootAbyss1);
+					__RootAbyss1:
+					case RootAbyss1:
+						UNFLAG(CharacterInfo.Flag, USERCONF::CHARACTER_INFO::ROOTABYSS_VONBAN);
+						BougerDeAAB(RootAbyss1, RootAbyss2_3, &CharacterInfo);
+						BougerDeAAB(RootAbyss2_3, RootAbyss3_3, &CharacterInfo);
+						break;
+
+					default: throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
+					}
+
+					RootAbyssVonBanRaid::Play(CharacterInfo);
 				}
 
 			__BEGIN_ZACUM:
-				if (CharacterInfo.Type & USERCONF::CHARACTER_INFO::ZACUM)
+				if (CharacterInfo.Flag & USERCONF::CHARACTER_INFO::ZACUM)
 				{
 					switch (int CurrentMap = WhereAmI())
 					{
 					case RootAbyss3_1:
-						MoveFromAToB(RootAbyss3_1, RootAbyss1, CharacterInfo);
+					case RootAbyss3_3:
+						BougerDeAAB(CurrentMap, RootAbyss1);
 					case RootAbyss1:
-						UNFLAG(CharacterInfo.Type, USERCONF::CHARACTER_INFO::ZACUM);
-						MoveFromAToB(RootAbyss1, Zacum1, CharacterInfo);
+						UNFLAG(CharacterInfo.Flag, USERCONF::CHARACTER_INFO::ZACUM);
+						BougerDeAAB(RootAbyss1, Zacum1);
 						goto __Zacum1_Z;
 					case Urus:
-						MoveFromAToB(Urus, Elnas, CharacterInfo);
+						BougerDeAAB(Urus, Elnas);
 						goto __Elnas_Z;
 
 					case FreeMarket:
-						MoveFromAToB(FreeMarket, ElnasMarket, CharacterInfo);
+						BougerDeAAB(FreeMarket, ElnasMarket);
 					case ElnasMarket:
-						MoveFromAToB(ElnasMarket, Zacum1, CharacterInfo);
+						BougerDeAAB(ElnasMarket, Zacum1);
 						goto __Zacum1_Z;
 
 					__Elnas_Z:
 					case Elnas:
-						UNFLAG(CharacterInfo.Type, USERCONF::CHARACTER_INFO::ZACUM);
-						MoveFromAToB(Elnas, Zacum1, CharacterInfo);
+						UNFLAG(CharacterInfo.Flag, USERCONF::CHARACTER_INFO::ZACUM);
+						BougerDeAAB(Elnas, Zacum1);
 					__Zacum1_Z:
 					case Zacum1:
-						MoveFromAToB(Zacum1, Zacum2_2, CharacterInfo);
+						BougerDeAAB(Zacum1, Zacum2_2);
 					case Zacum2_2:
-						UNFLAG(CharacterInfo.Type, USERCONF::CHARACTER_INFO::ZACUM);
-						MoveFromAToB(Zacum2_2, Zacum3_2, CharacterInfo);
+						UNFLAG(CharacterInfo.Flag, USERCONF::CHARACTER_INFO::ZACUM);
+						BougerDeAAB(Zacum2_2, Zacum3_2);
 						break;
 
 					default:
@@ -226,60 +276,75 @@ public:
 			{
 			case BRIDGE_EXCEPTION_CODE::A_FAIL:
 			case BRIDGE_EXCEPTION_CODE::B_FAIL:
-				IsRetryAvailable = CharacterInfo.Type ? true : false;
+				IsRetryAvailable = CharacterInfo.Flag ? true : false;
 				break;
+			case BRIDGE_EXCEPTION_CODE::DEJA_ACCOMPLI:
+				goto __CIRCULAR_REPLAY__;
 			case BRIDGE_EXCEPTION_CODE::A_ERRORINPUT:
 			case BRIDGE_EXCEPTION_CODE::B_ERRORINPUT:
+			case BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE:
 			default:
 				IsRetryAvailable = false;
+				break;
 			}
 
 			throw AppException("MoveAToBFailedException", IsRetryAvailable);
 		}
 		catch (BOSSRAID_EXCEPTION_CODE & ExceptionCode)
 		{
-			throw AppException("BossRaidException", ARE_FLAGS_ON(CharacterInfo.Type));
+			throw AppException("BossRaidException", ARE_FLAGS_ON(CharacterInfo.Flag));
 		}
 		catch (ZACUMRAID_EXCEPTION_CODE & ExceptionCode)
 		{
-			throw AppException("ZacumRaidException", ARE_FLAGS_ON(CharacterInfo.Type));
+			throw AppException("ZacumRaidException", ARE_FLAGS_ON(CharacterInfo.Flag));
 		}
 	}
 };
+#endif 
+#if defined(BUILD_CALC)
+#include "calc.h"
+
 class CalcPlay : private Calc, private Bridge
 {
 public:
 	void Play(
-		const USERCONF::MAPLEID_INFO& MapleIdInfo,
-		const USERCONF::CHARACTER_INFO& CharacterInfo)
+		const USERCONF::MAPLEID_INFO& MapleIdInfo)
 	{
 		try
 		{
 			switch (int CurrentMap = WhereAmI())
 			{
+			case Zacum3_2:
+				BougerDeAAB(Zacum3_2, Zacum2_2);
 			case Zacum2_2:
-				MoveFromAToB(Zacum2_2, Zacum1, CharacterInfo);
+				BougerDeAAB(Zacum2_2, Zacum1);
 			case Zacum1:
-				MoveFromAToB(Zacum1, Elnas, CharacterInfo);
+				BougerDeAAB(Zacum1, Elnas);
 				goto __Elnas__;
 
 			case Urus:
-				MoveFromAToB(Urus, Elnas, CharacterInfo);
+				BougerDeAAB(Urus, Elnas);
 				goto __Elnas__;
+
+			case RootAbyss3_1:
+			case RootAbyss3_3:
+				BougerDeAAB(CurrentMap, RootAbyss1);
 			case RootAbyss1:
-				MoveFromAToB(RootAbyss1, Elnas, CharacterInfo);
+				BougerDeAAB(RootAbyss1, Elnas);
 				goto __Elnas__;
 			case ElnasMarket:
-				MoveFromAToB(ElnasMarket, Elnas, CharacterInfo);
+				BougerDeAAB(ElnasMarket, Elnas);
 				goto __Elnas__;
 
 			__Elnas__:
 			case Elnas:
-				MoveFromAToB(Elnas, FreeMarket, CharacterInfo);
+				BougerDeAAB(Elnas, FreeMarket);
 				break;
 
 			case FreeMarket:
 				break;
+
+			default: throw AppException(INVALID_MAP_EXCEPTION(CurrentMap), false);
 			}
 
 			Calc::Play(MapleIdInfo);
@@ -295,6 +360,7 @@ public:
 				break;
 			case BRIDGE_EXCEPTION_CODE::A_ERRORINPUT:
 			case BRIDGE_EXCEPTION_CODE::B_ERRORINPUT:
+			case BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE:
 				IsRetryAvailable = false;
 				break;
 			}
@@ -307,3 +373,4 @@ public:
 		}
 	}
 };
+#endif

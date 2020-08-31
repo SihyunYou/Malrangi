@@ -58,6 +58,7 @@ public:
 		return Message.c_str();
 	}
 
+
 protected:
 	std::string Message;
 };
@@ -67,3 +68,11 @@ protected:
 #define ARE_FLAGS_OFF(_flags)	(!(bool)(_flags))
 #define FALG(_flags, _flag)			((_flags) |= (flag))
 #define UNFLAG(_flags, _flag)		((_flags) &= ~(_flag))
+
+
+//#define BUILD_URUS
+#define BUILD_DAILYBOSS
+//#define BUILD_CALC
+
+#define BUILD_SERVER_LAYER defined(BUILD_URUS)
+#define BUILD_CHARACTER_LAYER defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)

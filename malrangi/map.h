@@ -1,7 +1,6 @@
 #pragma once
 #include "client.h"
 
-
 class Bridge
 {
 	template <class F1, class F2>
@@ -34,6 +33,8 @@ public:
 		RootAbyss1,
 		RootAbyss2_1,
 		RootAbyss3_1,
+		RootAbyss2_3,
+		RootAbyss3_3,
 		FreeMarket,
 		MAX_MAPS
 	};
@@ -49,6 +50,8 @@ public:
 		MapFileName[RootAbyss1] = "r1";
 		MapFileName[RootAbyss2_1] = "r2_1";
 		MapFileName[RootAbyss3_1] = "r3_1";
+		MapFileName[RootAbyss2_3] = "r2_3";
+		MapFileName[RootAbyss3_3] = "r3_3";
 		MapFileName[FreeMarket] = "freemarket";
 	}
 	Mat GetMapMat(int NumberOfMap)
@@ -77,10 +80,13 @@ public:
 		A_FAIL,
 		A_ERRORINPUT,
 		B_FAIL,
-		B_ERRORINPUT
+		B_ERRORINPUT,
+		DEJA_ACCOMPLI,
+		NULL_PARAMETRE
 	};
 	
-	void MoveFromAToB(const int A, const int B, const USERCONF::CHARACTER_INFO& CharacterInfo, bool IsRetry = false)
+	void BougerDeAAB(
+		const int A, const int B, const LPVOID Reserved = nullptr)
 	{
 		auto Cross = [this, A, B](auto CrossRoutine)
 		{
@@ -126,6 +132,8 @@ public:
 				MouseEvent({ 690, 622 }, LEFT_CLICK);
 			}
 		};
+#if defined(BUILD_DAILYBOSS)
+		auto CharacterInfo = static_cast<const USERCONF::CHARACTER_INFO*>(Reserved);
 		auto CrossToZacum = [&, this](void)
 		{
 			static const Mat TargetImageButtonBoss = Read(TARGET_DIR "button//boss.jpg");
@@ -185,10 +193,219 @@ public:
 
 			throw BRIDGE_EXCEPTION_CODE::B_FAIL;
 		};
-		
+		auto CrossToR3 = [&, this](void)
+		{
+			KeybdEventContinued(VK_LEFT, 4000);
+
+			switch (CharacterInfo->Code)
+			{
+			default:
+				KeybdEventContinued(VK_RIGHT, 88);
+				break;
+			case USERCONF::CODE_PROPRE::팬텀:
+			case USERCONF::CODE_PROPRE::제논:
+			case USERCONF::CODE_PROPRE::보마:
+			case USERCONF::CODE_PROPRE::메세:
+			case USERCONF::CODE_PROPRE::메카닉:
+				break;
+			}
+
+			switch (CharacterInfo->Code)
+			{
+			case USERCONF::CODE_PROPRE::닼나:
+				for (int q = 0; q < 13; q++)
+				{
+					KeybdEvent('C', 960);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::불독:
+			case USERCONF::CODE_PROPRE::썬콜:
+				KeybdEvent('3', 1000);
+				for (int q = 0; q < 15; q++)
+				{
+					KeybdEvent('S', 800);
+					KeybdEventContinued(VK_RIGHT, 1000);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::비숍:
+				for (int q = 0; q < 15; q++)
+				{
+					KeybdEvent('Q', 800);
+					KeybdEventContinued(VK_RIGHT, 1000);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::신궁:
+				for (int q = 0; q < 16; q++)
+				{
+					KeybdEvent('W', 800);
+					KeybdEventContinued(VK_RIGHT, 900);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::나로:
+				for (int q = 0; q < 17; q++)
+				{
+					KeybdEvent('W', 800);
+					KeybdEventContinued(VK_RIGHT, 1000);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::바이퍼:
+				KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
+				break;
+
+			case USERCONF::CODE_PROPRE::소마:
+				KeybdEvent('3');
+				KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'W' }, 1000);
+				break;
+
+			case USERCONF::CODE_PROPRE::스커:
+				for (int q = 0; q < 13; q++)
+				{
+					KeybdEvent({ 'X', 'C' }, 400);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::팬텀:
+				KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
+				break;
+
+			case USERCONF::CODE_PROPRE::은월:
+				for (int q = 0; q < 18; q++)
+				{
+					KeybdEvent('W', 800);
+					KeybdEventContinued(VK_RIGHT, 900);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::데슬:
+				for (int q = 0; q < 17; q++)
+				{
+					KeybdEvent('W', 800);
+					KeybdEventContinued(VK_RIGHT, 1000);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::데벤:
+				KeybdEvent({ 'W', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'W' }, 920);
+				break;
+
+			case USERCONF::CODE_PROPRE::배메:
+				for (int q = 0; q < 9; q++)
+				{
+					KeybdEvent({ 'X', 'Z' }, 900);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::아란:
+				for (int q = 0; q < 16; q++)
+				{
+					KeybdEvent('A', 800);
+					KeybdEventContinued(VK_RIGHT, 900);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::제논:
+				KeybdEventDown(VK_RIGHT);
+				KeybdEventDown('W');
+				Sleep(20000);
+				KeybdEventUp('W');
+				KeybdEventUp(VK_RIGHT);
+				break;
+
+			case USERCONF::CODE_PROPRE::보마:
+			case USERCONF::CODE_PROPRE::메세:
+			case USERCONF::CODE_PROPRE::메카닉:
+				KeybdEventDown(VK_RIGHT);
+				KeybdEventDown('Q');
+				Sleep(20000);
+				KeybdEventUp('Q');
+				KeybdEventUp(VK_RIGHT);
+				break;
+
+			case USERCONF::CODE_PROPRE::블래:
+				for (int q = 0; q < 20; q++)
+				{
+					KeybdEvent('Q', 800);
+					KeybdEventContinued(VK_RIGHT, 800);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::엔버:
+				for (int q = 0; q < 13; q++)
+				{
+					KeybdEvent('W', 800);
+					KeybdEventContinued(VK_RIGHT, 1200);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::아크:
+				for (int q = 0; q < 20; q++)
+				{
+					KeybdEvent('A', 600);
+					KeybdEventContinued(VK_RIGHT, 900);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::제로:
+				KeybdEvent({ 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'E', 'W', 'W', 'Z' }, 1400);
+				KeybdEventContinued(VK_RIGHT, 1000);
+				break;
+
+			case USERCONF::CODE_PROPRE::키네:
+				for (int q = 0; q < 15; q++)
+				{
+					KeybdEvent('C', 1000);
+					KeybdEventContinued(VK_RIGHT, 1100);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::플위:
+				for (int q = 0; q < 16; q++)
+				{
+					KeybdEvent('Q', 720);
+					KeybdEventContinued(VK_RIGHT, 1000);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::나워:
+				for (int q = 0; q < 20; q++)
+				{
+					KeybdEvent('A', 800);
+					KeybdEventContinued(VK_RIGHT, 800);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::듀블:
+				for (int q = 0; q < 13; q++)
+				{
+					KeybdEvent({ 'F', 'W' }, 1000);
+				}
+				break;
+
+			case USERCONF::CODE_PROPRE::미하일:
+				KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
+				break;
+
+			case USERCONF::CODE_PROPRE::윈브:
+				for (int q = 0; q < 13; q++)
+				{
+					KeybdEvent({ 'W', 'C' }, 1000);
+				}
+				break;
+
+			default:
+				throw BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE;
+			}
+		};
+#endif
 
 		switch (A)
 		{
+#if defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 		case Urus:
 			switch (B)
 			{
@@ -201,22 +418,29 @@ public:
 
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
+#endif
 
 		case Elnas:
 			switch (B)
 			{
+#if defined(BUILD_DAILYBOSS)
 			case Zacum1:
 				CrossToZacum();
 				return;
-
+#endif
+#if defined(BUILD_URUS)
 			case Urus:
+#endif
+#if defined(BUILD_DAILYBOSS)
 			case RootAbyss1:
+#endif
 				Cross([&CrossWithMirror, B]()
 					{
 						CrossWithMirror();
 					});
 				return;
 
+#if defined(BUILD_CALC)
 			case FreeMarket:
 				Cross([]()
 					{
@@ -225,13 +449,14 @@ public:
 						MouseEvent({ 840, 488 }, LEFT_CLICK);
 					});
 				return;
-
+#endif
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case Zacum1:
 			switch (B)
 			{
+#if defined(BUILD_DAILYBOSS)
 			case Zacum2_2:
 				Cross([Level = Zacum2_2 == B ? 1 : 2]()
 				{
@@ -251,12 +476,12 @@ public:
 					KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 1200);
 					for (int i = 0; i < (int)Level; i++)
 					{
-						KeybdEvent(VK_DOWN, 600);
+						KeybdEvent(VK_DOWN);
 					}
 					KeybdEvent(VK_RETURN);
 				});
 				return;
-
+#endif
 			case Elnas:
 				Cross([]()
 					{
@@ -267,15 +492,9 @@ public:
 						}
 
 						MouseEvent({ 820, 589 }, LEFT_CLICK);
-						KeybdEvent(VK_DOWN, 400);
-						KeybdEvent(VK_DOWN, 400);
-						KeybdEvent(VK_DOWN, 400);
-						KeybdEvent(VK_RETURN, 400);
-						KeybdEvent(VK_RETURN, 400);
-						KeybdEvent(VK_RETURN, 400);
+						KeybdEvent({ VK_DOWN, VK_DOWN, VK_DOWN, VK_RETURN, VK_RETURN, VK_RETURN }, 400);
 					});
 				return;
-
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
@@ -289,6 +508,7 @@ public:
 					});
 				return;
 
+#if defined(BUILD_DAILYBOSS)
 			case Zacum3_2:
 				Cross(
 					[]() {
@@ -298,10 +518,11 @@ public:
 						KeybdEvent({ VK_RETURN, VK_RETURN, VK_RETURN }, 600);
 					});
 				return;
-
+#endif
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
+#if defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 		case Zacum3_2:
 			switch (B)
 			{
@@ -311,9 +532,9 @@ public:
 						ClientApi::BreakParty();
 					});
 				return;
-
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
+#endif
 
 		case FreeMarket:
 			switch (B)
@@ -359,6 +580,7 @@ public:
 		case ElnasMarket:
 			switch (B)
 			{
+#if defined(BUILD_URUS) || defined(BUILD_DAILYBOSS)
 			case Elnas:
 				Cross(
 					[](){
@@ -368,28 +590,44 @@ public:
 						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
 					});
 				return;
-
+#endif
+#if defined(BUILD_DAILYBOSS)
 			case Zacum1:
 				CrossToZacum();
 				return;
-
+#endif
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
 		case RootAbyss1:
 			switch (B)
 			{
+#if defined(BUILD_DAILYBOSS)
 			case RootAbyss2_1:
-				Cross([]()
+				if (nullptr == CharacterInfo)
+				{
+					throw BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE;
+				}
+				Cross([CharacterInfo]()
 					{
-						static const Mat TargetImageQuestRootAbyss(Read(TARGET_DIR "text//quest_rootabyss.jpg"));
-
 						ClientApi::MakeParty();
 
 						KeybdEvent(VK_CONTROL);
+						switch (CharacterInfo->Code)
+						{
+						default:
+							break;
+						case USERCONF::CODE_PROPRE::메카닉:
+						case USERCONF::CODE_PROPRE::엔버:
+							KeybdEvent('W', 1000);
+						}
+
 						// 고목나무 열쇠 받기
-						MouseEvent({ 33, 318 }, LEFT_CLICK, 1500);
-						if (VALLOC MatchInfo; MatchTemplate(SourceImageClient4, TargetImageQuestRootAbyss, &MatchInfo))
+						MouseEvent({ 33, 318 }, LEFT_CLICK, 1000);
+
+						static const Mat TargetImage1(Read(TARGET_DIR "text//quest_rootabyss.jpg"));
+						if (VALLOC MatchInfo; 
+							MatchTemplate(SourceImageClient4, TargetImage1, &MatchInfo))
 						{
 							MouseEvent(MatchInfo.Location + Point{ 10, 3 }, LEFT_CLICK);
 							KeybdEvent({ VK_RETURN, VK_RIGHT, VK_RETURN, VK_RETURN });
@@ -414,6 +652,39 @@ public:
 					});
 				return;
 
+			case RootAbyss2_3:
+				if (nullptr == CharacterInfo)
+				{
+					throw BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE;
+				}
+				Cross([CharacterInfo]()
+					{
+						KeybdEvent(VK_ESCAPE);
+						MouseEvent(POS_VOID, LEFT_CLICK);
+						ClientApi::MakeParty();
+
+						switch (CharacterInfo->Code)
+						{
+						default:
+							break;
+						case USERCONF::CODE_PROPRE::메카닉:
+						case USERCONF::CODE_PROPRE::엔버:
+							KeybdEvent('W', 1000);
+						}
+
+						KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 1600);
+						KeybdEvent(VK_RETURN);
+						MouseEvent({ 700, 400 }, LEFT_CLICK);
+					});
+				return;
+
+			case Zacum1:
+				KeybdEvent(VK_ESCAPE);
+				MouseEvent(POS_VOID, LEFT_CLICK);
+				CrossToZacum();
+				return;
+#endif
+#if defined(BUILD_URUS) || defined(BUILD_CALC)
 			case Elnas:
 				Cross([]()
 					{
@@ -422,266 +693,30 @@ public:
 						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1000);
 					});
 				return;
-
-			case Zacum1:
-				CrossToZacum();
-				return;
-
+#endif
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
 
+#if defined(BUILD_DAILYBOSS)
 		case RootAbyss2_1:
 			switch (B)
 			{
 			case RootAbyss3_1:
-				Cross([&CharacterInfo]()
+				Cross([&CrossToR3]()
 					{
-						if("데벤" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('W', 1000);
-							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
-						}
-						else if ("닼나" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('A', 1200);
-							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
-						}
-						else if ("썬콜" == CharacterInfo.ClassName || "불독" == CharacterInfo.ClassName || "비숍" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('A', 1000);
-							for (int q = 0; q < 16; q++)
-							{
-								KeybdEvent('Q');
-								KeybdEventContinued(VK_RIGHT, 1000);
-							}
-						}
-						else if ("바이퍼" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('E', 1000);
-							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
-						}
-						else if ("신궁" == CharacterInfo.ClassName)
-						{
-							KeybdEventContinued(VK_LEFT, 100);
-							KeybdEvent('W');
-							KeybdEventContinued(VK_LEFT, 800);
-							KeybdEventContinued(VK_RIGHT, 100);
+						CrossToR3();
 
-							for (int q = 0; q < 12; q++)
-							{
-								KeybdEvent('W');
-								KeybdEventContinued(VK_RIGHT, 1500);
-							}
-						}
-						else if ("팬텀" == CharacterInfo.ClassName)
-						{
-							KeybdEventContinued(VK_LEFT, 200);
-							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
-						}
-						else if ("소마" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('3');
-							KeybdEvent('W', 1100);
-							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C'}, 1000);
-						}
-						else if ("스커" == CharacterInfo.ClassName)
-						{
-							KeybdEventContinued(VK_LEFT, 400);
-							KeybdEvent({ 'X', 'C' }, 400);
-
-							KeybdEventContinued(VK_RIGHT, 400);
-							for (int q = 0; q < 11; q++)
-							{
-								KeybdEvent({ 'X', 'C' }, 400);
-							}
-						}
-						else if ("아크" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('F', 1000);
-							for (int q = 0; q < 16; q++)
-							{
-								KeybdEvent('A');
-								KeybdEventContinued(VK_RIGHT, 1000);
-							}
-						}
-						else if ("제로" == CharacterInfo.ClassName)
-						{
-							KeybdEventContinued(VK_LEFT, 800);
-							KeybdEventContinued(VK_RIGHT, 100);
-							KeybdEvent({ 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'E', 'W', 'W', 'Z'}, 1300);
-						}
-						else if ("메카닉" == CharacterInfo.ClassName)
-						{
-							KeybdEvent({ 'E', 'E' }, 1200);
-							for (int q = 0; q < 16; q++)
-							{
-								KeybdEvent('A');
-								KeybdEventContinued(VK_RIGHT, 1000);
-							}
-						}
-						else if ("은월" == CharacterInfo.ClassName)
-						{
-							for (int q = 0; q < 18; q++)
-							{
-								KeybdEvent('W');
-								KeybdEventContinued(VK_RIGHT, 900);
-							}
-						}
-						else if ("배메" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('E');
-							for (int q = 0; q < 9; q++)
-							{
-								KeybdEvent({ 'X', 'Z' }, 900);
-							}
-						}
-						else if ("키네" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('S', 1000);
-							for (int q = 0; q < 14; q++)
-							{
-								KeybdEvent({ 'Q', 'Q' }, 1000);
-								KeybdEventContinued(VK_RIGHT, 1200);
-							}
-						}
-						else if ("블래" == CharacterInfo.ClassName)
-						{
-							KeybdEventContinued(VK_LEFT, 100);
-							KeybdEvent('Q');
-							KeybdEventContinued(VK_LEFT, 800);
-							KeybdEventContinued(VK_RIGHT, 100);
-
-							for (int q = 0; q < 20; q++)
-							{
-								KeybdEvent('Q');
-								KeybdEventContinued(VK_RIGHT, 800);
-							}
-						}
-						else if ("엔버" == CharacterInfo.ClassName)
-						{
-							KeybdEvent({ 'A', 'A' }, 1000);
-							for (int q = 0; q < 13; q++)
-							{
-								KeybdEvent('W');
-								KeybdEventContinued(VK_RIGHT, 1200);
-							}
-						}
-						else if ("데슬" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('E', 1000);
-							for (int q = 0; q < 14; q++)
-							{
-								KeybdEvent('W');
-								KeybdEventContinued(VK_RIGHT, 1000);
-							}
-						}
-						else if ("아란" == CharacterInfo.ClassName)
-						{
-							for (int q = 0; q < 15; q++)
-							{
-								KeybdEvent('A');
-								KeybdEventContinued(VK_RIGHT, 900);
-							}
-						}
-						else if ("플위" == CharacterInfo.ClassName)
-						{
-							KeybdEventContinued(VK_LEFT, 100);
-							KeybdEvent('W');
-							KeybdEventContinued(VK_LEFT, 800);
-							KeybdEventContinued(VK_RIGHT, 100);
-
-							for (int q = 0; q < 16; q++)
-							{
-								KeybdEvent('Q');
-								KeybdEventContinued(VK_RIGHT, 1000);
-							}
-						}
-						else if ("나워" == CharacterInfo.ClassName)
-						{
-						KeybdEvent('W');
-						for (int q = 0; q < 20; q++)
-						{
-							KeybdEvent('A');
-							KeybdEventContinued(VK_RIGHT, 800);
-						}
-						}
-						else if ("메세" == CharacterInfo.ClassName)
-						{
-							KeybdEventContinued(VK_LEFT, 100);
-							KeybdEvent('F');
-							KeybdEventContinued(VK_LEFT, 800);
-
-							KeybdEventDown(VK_RIGHT);
-							KeybdEventDown('Q');
-							Sleep(20000);
-							KeybdEventUp('Q');
-							KeybdEventUp(VK_RIGHT);
-						}
-						else if ("보마" == CharacterInfo.ClassName)
-						{
-							KeybdEventContinued(VK_LEFT, 100);
-							KeybdEvent('W');
-							KeybdEventContinued(VK_LEFT, 800);
-
-							KeybdEventDown(VK_RIGHT);
-							KeybdEventDown('Q');
-							Sleep(20000);
-							KeybdEventUp('Q');
-							KeybdEventUp(VK_RIGHT);
-						}
-						else if ("제논" == CharacterInfo.ClassName)
-						{
-							KeybdEventContinued('W', 1000);
-							for (int q = 0; q < 16; q++)
-							{
-								KeybdEvent('D');
-								KeybdEventContinued(VK_RIGHT, 1000);
-							}
-						}
-						else if ("듀블" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('E', 1000);
-							for (int q = 0; q < 13; q++)
-							{
-								KeybdEvent({ 'F', 'W' }, 1000);
-							}
-						}
-						else if ("미하일" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('F', 1000);
-							KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
-						}
-						else if("나로" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('R', 1000);
-							for (int q = 0; q < 16; q++)
-							{
-								KeybdEvent('W');
-								KeybdEventContinued(VK_RIGHT, 1000);
-							}
-						}
-						else if ("윈브" == CharacterInfo.ClassName)
-						{
-							KeybdEvent('E');
-							for (int q = 0; q < 13; q++)
-							{
-								KeybdEvent({ 'W', 'C' }, 1000);
-							}
-						}
-						else
-						{
-							throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
-						}
-
-						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 4000);
+						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 3600);
 						KeybdEvent({ VK_RIGHT, VK_RETURN });
 					});
 				return;
 
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
-
+#endif
+#if defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 		case RootAbyss3_1:
+		case RootAbyss3_3:
 			switch (B)
 			{
 			case RootAbyss1:
@@ -693,7 +728,63 @@ public:
 
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
+#endif
 
+#if defined(BUILD_DAILYBOSS)
+		case RootAbyss2_3:
+			switch (B)
+			{
+			case RootAbyss3_3:
+				if (nullptr == CharacterInfo)
+				{
+					throw BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE;
+				}
+				Cross([&CrossToR3, &CharacterInfo]()
+					{
+						CrossToR3();
+
+						Sleep(800);
+#define GET_DURATION(_d, _ms) (_d / _ms)
+						KeybdEventContinued(VK_LEFT, GET_DURATION(92000, CharacterInfo->Speed));
+						Sleep(800);
+						switch (CharacterInfo->Code)
+						{
+						case USERCONF::CODE_PROPRE::닼나:
+						case USERCONF::CODE_PROPRE::보마:
+						case USERCONF::CODE_PROPRE::패파:
+						case USERCONF::CODE_PROPRE::섀도어:
+						case USERCONF::CODE_PROPRE::소마:
+						case USERCONF::CODE_PROPRE::나워:
+						case USERCONF::CODE_PROPRE::데벤:
+							KeybdEvent('W', 1200);
+							break;
+						case USERCONF::CODE_PROPRE::불독:
+						case USERCONF::CODE_PROPRE::썬콜:
+
+						case USERCONF::CODE_PROPRE::바이퍼:
+						case USERCONF::CODE_PROPRE::캐슈:
+						case USERCONF::CODE_PROPRE::플위:
+						case USERCONF::CODE_PROPRE::윈브:
+							KeybdEvent('Z', 1200);
+							break;
+						case USERCONF::CODE_PROPRE::신궁:
+							KeybdEvent('A', 1200);
+							break;
+						case USERCONF::CODE_PROPRE::메세:
+							KeybdEvent('F', 1200);
+							break;
+						
+						default:
+							break;
+						}
+						KeybdEvent(VK_MENU, 1000);
+						KeybdEvent({VK_UP, VK_RIGHT, VK_RETURN });
+					});
+				return;
+
+			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
+			}
+#endif
 		default: throw BRIDGE_EXCEPTION_CODE::A_ERRORINPUT;
 		}
 	}
