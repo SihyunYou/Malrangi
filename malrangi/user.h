@@ -15,6 +15,9 @@ public:
 		{
 			string Id;
 			string SecondPassword;
+			unsigned int Adresse;
+			bool EstAdressePremier;
+			bool EstAdresseDernier;
 			struct _SERVER_INFO
 			{
 				string ServerName;
@@ -91,6 +94,8 @@ public:
 #endif
 			};
 			vector<_SERVER_INFO> VecServer;
+
+			_MAPLEID_INFO() : EstAdressePremier(false), EstAdresseDernier(false) {}
 		};
 		vector<_MAPLEID_INFO> VecMapleId;
 	} NEXONAC_INFO;
@@ -220,10 +225,11 @@ private:
 
 					Stream >> SubLine;
 					MapleIdInfo.Id = SubLine;
-
 					Stream >> SubLine;
 					MapleIdInfo.SecondPassword = SubLine;
-
+					Stream >> SubLine;
+					MapleIdInfo.Adresse = atoi(SubLine.c_str());
+	
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.push_back(MapleIdInfo);
 				}
 				else
@@ -240,6 +246,27 @@ private:
 				}
 			}
 			File.close();
+
+			bool EstUnieme = true;
+			MAPLEID_INFO* MapleIdAvant = nullptr;
+			for (auto& NexonAccountInfo : VecNexonAccount)
+			{
+				for (auto& MapleIdInfo : NexonAccountInfo.VecMapleId)
+				{
+					if (EstUnieme)
+					{
+						MapleIdInfo.EstAdressePremier = true;
+						EstUnieme = false;
+					}
+					else if (MapleIdInfo.Adresse != MapleIdAvant->Adresse)
+					{
+						MapleIdInfo.EstAdressePremier = true;
+						MapleIdAvant->EstAdresseDernier = true;
+					}
+
+					MapleIdAvant = &MapleIdInfo;
+				}
+			}
 
 			VirtualKeyset.Inventory = 'I';
 			VirtualKeyset.Party = VK_OEM_4;

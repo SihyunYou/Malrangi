@@ -128,7 +128,7 @@ public:
 	{
 		for (int q = 0; q < p; q++)
 		{
-			MouseEvent({ 1350, 45 }, RIGHT_CLICK);
+			MouseEvent({ 1350, 45 }, CLIC_DROIT);
 		}
 	}
 	void SetSkills(vector<SKILL>* _VecSkills)
@@ -225,7 +225,7 @@ public:
 			{
 				while (!IsThreadJoinable)
 				{
-					MouseEvent({ 800, 320 }, LEFT_CLICK, ResurectionTimeCycle);
+					MouseEvent({ 800, 320 }, CLIC_GAUCHE, ResurectionTimeCycle);
 				}
 			}
 		);
@@ -452,6 +452,10 @@ protected:
 			{'A', SKILL::UNITARY }
 		};
 		MapVecSkills[USERCONF::CODE_PROPRE::È£¿µ] =
+		{
+			{'Q', SKILL::UNITARY }
+		};
+		MapVecSkills[USERCONF::CODE_PROPRE::¾Æµ¨] =
 		{
 			{'Q', SKILL::UNITARY }
 		};
@@ -713,6 +717,9 @@ public:
 		};
 		MapVecSkills[USERCONF::CODE_PROPRE::¾Æµ¨] =
 		{
+			{'E', SKILL::ASSIST, milliseconds(1000), seconds(60)},
+			{'S', SKILL::ASSIST, milliseconds(1000), seconds(30)},
+			{'Q', SKILL::UNITARY}
 		};
 		SetSkills(&MapVecSkills[CharacterInfo.Code]);
 
@@ -724,7 +731,7 @@ public:
 			Sleep(500);
 			for (int i = 0; i < 9; i++)
 			{
-				MouseEvent({ 870, 561 }, LEFT_CLICK, 280);
+				MouseEvent({ 870, 561 }, CLIC_GAUCHE, 280);
 			}
 
 			RaidDoBattle(
@@ -741,26 +748,34 @@ public:
 				-4500,
 				[this, &CharacterInfo]()
 				{
-					Sleep(1000);
+					Sleep(600);
 					if (USERCONF::CODE_PROPRE::¾ÆÅ© == CharacterInfo.Code)
 					{
 						KeybdEvent('Z');
 					}
+					
+					switch (CharacterInfo.Code)
+					{
+					case USERCONF::CODE_PROPRE::µ¥º¥:
+						break;
 
-					KeybdEventContinued(VK_LEFT, 8000);
-					KeybdEventContinued(VK_RIGHT, GET_DURATION(668000, CharacterInfo.Speed));
-					Sleep(1000);
+					default:
+						KeybdEventContinued(VK_LEFT, 8000);
+						KeybdEventContinued(VK_RIGHT, GET_DURATION(668000, CharacterInfo.Speed));
+						break;
+					}
+					Sleep(600);
 
 					if (VALLOC MatchInfo;
 						MatchTemplate(SourceImageClient4, TargetImageNpcPetrick, &MatchInfo))
 					{
-						MouseEvent(MatchInfo.Location, LEFT_CLICK);
+						MouseEvent(MatchInfo.Location, CLIC_GAUCHE);
 
 						for (const auto& TargetImage : ArrTargetImageItem1)
 						{
 							if (MatchTemplate(Capture({ 0, 0, 600, 750 }, IMREAD_COLOR), TargetImage, &MatchInfo))
 							{
-								MouseEvent(MatchInfo.Location, DLEFT_CLICK);
+								MouseEvent(MatchInfo.Location, DOUBLECLIC_GAUCHE);
 								KeybdEvent({ VK_RETURN, VK_RETURN }, 400);
 							}
 						}
@@ -769,13 +784,13 @@ public:
 						{
 							if (MatchTemplate(Capture({ 0, 0, 600, 750 }, IMREAD_COLOR), TargetImage, &MatchInfo))
 							{
-								MouseEvent(MatchInfo.Location, DLEFT_CLICK);
+								MouseEvent(MatchInfo.Location, DOUBLECLIC_GAUCHE);
 								KeybdEvent({ '3', '0', VK_RETURN, VK_RETURN }, 400);
 							}
 						}
 
-						MouseEvent({ 660, 220 }, LEFT_CLICK);
-						MouseEvent(POS_VOID, LEFT_CLICK);
+						MouseEvent({ 660, 220 }, CLIC_GAUCHE);
+						MouseEvent(POS_VOID, CLIC_GAUCHE);
 					}
 
 					if (USERCONF::CODE_PROPRE::µ¥½½ == CharacterInfo.Code || USERCONF::CODE_PROPRE::¾Æ¶õ== CharacterInfo.Code)
@@ -1030,6 +1045,10 @@ public:
 		};
 		MapVecSkills[USERCONF::CODE_PROPRE::¾Æµ¨] =
 		{
+			{'R', SKILL::ASSIST},
+			{'E', SKILL::ASSIST, milliseconds(1000), seconds(60)},
+			{'S', SKILL::ASSIST, milliseconds(1000), seconds(30)},
+			{'Q', SKILL::UNITARY}
 		};
 		SetSkills(&MapVecSkills[CharacterInfo.Code]);
 
@@ -1043,7 +1062,7 @@ public:
 				ClientApi::SupprimerBuf(1);
 			}
 			UseSkills(*VecSkills, SKILL::BUF | SKILL::ONOFF);
-			MouseEvent({ 995, 570 }, LEFT_CLICK, 2500);
+			MouseEvent({ 995, 570 }, CLIC_GAUCHE, 2500);
 
 			RaidDoBattle(
 				[]() -> bool
@@ -1067,13 +1086,13 @@ public:
 					if (VALLOC MatchInfo;
 						MatchTemplate(SourceImageClient4, TargetImageNpcPetrick, &MatchInfo))
 					{
-						MouseEvent(MatchInfo.Location, LEFT_CLICK);
+						MouseEvent(MatchInfo.Location, CLIC_GAUCHE);
 
 						for (const auto& TargetImage : ArrTargetImageItem1)
 						{
 							if (MatchTemplate(Capture({ 0, 0, 600, 750 }, IMREAD_COLOR), TargetImage, &MatchInfo))
 							{
-								MouseEvent(MatchInfo.Location, DLEFT_CLICK);
+								MouseEvent(MatchInfo.Location, DOUBLECLIC_GAUCHE);
 								KeybdEvent({ VK_RETURN, VK_RETURN }, 400);
 							}
 						}
@@ -1082,13 +1101,13 @@ public:
 						{
 							if (MatchTemplate(Capture({ 0, 0, 600, 750 }, IMREAD_COLOR), TargetImage, &MatchInfo))
 							{
-								MouseEvent(MatchInfo.Location, DLEFT_CLICK);
+								MouseEvent(MatchInfo.Location, DOUBLECLIC_GAUCHE);
 								KeybdEvent({ '3', '0', VK_RETURN, VK_RETURN }, 400);
 							}
 						}
 
-						MouseEvent({ 660, 220 }, LEFT_CLICK);
-						MouseEvent(POS_VOID, LEFT_CLICK);
+						MouseEvent({ 660, 220 }, CLIC_GAUCHE);
+						MouseEvent(POS_VOID, CLIC_GAUCHE);
 					}
 				});
 		}

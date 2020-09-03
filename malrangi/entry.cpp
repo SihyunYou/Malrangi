@@ -11,28 +11,13 @@ main(
 	ClientApi::SET_CLIENT_STDPOS();
 	Sleep(0x800);
 
-	/*BossRaid a;
-
-	static map<string, vector<BossRaid::SKILL>> MapVecSkills;
-	MapVecSkills["데벤"] =
-	{
-		{'R', BossRaid::SKILL::ASSIST, milliseconds(1000), seconds(180), seconds(3)},
-		{'Z', BossRaid::SKILL::UNITARY}
-	};
-	a.SetSkills(&MapVecSkills["데벤"]);
-	while (true)
-	{
-
-		a.UseSkills(MapVecSkills["데벤"], BossRaid::SKILL::UNITARY | BossRaid::SKILL::RAPID | BossRaid::SKILL::ASSIST);
-	}
-	Sleep(99999999);*/
 	try
 	{
 		USERCONF& UserInfo = *(USERCONF::GetInstance());
 		IpManage IpManager;
 		string Uri;
-		int SeqMapleId = 0;
 		int CountIndisponible = 0;
+		bool EstForceARenoveller = false;
 		auto LEAVE_LOG = [&Uri](std::exception* ce)
 		{
 			if (nullptr != ce)
@@ -88,21 +73,21 @@ main(
 					continue;
 				}
 				
-				if (!IpManager.IsNetworkConnected())
+				do
 				{
 					IpManager.ConnectNetwork();
-				}
-#define IF_REQUIRED_RENOUVELER_IP	(SeqMapleId % 4 == 0)
-				if (IF_REQUIRED_RENOUVELER_IP)
+				} while (!IpManager.IsNetworkConnected());
+
+				if (MapleIdInfo.EstAdressePremier || EstForceARenoveller)
 				{
-					IpManager.Renouveler();
-					SeqMapleId = 0;
+					while (!IpManager.Renouveler(MapleIdInfo.Adresse));
 				}
+				EstForceARenoveller = false;
 
 				switch (EtatDeLogout)
 				{
 				case NORMAL:
-					if (!IF_REQUIRED_RENOUVELER_IP)
+					if (!MapleIdInfo.EstAdressePremier)
 					{
 						break;
 					}
@@ -135,7 +120,6 @@ main(
 				{
 					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 
-					++SeqMapleId;
 					EtatDeLogout = NORMAL;
 				}
 				catch (ClientApi::Exception & e)
@@ -178,7 +162,7 @@ main(
 						{
 							try
 							{
-								ClientApi::EnterGame(MapleIdInfo);
+								ClientApi::EntrerDansGame(MapleIdInfo);
 								return NORMAL;
 							}
 							catch (ClientApi::SecondPasswordNotLiftException & ec)
@@ -195,7 +179,7 @@ main(
 
 						try
 						{
-							ClientApi::SelectServer(ServerInfo, 27);
+							ClientApi::EntrerDansServeur(ServerInfo, 27);
 						}
 						catch (ClientApi::ServerDelayException & e)
 						{
@@ -206,7 +190,7 @@ main(
 							goto __LOGOUT__;
 						}
 
-						ClientApi::SelectCharacter(ServerInfo);
+						ClientApi::SelecterCaractere(ServerInfo);
 #if defined(BUILD_URUS)
 						__REPLAY_APPLICATION__:
 						if (NORMAL != (EtatDeLogout = EnterGame()))
@@ -231,7 +215,7 @@ main(
 						try
 						{
 							UrusPlay OuvrierA;
-							OuvrierA.Play(EstIndexDerinierDeServeur() && IF_REQUIRED_RENOUVELER_IP);
+							OuvrierA.Play(EstIndexDerinierDeServeur() && MapleIdInfo.EstAdresseDernier);
 
 							ServerInfo.IsCompleted = true;
 							LEAVE_LOG(nullptr);
@@ -249,7 +233,7 @@ main(
 
 						if (MapleIdInfo.VecServer[MapleIdInfo.VecServer.size() - 1].IsCompleted &&
 							EstIndexDerinierDeServeur() && 
-							IF_REQUIRED_RENOUVELER_IP)
+							MapleIdInfo.EstAdresseDernier)
 						{
 							goto __LOGOUT__;
 						}
@@ -323,7 +307,7 @@ main(
 							}
 
 							if (MapleIdInfo.VecServer[MapleIdInfo.VecServer.size() - 1].VecCharacter[MapleIdInfo.VecServer[MapleIdInfo.VecServer.size() - 1].VecCharacter.size() - 1].IsCompleted &&
-								IF_REQUIRED_RENOUVELER_IP)
+								MapleIdInfo.EstAdresseDernier)
 							{
 								goto __LOGOUT__;
 							}
@@ -381,9 +365,8 @@ main(
 				switch (EtatDeLogout)
 				{
 				case NORMAL:
-					if (IF_REQUIRED_RENOUVELER_IP)
+					if (MapleIdInfo.EstAdresseDernier)
 					{
-						SeqMapleId = 0;
 						ClientApi::TerminateClient();
 					}
 					else
@@ -402,12 +385,12 @@ main(
 					}
 					goto __CHECK_IF_LOOP_COMPLETED__;
 
-				case INDISPONIBLE:
 				case FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU:
+					EstForceARenoveller = true;
+				case INDISPONIBLE:
 					++CountIndisponible;
 				case SERVEUR_DECONNECTE:
 				case CLIENT_ANORMALEMENT_TERMINE:
-					SeqMapleId = 0;
 					ClientApi::TerminateClient();
 				__CHECK_IF_LOOP_COMPLETED__:
 					if (!IsMapleIdCompleted(MapleIdInfo.VecServer))
@@ -420,7 +403,6 @@ main(
 					}
 				
 				case INCOMPATIBLE:
-					SeqMapleId = 0;
 					EtatDeLogout = INDISPONIBLE;
 					ClientApi::TerminateClient();
 					break;

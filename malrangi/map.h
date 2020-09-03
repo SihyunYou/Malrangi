@@ -124,12 +124,12 @@ public:
 			}
 			FilePath += ".jpg";
 
-			MouseEvent({ 58, 194 }, LEFT_CLICK);
-			MouseEvent({ 566, 402 }, LEFT_CLICK);
+			MouseEvent({ 58, 194 }, CLIC_GAUCHE);
+			MouseEvent({ 566, 402 }, CLIC_GAUCHE);
 			if (VALLOC MatchInfo; MatchTemplate(SourceImageClient4, Read(FilePath), &MatchInfo))
 			{
-				MouseEvent(MatchInfo.Location, LEFT_CLICK);
-				MouseEvent({ 690, 622 }, LEFT_CLICK);
+				MouseEvent(MatchInfo.Location, CLIC_GAUCHE);
+				MouseEvent({ 690, 622 }, CLIC_GAUCHE);
 			}
 		};
 #if defined(BUILD_DAILYBOSS)
@@ -144,12 +144,12 @@ public:
 
 		__RETRY__MATCH:
 			KeybdEvent(VK_F7);
-			MouseEvent(POS_VOID, CURSOR_MOVE);
+			METTRE_CURSEUR_A_STDVIDE;
 			if (VALLOC MatchInfo;
 				MatchTemplate(SourceImageClient4, TargetImageButtonBoss, &MatchInfo))
 			{
-				MouseEvent(MatchInfo.Location + Point{ -5, 50 }, LEFT_CLICK);
-				MouseEvent(MatchInfo.Location + Point{ 110, 310 }, LEFT_CLICK);
+				MouseEvent(MatchInfo.Location + Point{ -5, 50 }, CLIC_GAUCHE);
+				MouseEvent(MatchInfo.Location + Point{ 110, 310 }, CLIC_GAUCHE);
 
 				if (MatchTemplate(SourceImageClient4, TargetImageWindowEnterRefuse, &MatchInfo))
 				{
@@ -161,7 +161,7 @@ public:
 				}
 			}
 
-			MouseEvent(POS_VOID, CURSOR_MOVE);
+			METTRE_CURSEUR_A_STDVIDE;
 			if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageButtonSmallEnter, seconds(150)))
 			{
 				Sleep(400);
@@ -173,7 +173,7 @@ public:
 					if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, GetMapMat(Zacum1), seconds(36)))
 					{
 						Sleep(4000);
-						ClientApi::BreakParty();
+						ClientApi::OpererParty(2);
 
 						return;
 					}
@@ -193,10 +193,9 @@ public:
 
 			throw BRIDGE_EXCEPTION_CODE::B_FAIL;
 		};
-		auto CrossToR3 = [&, this](void)
+		auto CrossToR3 = [&, this](int MillisecondeDeInitialisation)
 		{
-			KeybdEventContinued(VK_LEFT, 4000);
-
+			KeybdEventContinued(VK_LEFT, MillisecondeDeInitialisation);
 			switch (CharacterInfo->Code)
 			{
 			default:
@@ -212,6 +211,25 @@ public:
 
 			switch (CharacterInfo->Code)
 			{
+			default:
+				break;
+
+			case USERCONF::CODE_PROPRE::불독:
+			case USERCONF::CODE_PROPRE::썬콜:
+				KeybdEvent('3', 1000);
+				break;
+
+			case USERCONF::CODE_PROPRE::신궁:
+				KeybdEvent('S', 1000);
+				break;
+
+			case USERCONF::CODE_PROPRE::배메:
+				KeybdEvent('E', 1000);
+				break;
+			}
+
+			switch (CharacterInfo->Code)
+			{
 			case USERCONF::CODE_PROPRE::닼나:
 				for (int q = 0; q < 13; q++)
 				{
@@ -221,8 +239,7 @@ public:
 
 			case USERCONF::CODE_PROPRE::불독:
 			case USERCONF::CODE_PROPRE::썬콜:
-				KeybdEvent('3', 1000);
-				for (int q = 0; q < 15; q++)
+				for (int q = 0; q < 17; q++)
 				{
 					KeybdEvent('S', 800);
 					KeybdEventContinued(VK_RIGHT, 1000);
@@ -326,6 +343,7 @@ public:
 				KeybdEventUp(VK_RIGHT);
 				break;
 
+			case USERCONF::CODE_PROPRE::아델:
 			case USERCONF::CODE_PROPRE::블래:
 				for (int q = 0; q < 20; q++)
 				{
@@ -356,10 +374,10 @@ public:
 				break;
 
 			case USERCONF::CODE_PROPRE::키네:
-				for (int q = 0; q < 15; q++)
+				for (int q = 0; q < 20; q++)
 				{
-					KeybdEvent('C', 1000);
-					KeybdEventContinued(VK_RIGHT, 1100);
+					KeybdEvent('C', 800);
+					KeybdEventContinued(VK_RIGHT, 800);
 				}
 				break;
 
@@ -491,7 +509,7 @@ public:
 							Recognizer.MoveToRelativeCriteria(143);
 						}
 
-						MouseEvent({ 820, 589 }, LEFT_CLICK);
+						MouseEvent({ 820, 589 }, CLIC_GAUCHE);
 						KeybdEvent({ VK_DOWN, VK_DOWN, VK_DOWN, VK_RETURN, VK_RETURN, VK_RETURN }, 400);
 					});
 				return;
@@ -512,9 +530,9 @@ public:
 			case Zacum3_2:
 				Cross(
 					[]() {
-						ClientApi::MakeParty();
+						ClientApi::OpererParty(1);
 
-						MouseEvent({ 1000, 570 }, LEFT_CLICK, 600);
+						MouseEvent({ 1000, 570 }, CLIC_GAUCHE, 600);
 						KeybdEvent({ VK_RETURN, VK_RETURN, VK_RETURN }, 600);
 					});
 				return;
@@ -529,7 +547,7 @@ public:
 			case Zacum2_2:
 				Cross(
 					[](){
-						ClientApi::BreakParty();
+						ClientApi::OpererParty(2);
 					});
 				return;
 			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
@@ -610,7 +628,7 @@ public:
 				}
 				Cross([CharacterInfo]()
 					{
-						ClientApi::MakeParty();
+						ClientApi::OpererParty(1);
 
 						KeybdEvent(VK_CONTROL);
 						switch (CharacterInfo->Code)
@@ -623,13 +641,13 @@ public:
 						}
 
 						// 고목나무 열쇠 받기
-						MouseEvent({ 33, 318 }, LEFT_CLICK, 1000);
+						MouseEvent({ 33, 318 }, CLIC_GAUCHE, 1000);
 
 						static const Mat TargetImage1(Read(TARGET_DIR "text//quest_rootabyss.jpg"));
 						if (VALLOC MatchInfo; 
 							MatchTemplate(SourceImageClient4, TargetImage1, &MatchInfo))
 						{
-							MouseEvent(MatchInfo.Location + Point{ 10, 3 }, LEFT_CLICK);
+							MouseEvent(MatchInfo.Location + Point{ 10, 3 }, CLIC_GAUCHE);
 							KeybdEvent({ VK_RETURN, VK_RIGHT, VK_RETURN, VK_RETURN });
 						}
 						else
@@ -660,8 +678,8 @@ public:
 				Cross([CharacterInfo]()
 					{
 						KeybdEvent(VK_ESCAPE);
-						MouseEvent(POS_VOID, LEFT_CLICK);
-						ClientApi::MakeParty();
+						MouseEvent(POS_VOID, CLIC_GAUCHE);
+						ClientApi::OpererParty(1);
 
 						switch (CharacterInfo->Code)
 						{
@@ -674,13 +692,13 @@ public:
 
 						KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 1600);
 						KeybdEvent(VK_RETURN);
-						MouseEvent({ 700, 400 }, LEFT_CLICK);
+						MouseEvent({ 700, 400 }, CLIC_GAUCHE);
 					});
 				return;
 
 			case Zacum1:
 				KeybdEvent(VK_ESCAPE);
-				MouseEvent(POS_VOID, LEFT_CLICK);
+				MouseEvent(POS_VOID, CLIC_GAUCHE);
 				CrossToZacum();
 				return;
 #endif
@@ -704,7 +722,7 @@ public:
 			case RootAbyss3_1:
 				Cross([&CrossToR3]()
 					{
-						CrossToR3();
+						CrossToR3(2000);
 
 						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 3600);
 						KeybdEvent({ VK_RIGHT, VK_RETURN });
@@ -722,7 +740,7 @@ public:
 			case RootAbyss1:
 				Cross(
 					[](){
-						ClientApi::BreakParty();
+						ClientApi::OpererParty(2);
 					});
 				return;
 
@@ -741,7 +759,7 @@ public:
 				}
 				Cross([&CrossToR3, &CharacterInfo]()
 					{
-						CrossToR3();
+						CrossToR3(3800);
 
 						Sleep(800);
 #define GET_DURATION(_d, _ms) (_d / _ms)

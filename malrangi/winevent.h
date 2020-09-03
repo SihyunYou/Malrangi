@@ -7,10 +7,10 @@
 /****************************************************************************
 * Mouse Event Util
 ****************************************************************************/
-#define CURSOR_MOVE	(-1)
-#define RIGHT_CLICK		(0)
-#define LEFT_CLICK		(1)
-#define DLEFT_CLICK		(2)
+#define METTRE_CURSEUR (-1)
+#define CLIC_DROIT (0)
+#define CLIC_GAUCHE (1)
+#define DOUBLECLIC_GAUCHE (2)
 
 VOID
 WINAPI
@@ -25,12 +25,12 @@ MouseEvent(
 	mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, Location.x, Location.y, 0, NULL);
 	switch (chFlag)
 	{
-	case RIGHT_CLICK:
+	case CLIC_DROIT:
 		mouse_event(MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_ABSOLUTE, Location.x, Location.y, 0, NULL);
 		mouse_event(MOUSEEVENTF_RIGHTUP | MOUSEEVENTF_ABSOLUTE, Location.x, Location.y, 0, NULL);
 		break;
-	case LEFT_CLICK:
-	case DLEFT_CLICK:
+	case CLIC_GAUCHE:
+	case DOUBLECLIC_GAUCHE:
 		for (int i = 0; i < chFlag; i++)
 		{
 			mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_ABSOLUTE, Location.x, Location.y, 0, NULL);

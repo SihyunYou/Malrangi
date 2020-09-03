@@ -223,10 +223,10 @@ public:
 	static void Login( 
 		const USERCONF::NEXONAC_INFO&,
 		const USERCONF::MAPLEID_INFO&);
-	static void SelectServer(
+	static void EntrerDansServeur(
 		const USERCONF::SERVER_INFO&,
 		int); 
-	static void SelectCharacter(
+	static void SelecterCaractere(
 		const USERCONF::SERVER_INFO&);
 	static bool UnlockSecondPassword(
 		const string&); 
@@ -238,7 +238,7 @@ public:
 	/****************************************************************************
 	* Internal Game Window Control
 	****************************************************************************/
-	static void EnterGame(
+	static void EntrerDansGame(
 		const USERCONF::MAPLEID_INFO&);
 	enum class JUMP_T
 	{
@@ -254,8 +254,7 @@ public:
 		DWORD);
 	static void DownJump(
 		DWORD);
-	static void MakeParty(void);
-	static void BreakParty(void);
+	static void OpererParty(int);
 	static void MoveServer(bool);
 	static void RemoveAllIngameWindows(void);
 	static void ExitGame(void);
@@ -263,6 +262,7 @@ public:
 	static void SupprimerBuf(int);
 };
 
+#define METTRE_CURSEUR_A_STDVIDE (MouseEvent(POS_VOID, METTRE_CURSEUR, 100))
 void ClientApi::SET_CLIENT_STDPOS(void)
 {
 	SetWindowPos(
@@ -337,8 +337,8 @@ void ClientApi::Login(
 	bool IsThrowable = false;
 
 	__NEXON_LOGIN__:
-	MouseEvent({ 334, 282 }, LEFT_CLICK);
-	MouseEvent({ 452, 282 }, LEFT_CLICK);
+	MouseEvent({ 334, 282 }, CLIC_GAUCHE);
+	MouseEvent({ 452, 282 }, CLIC_GAUCHE);
 	WriteString(AccountInfo.Id);
 	KeybdEvent(VK_TAB);
 	WriteString(AccountInfo.Password);
@@ -376,10 +376,10 @@ __MAPLE_LOGIN__:
 		}
 		else
 		{
-			MouseEvent({ 513, 396 }, LEFT_CLICK);
+			MouseEvent({ 513, 396 }, CLIC_GAUCHE);
 		}
 	}
-	MouseEvent(MatchInfo.Location + Point{ 10, 4 }, DLEFT_CLICK);
+	MouseEvent(MatchInfo.Location + Point{ 10, 4 }, DOUBLECLIC_GAUCHE);
 
 	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN2, seconds(15)))
 	{
@@ -390,7 +390,7 @@ __MAPLE_LOGIN__:
 		throw ClientApi::Exception("MapleLoginFailedException");
 	}
 }
-void ClientApi::SelectServer(
+void ClientApi::EntrerDansServeur(
 	const USERCONF::SERVER_INFO& ServerInfo,
 	int ChannelNumber)
 {
@@ -399,15 +399,15 @@ void ClientApi::SelectServer(
 	if(VALLOC MatchInfo;
 		MatchTemplate(Capture(ClientApi::RECT_CLIENT1), Read(TARGET_DIR "server//" + ServerInfo.ServerName + ".jpg"), &MatchInfo))
 	{
-		MouseEvent(MatchInfo.Location, LEFT_CLICK);
-		MouseEvent({ 291 + 70 * (ChannelNumber % 5), 255 + 30 * (ChannelNumber / 5) }, DLEFT_CLICK);
+		MouseEvent(MatchInfo.Location, CLIC_GAUCHE);
+		MouseEvent({ 291 + 70 * (ChannelNumber % 5), 255 + 30 * (ChannelNumber / 5) }, DOUBLECLIC_GAUCHE);
 	}
 	else
 	{
 		throw ClientApi::Exception("SelectServerFailedException");
 	}
 
-	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN3, seconds(90)))
+	if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT1, ClientApi::TARGETIMAGE_EXTERN3, seconds(180)))
 	{
 		Sleep(0x400);
 	}
@@ -446,7 +446,7 @@ bool ClientApi::UnlockSecondPassword(
 			VALLOC MatchInfo;
 			if (MatchTemplate(SourceImageClient4, Read(string(TARGET_DIR "button//2pwd//") + Character + ".jpg"), &MatchInfo))
 			{
-				MouseEvent(MatchInfo.Location + Point{5, 5}, LEFT_CLICK);
+				MouseEvent(MatchInfo.Location + Point{5, 5}, CLIC_GAUCHE);
 			}
 				
 			break;
@@ -477,11 +477,15 @@ bool ClientApi::UnlockSecondPassword(
 
 	return true;
 }
-void ClientApi::EnterGame(
+void ClientApi::EntrerDansGame(
 	CONST USERCONF::MAPLEID_INFO& MapleIdInfo)
 {
 __REUNLOCK__:
 	KeybdEvent(VK_RETURN, 0x400);
+	if (MatchTemplate(Capture(ClientApi::RECT_CLIENT1), Read(TARGET_DIR "button//block.png")))
+	{
+		throw BlockFromCapchaException();
+	}
 
 	int t = 0;
 	if(MatchTemplate(Capture(ClientApi::RECT_CLIENT1), Read(TARGET_DIR "button//2pwd//1.jpg")))
@@ -509,12 +513,12 @@ __REUNLOCK__:
 
 		// Remove tooltips
 		KeybdEvent({ VK_ESCAPE, VK_ESCAPE, VK_ESCAPE }, 600);
-		MouseEvent(POS_VOID, LEFT_CLICK);
+		MouseEvent(POS_VOID, CLIC_GAUCHE);
 	}
 	else
 	{
-		static const Mat TargetImageWindow2pwdNotEqual = Read(TARGET_DIR "window//2pwd_not_equal.jpg");
-		if (MatchTemplate(Capture(ClientApi::RECT_CLIENT1), TargetImageWindow2pwdNotEqual))
+		static const Mat TargetImage = Read(TARGET_DIR "window//2pwd_not_equal.jpg");
+		if (MatchTemplate(Capture(ClientApi::RECT_CLIENT1), TargetImage))
 		{
 			++t;
 			KeybdEvent(VK_RETURN);
@@ -523,27 +527,23 @@ __REUNLOCK__:
 		}
 		else
 		{
-			throw BlockFromCapchaException();
+			ThrowLowException(__FEWHAT__);
 		}
-		
-		ThrowLowException(__FEWHAT__);
 	}
 
 	if (VALLOC MatchInfo;
 		MatchTemplate(Capture(ClientApi::RECT_CLIENT4), Read(TARGET_DIR "button//diminuer_chat.png"), &MatchInfo))
 	{
-		MouseEvent({ MatchInfo.Location.x + 2, MatchInfo.Location.y + 2 }, LEFT_CLICK);
+		MouseEvent({ MatchInfo.Location.x + 2, MatchInfo.Location.y + 2 }, CLIC_GAUCHE);
 	}
 }
-void ClientApi::SelectCharacter(
+void ClientApi::SelecterCaractere(
 	const USERCONF::SERVER_INFO& ServerInfo)
 {
 	static const array<Mat, 5> ArrTargetImageTextCharacterSelect =
 	{
 		Read(TARGET_DIR "text//character_select_p1.jpg"),
 		Read(TARGET_DIR "text//character_select_p2.jpg"),
-
-
 		Read(TARGET_DIR "text//character_select_p3.jpg"),
 		Read(TARGET_DIR "text//character_select_p4.jpg"),
 		Read(TARGET_DIR "text//character_select_p5.jpg")
@@ -561,7 +561,7 @@ void ClientApi::SelectCharacter(
 	}
 
 #if defined(BUILD_URUS)
-	MouseEvent({ 135, 235 }, LEFT_CLICK);
+	MouseEvent({ 135, 235 }, CLIC_GAUCHE);
 #elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 	int Seq = 1;
 	for (auto& CharacterInfo : ServerInfo.VecCharacter)
@@ -579,11 +579,11 @@ void ClientApi::SelectCharacter(
 
 	for (int i = 0; i < (Seq - 1) / 8; i++)
 	{
-		MouseEvent({ 505, 545 }, LEFT_CLICK, 8000);
+		MouseEvent({ 505, 545 }, CLIC_GAUCHE, 8000);
 	}
 	MouseEvent(
 		{ (135 + (((Seq - 1) % 8) % 4) * 125), (235 + (((Seq % 8) <= 4 && (Seq % 8) >= 1) ? 0 : 1) * 200) },
-		LEFT_CLICK);
+		CLIC_GAUCHE);
 #endif
 }
 void ClientApi::RemoveAllIngameWindows(
@@ -602,7 +602,7 @@ void ClientApi::RemoveAllIngameWindows(
 	{
 		KeybdEvent(VK_ESCAPE, 256);
 	}
-	MouseEvent(POS_VOID, LEFT_CLICK);
+	MouseEvent(POS_VOID, CLIC_GAUCHE);
 }
 void ClientApi::ExitGame(
 	void)
@@ -654,36 +654,40 @@ void ClientApi::ExitCharacterWindow(void)
 		ThrowLowException(__FEWHAT__);
 	}
 }
-void ClientApi::MakeParty(
-	void)
+void ClientApi::OpererParty(int CodeOperation)
 {
 	static const array<Mat, 2> ArrTargetImage = { Read(TARGET_DIR "button//make.jpg"), Read(TARGET_DIR "button//break.jpg") };
-
 	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
 	ClientApi::SET_CLIENT_STDPOS();
+	METTRE_CURSEUR_A_STDVIDE;
 
 	const auto [Seq, Value, Location] = GetHighestMatchedTemplate(Capture(ClientApi::RECT_CLIENT4), ArrTargetImage);
-	if (0 == Seq)
+	switch (CodeOperation)
 	{
-		MouseEvent(Location, LEFT_CLICK);
+	case 1: // Faire
+		if (0 == Seq)
+		{
+			MouseEvent(Location, CLIC_GAUCHE);
+			KeybdEvent(VK_RETURN);
+		}
+		break;
+	case 2: // Casser
+		if (1 == Seq)
+		{
+			MouseEvent(Location, CLIC_GAUCHE);
+		}
+		break;
+	case 3: // Refaire
+		MouseEvent(Location, CLIC_GAUCHE);
+		if (1 == Seq)
+		{
+			MouseEvent(Location, CLIC_GAUCHE);
+		}
 		KeybdEvent(VK_RETURN);
+		break;
 	}
-	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
-}
-void ClientApi::BreakParty(
-	void)
-{
-	static const array<Mat, 2> ArrTargetImage = { Read(TARGET_DIR "button//make.jpg"), Read(TARGET_DIR "button//break.jpg") };
 
-	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
-	ClientApi::SET_CLIENT_STDPOS();
-
-	const auto [Seq, Value, Location] = GetHighestMatchedTemplate(Capture(ClientApi::RECT_CLIENT4), ArrTargetImage);
-	if (1 == Seq)
-	{
-		MouseEvent(Location, LEFT_CLICK);
-	}
-	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Party);
+	KeybdEvent(VK_ESCAPE);
 }
 void ClientApi::MoveServer(
 	bool IsForward)
@@ -767,42 +771,47 @@ int ClientApi::ThrowItem(
 	if (VALLOC MatchInfo;
 		MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
 	{
-		MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK);
+		MouseEvent(MatchInfo.Location + Point{ 10, 10 }, CLIC_GAUCHE);
 	}
 	else
 	{
+		METTRE_CURSEUR_A_STDVIDE;
 		if (MatchTemplate(SourceImageClient4, TargetImageButtonEtc, &MatchInfo))
 		{
-			MouseEvent(MatchInfo.Location + Point{ 5, 5 }, LEFT_CLICK);
-		}
-		
-		if (MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
-		{
-			MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK);
-		}
-		else
-		{
-			if (MatchTemplate(SourceImageClient4, TargetImageButtonExpandingInventory, &MatchInfo))
-			{
-				MouseEvent(MatchInfo.Location + Point{ 6, 6 }, LEFT_CLICK);
-			}
-			else
-			{
-				return -1;
-			}
+			MouseEvent(MatchInfo.Location + Point{ 5, 5 }, CLIC_GAUCHE);
 
 			if (MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
 			{
-				MouseEvent(MatchInfo.Location + Point{ 10, 10 }, LEFT_CLICK);
+				MouseEvent(MatchInfo.Location + Point{ 10, 10 }, CLIC_GAUCHE);
 			}
 			else
 			{
-				return -1;
+				if (MatchTemplate(SourceImageClient4, TargetImageButtonExpandingInventory, &MatchInfo))
+				{
+					MouseEvent(MatchInfo.Location + Point{ 6, 6 }, CLIC_GAUCHE);
+
+					if (MatchTemplate(SourceImageClient4, TargetImage, &MatchInfo))
+					{
+						MouseEvent(MatchInfo.Location + Point{ 10, 10 }, CLIC_GAUCHE);
+					}
+					else
+					{
+						return -1;
+					}
+				}
+				else
+				{
+					return -1;
+				}
 			}
+		}
+		else
+		{
+			return -1;
 		}
 	}
 
-	MouseEvent(POS_VOID, LEFT_CLICK);
+	MouseEvent(POS_VOID, CLIC_GAUCHE);
 	KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Inventory);
 
 	return 0;
@@ -811,6 +820,6 @@ void ClientApi::SupprimerBuf(int n)
 {
 	for (int p = 0; p < n; p++)
 	{
-		MouseEvent({ 1350, 45 }, RIGHT_CLICK, 1000);
+		MouseEvent({ 1350, 45 }, CLIC_DROIT, 1000);
 	}
 }

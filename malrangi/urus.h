@@ -35,7 +35,7 @@ protected:
 		/*** ÀüÅõ Àü ***/
 		if (1 == SeqPlay)
 		{
-			ClientApi::BreakParty();
+			ClientApi::OpererParty(2);
 		}
 		else if (3 < SeqPlay)
 		{
@@ -44,16 +44,17 @@ protected:
 
 		bool IsRetry = false;
 	__RETRY__:
-		MouseEvent({ EstGauche ? 1140 : 885, 630 }, LEFT_CLICK);
-		MouseEvent({ 440, 710 }, LEFT_CLICK);
-		MouseEvent({ 487, 771 }, LEFT_CLICK);
-		MouseEvent({ 820, 780 }, LEFT_CLICK);
-		MouseEvent({ 820, 780 }, LEFT_CLICK);
+		KeybdEventContinued(VK_LEFT, 2800);
+		MouseEvent({ 1140, 630 }, CLIC_GAUCHE);
+		MouseEvent({ 440, 710 }, CLIC_GAUCHE);
+		MouseEvent({ 487, 771 }, CLIC_GAUCHE);
+		MouseEvent({ 820, 780 }, CLIC_GAUCHE);
+		MouseEvent({ 820, 780 }, CLIC_GAUCHE);
 
 		Mat SourceImage = SourceImageClient4;
 		if (MatchTemplate(SourceImage, TargetImageButtonReady, &MatchInfo))
 		{
-			MouseEvent(MatchInfo.Location, LEFT_CLICK);
+			MouseEvent(MatchInfo.Location, CLIC_GAUCHE);
 		}
 		else
 		{
@@ -66,7 +67,7 @@ protected:
 				else
 				{
 					KeybdEvent(VK_ESCAPE);
-					ClientApi::BreakParty();
+					ClientApi::OpererParty(2);
 
 					IsRetry = true;
 					goto __RETRY__;
