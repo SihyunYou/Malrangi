@@ -128,7 +128,7 @@ bool WaitUntilMatchingTemplate(
 	const RECT& Area,
 	Mat TargetImage,
 	T_DUR Duration,
-	int IdleTime = 256,
+	int IdleTime = 128,
 	double Threshold = 0.9)
 {
 	const auto StartTime = system_clock::now();

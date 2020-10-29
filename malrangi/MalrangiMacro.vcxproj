@@ -140,7 +140,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\webdriverxx\include;C:\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\opencv\build\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -149,7 +149,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opencv_world420.lib;opencv_world420d.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opencv_world440.lib;opencv_world440d.lib;imm32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\opencv\build\x64\vc15\lib</AdditionalLibraryDirectories>
       <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
       <OutputFile>$(SolutionDir)malrangi.exe</OutputFile>
@@ -157,25 +157,25 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="entry.cpp" />
+    <ClCompile Include="client.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="urus.h" />
     <ClInclude Include="map.h" />
-    <ClInclude Include="calc.h" />
-    <ClInclude Include="circular_play.h" />
-    <ClInclude Include="ipmanage.h" />
+    <ClInclude Include="compte.h" />
+    <ClInclude Include="operation_circulaire.h" />
+    <ClInclude Include="contrôler_ip.h" />
     <ClInclude Include="malrangi.h" />
-    <ClInclude Include="dailyboss.h" />
+    <ClInclude Include="boss.h" />
     <ClInclude Include="user.h" />
     <ClInclude Include="cvwrap.h" />
-    <ClInclude Include="client.h" />
+    <ClInclude Include="client_api.h" />
     <ClInclude Include="log.h" />
-    <ClInclude Include="report.h" />
-    <ClInclude Include="tesseract-binary-wrap.h" />
     <ClInclude Include="winevent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\conf\user.conf" />
+    <None Include="..\contrôleur.py" />
     <None Include="..\renouveler_ip.py" />
     <None Include="packages.config" />
   </ItemGroup>

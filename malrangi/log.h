@@ -29,18 +29,9 @@ enum NIVEAU_DE_LOG
 	FAILURE = LIGHT_RED
 };
 
-
-#define __FILENAME__		(strrchr(__FILE__,'\\')+1)
-#define WriteLog(_lv, _fm, ...)	{																									\
-											NumberOfLine = __LINE__;															\
-											FileName = __FILENAME__;															\
-											VWriteLog(_lv, _fm, __VA_ARGS__);												\
-										}
-INT NumberOfLine;
-LPCSTR FileName;
 ofstream LogFile{ SNAP_DIR "log.txt", ios::out || ios::trunc };
 
-void VWriteLog(NIVEAU_DE_LOG LogLevel, LPCSTR lpFormat, ...)
+void WriteLog(NIVEAU_DE_LOG LogLevel, LPCSTR lpFormat, ...)
 {
 	auto GetCurrentDateTimeString = [](void) -> string
 	{
@@ -66,7 +57,7 @@ void VWriteLog(NIVEAU_DE_LOG LogLevel, LPCSTR lpFormat, ...)
 #define SetConsolePosition(_x, _y)	SetConsoleCursorPosition(hStdOutput, {_x, _y})
 
 	SetConsoleTextColor(GREEN);
-	string LogContent = GetCurrentDateTimeString() + ", " + to_string(NumberOfLine) + " [" + FileName + "] ";
+	string LogContent = "[" + GetCurrentDateTimeString() + "] ";
 
 	SetConsoleTextColor(LogLevel);
 	switch (LogLevel)
@@ -87,6 +78,7 @@ void VWriteLog(NIVEAU_DE_LOG LogLevel, LPCSTR lpFormat, ...)
 	va_end(Args);
 
 	LogContent += Buffer;
+	LogContent += "\n";
 
 	LogFile << LogContent;
 	cout << LogContent;

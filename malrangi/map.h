@@ -1,25 +1,8 @@
-#pragma once
-#include "client.h"
+Ôªø#pragma once
+#include "client_api.h"
 
-class Bridge
+class Pont
 {
-	template <class F1, class F2>
-	struct overload_set : F1, F2
-	{
-		overload_set(F1 f1, F2 f2)
-			: F1(f1), F2(f2)
-		{}
-
-		using F1::operator();
-		using F2::operator();
-	};
-
-	template <class F1, class F2>
-	overload_set<F1, F2> overload(F1 f1, F2 f2)
-	{
-		return overload_set<F1, F2>(f1, f2);
-	}
-
 public:
 	enum
 	{
@@ -27,6 +10,7 @@ public:
 		Urus,
 		Elnas,
 		ElnasMarket,
+		FreeMarket,
 		Zacum1,
 		Zacum2_2,
 		Zacum3_2,
@@ -35,15 +19,27 @@ public:
 		RootAbyss3_1,
 		RootAbyss2_3,
 		RootAbyss3_3,
-		FreeMarket,
+		RootAbyss2_4,
+		RootAbyss3_4,
+		VonLeon1,
+		VonLeon2,
+		VonLeon3_1,
+		VonLeon3_2,
+		VonLeon3_3,
+		Kaung1,
+		Kaung2,
+		Papulatus1,
+		Papulatus2_1,
+		Papulatus2_2,
 		MAX_MAPS
 	};
 	map<int, string> MapFileName;
-	Bridge()
+	Pont()
 	{
 		MapFileName[Urus] = "urus";
 		MapFileName[Elnas] = "elnas";
 		MapFileName[ElnasMarket] = "elnas_market";
+		MapFileName[FreeMarket] = "freemarket";
 		MapFileName[Zacum1] = "z1";
 		MapFileName[Zacum2_2] = "z2_2";
 		MapFileName[Zacum3_2] = "z3_2";
@@ -52,7 +48,18 @@ public:
 		MapFileName[RootAbyss3_1] = "r3_1";
 		MapFileName[RootAbyss2_3] = "r2_3";
 		MapFileName[RootAbyss3_3] = "r3_3";
-		MapFileName[FreeMarket] = "freemarket";
+		MapFileName[RootAbyss2_4] = "r2_4";
+		MapFileName[RootAbyss3_4] = "r3_4";
+		MapFileName[VonLeon1] = "v1";
+		MapFileName[VonLeon2] = "v2";
+		MapFileName[VonLeon3_1] = "v3";
+		MapFileName[VonLeon3_2] = "v3";
+		MapFileName[VonLeon3_3] = "v3";
+		MapFileName[Kaung1] = "k1";
+		MapFileName[Kaung2] = "k2";
+		MapFileName[Papulatus1] = "p1";
+		MapFileName[Papulatus2_1] = "p2";
+		MapFileName[Papulatus2_2] = "p2";
 	}
 	Mat GetMapMat(int NumberOfMap)
 	{
@@ -61,57 +68,54 @@ public:
 #define RECT_MAP { 0, 0, 300, 300 }
 	int WhereAmI()
 	{
-		static array<Mat, MAX_MAPS> ArrTargetImageMap;
+		array<Mat, MAX_MAPS> ArrTargetImageMap;
 		for (int i = 0; i < MAX_MAPS; i++)
 		{
 			ArrTargetImageMap[i] = GetMapMat(i);
 		}
 
-		auto [Seq, Value, Location] = GetHighestMatchedTemplate(Capture(RECT_MAP), ArrTargetImageMap);
-		return Value > 0.9 ? Seq : Unknown;
-	}
-	bool AmIIn(int NumberOfMap)
-	{
-		return MatchTemplate(Capture(RECT_MAP), GetMapMat(NumberOfMap), nullptr, 0.96);
+		int MapPr√©sent;
+		for (int p = 0; p < 5; p++)
+		{
+			auto [Seq, Value, Location] = GetHighestMatchedTemplate(Capture(RECT_MAP), ArrTargetImageMap);
+
+			if (Unknown != (MapPr√©sent = Value > 0.9 ? Seq : Unknown))
+			{
+				break;
+			}
+			Sleep(0x100);
+		}
+
+		return MapPr√©sent;
 	}
 
-	enum class BRIDGE_EXCEPTION_CODE
+	enum
 	{
-		A_FAIL,
-		A_ERRORINPUT,
-		B_FAIL,
-		B_ERRORINPUT,
-		DEJA_ACCOMPLI,
-		NULL_PARAMETRE
+		ZACUM = 1,
+		URUS,
+		KAUNG = 5,
+		PAPULATUS,
+		PIERRE,
+		VONBAN,
+		BLOODY_QUEEN,
+		BELLUM,
+		VON_LEON
 	};
-	
-	void BougerDeAAB(
-		const int A, const int B, const LPVOID Reserved = nullptr)
+
+	enum class PONT_EXCEPTION_CODE
 	{
-		auto Cross = [this, A, B](auto CrossRoutine)
-		{
-			ClientApi::SET_CLIENT_STDPOS();
-			if (AmIIn(A))
-			{
-				CrossRoutine();
-				
-				if (WaitUntilMatchingTemplate(
-					RECT_MAP,
-					GetMapMat(B),
-					seconds(32)))
-				{
-					Sleep(0x400);
-				}
-				else
-				{
-					throw BRIDGE_EXCEPTION_CODE::B_FAIL;
-				}
-			}
-			else
-			{
-				throw BRIDGE_EXCEPTION_CODE::A_FAIL;
-			}
-		};
+		A_INVALID,
+		B_MANQU√â,
+		B_INVALID,
+		B_INACCESSIBLE,
+		INPUT_ERRON√â
+	};
+
+	void BougerDeA√ÄB(
+		const int A,
+		const int B,
+		const USERCONF::CHARACTER_INFO& CharacterInfo)
+	{
 		auto CrossWithMirror = [this, B](void)
 		{
 			string FilePath = TARGET_DIR "pic//mirror//";
@@ -132,678 +136,1028 @@ public:
 				MouseEvent({ 690, 622 }, CLIC_GAUCHE);
 			}
 		};
-#if defined(BUILD_DAILYBOSS)
-		auto CharacterInfo = static_cast<const USERCONF::CHARACTER_INFO*>(Reserved);
-		auto CrossToZacum = [&, this](void)
+		auto Traverser√ÄBoss = [this](int FlagDeBoss)
 		{
-			static const Mat TargetImageButtonBoss = Read(TARGET_DIR "button//boss.jpg");
-			static const Mat TargetImageWindowEnterRefuse = Read(TARGET_DIR "window//enter_refuse.jpg");
-			static const Mat TargetImageButtonSmallEnter = Read(TARGET_DIR "button//small_enter.jpg");
-			static const Mat TargetImageWindowWaitingListZacum = Read(TARGET_DIR "window\\waiting_list_zacum.jpg");
-			bool IsRetry = false;
-
-		__RETRY__MATCH:
-			KeybdEvent(VK_F7);
-			METTRE_CURSEUR_A_STDVIDE;
-			if (VALLOC MatchInfo;
-				MatchTemplate(SourceImageClient4, TargetImageButtonBoss, &MatchInfo))
+			for (int t = 0; t < 3; t++)
 			{
-				MouseEvent(MatchInfo.Location + Point{ -5, 50 }, CLIC_GAUCHE);
-				MouseEvent(MatchInfo.Location + Point{ 110, 310 }, CLIC_GAUCHE);
+				KeybdEvent(VK_F7);
+				METTRE_CURSEUR_√Ä_STDVIDE;
 
-				if (MatchTemplate(SourceImageClient4, TargetImageWindowEnterRefuse, &MatchInfo))
+				if (VALLOC mi;
+					MatchTemplate(SourceImageClient4, Read(TARGET_DIR "button//boss.jpg"), &mi))
 				{
-					throw BRIDGE_EXCEPTION_CODE::B_FAIL;
-				}
-				else
-				{
-					KeybdEvent(VK_RETURN);
-				}
-			}
-
-			METTRE_CURSEUR_A_STDVIDE;
-			if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, TargetImageButtonSmallEnter, seconds(150)))
-			{
-				Sleep(400);
-				KeybdEvent(VK_RETURN);
-
-				if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, GetMapMat(Zacum1), seconds(36)))
-				{
-					ClientApi::MoveServer(true);
-					if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, GetMapMat(Zacum1), seconds(36)))
+					for (int p = 0; p < FlagDeBoss / 5; p++)
 					{
-						Sleep(4000);
-						ClientApi::OpererParty(2);
+						MouseEvent(mi.Location + Point{ 132, 50 }, CLIC_GAUCHE);
+					}
+					MouseEvent(mi.Location + Point{ -50 + 40 * (FlagDeBoss % 5), 50 }, CLIC_GAUCHE);
+					MouseEvent(mi.Location + Point{ 110, 310 }, CLIC_GAUCHE); // Commencer
 
-						return;
+					Mat Image = SourceImageClient4;
+					if (VALLOC a;
+						MatchTemplate(Image, Read(TARGET_DIR "window//rechercher.png"), &a))
+					{
+						KeybdEvent(VK_RETURN);
+					}
+					else if (MatchTemplate(Image, Read(TARGET_DIR "window//refus.png")))
+					{
+						throw PONT_EXCEPTION_CODE::B_INACCESSIBLE;
+					}
+					else
+					{
+						throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
 					}
 				}
 				else
 				{
-					if (!MatchTemplate(SourceImageClient4, TargetImageWindowWaitingListZacum))
+					throw PONT_EXCEPTION_CODE::B_MANQU√â;
+				}
+
+			__ATTENDRE:
+				METTRE_CURSEUR_√Ä_STDVIDE;
+				if (WaitUntilMatchingTemplate(ClientApi::RECT_CLIENT4, Read(TARGET_DIR "button//confirmation_petite.jpg"), seconds(4)))
+				{
+					Sleep(0x200);
+					KeybdEvent(VK_RETURN);
+
+					int Map;
+					switch (FlagDeBoss)
 					{
-						if (!IsRetry)
+					case ZACUM:
+						Map = Zacum1; break;
+					case VON_LEON:
+						Map = VonLeon2; break;
+					case KAUNG:
+						Map = Kaung1; break;
+					case PAPULATUS:
+						Map = Papulatus1; break;
+					default:
+						throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+					}
+
+				__ATTENDRE2:
+					if (WaitUntilMatchingTemplate(
+						ClientApi::RECT_CLIENT4,
+						GetMapMat(Map),
+						seconds(4)))
+					{
+						return;
+					}
+					else
+					{
+						if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "window//waiting_list.png")))
 						{
-							IsRetry = true;
-							goto __RETRY__MATCH;
+							goto __ATTENDRE2;
+						}
+						else
+						{
+							ClientApi::EffaceTousWindows();
+							continue;
 						}
 					}
 				}
+				else
+				{
+					if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "window//waiting_list.png")))
+					{
+						goto __ATTENDRE;
+					}
+					else
+					{
+						ClientApi::EffaceTousWindows();
+						continue;
+					}
+				}
 			}
 
-			throw BRIDGE_EXCEPTION_CODE::B_FAIL;
+			throw PONT_EXCEPTION_CODE::B_MANQU√â;
 		};
-		auto CrossToR3 = [&, this](int MillisecondeDeInitialisation)
+		auto Traverser√ÄR3 = [=](int MillisecondeDeInitialisation)
 		{
-			KeybdEventContinued(VK_LEFT, MillisecondeDeInitialisation);
-			switch (CharacterInfo->Code)
+			auto Marcher = overload_set
+			(
+				[](initializer_list<BYTE> Keys, seconds MillisecondsKeyDown, int Pas)
+				{
+					const auto StartTime = system_clock::now();
+					KeybdEventDown(VK_RIGHT);
+					Sleep(0x40);
+					while (duration_cast<seconds>(system_clock::now() - StartTime) < MillisecondsKeyDown)
+					{
+						KeybdEvent(Keys, Pas);
+					}
+					KeybdEventUp(VK_RIGHT);
+				},
+				[](initializer_list<BYTE> Keys, seconds MillisecondsKeyDown, bool EstDroit = true)
+				{
+					KeybdEventContinued(EstDroit ? VK_RIGHT : VK_LEFT, 0x40);
+					const auto StartTime = system_clock::now();
+					while (duration_cast<seconds>(system_clock::now() - StartTime) < MillisecondsKeyDown)
+					{
+						KeybdEvent(Keys, 0x100);
+					}
+				},
+					[](BYTE Key, seconds MillisecondsKeyDown, bool EstDroit = true)
+				{
+					KeybdEventDown(EstDroit ? VK_RIGHT : VK_LEFT);
+					KeybdEventDown(Key);
+					this_thread::sleep_for(MillisecondsKeyDown);
+					KeybdEventUp(Key);
+					KeybdEventUp(EstDroit ? VK_RIGHT : VK_LEFT);
+				}
+				);
+
+			switch (CharacterInfo.Code)
 			{
 			default:
-				KeybdEventContinued(VK_RIGHT, 88);
+				KeybdEventContinued(VK_LEFT, MillisecondeDeInitialisation);
+				switch (CharacterInfo.Code)
+				{
+				default:
+					break;
+
+				case USERCONF::CODE_PROPRE::Ïç¨ÏΩú:
+				case USERCONF::CODE_PROPRE::Î∂àÎèÖ:
+				case USERCONF::CODE_PROPRE::ÎÇòÎ°ú:
+				case USERCONF::CODE_PROPRE::ÌÇ§ÎÑ§:
+				case USERCONF::CODE_PROPRE::Ïä§Ïª§:
+				case USERCONF::CODE_PROPRE::ÏóîÎ≤Ñ:
+				case USERCONF::CODE_PROPRE::ÎØ∏ÌïòÏùº:
+				case USERCONF::CODE_PROPRE::ÏúàÎ∏å:
+					KeybdEvent('A', 1200);
+					break;
+
+				case USERCONF::CODE_PROPRE::ÏïÑÌÅ¨:
+					KeybdEvent('F', 1200);
+					break;
+
+				case USERCONF::CODE_PROPRE::Ïã†Í∂Å:
+				case USERCONF::CODE_PROPRE::Ïπ¥Îç∞ÎÇò:
+					KeybdEvent('S', 1200);
+					break;
+
+				case USERCONF::CODE_PROPRE::ÎÇòÏõå:
+				case USERCONF::CODE_PROPRE::Îç∞Î≤§:
+				case USERCONF::CODE_PROPRE::Îç∞Î≤§2:
+					KeybdEvent('W', 1000);
+					break;
+
+				case USERCONF::CODE_PROPRE::Î∞∞Î©î:
+					KeybdEvent('E', 1000);
+					break;
+
+				case USERCONF::CODE_PROPRE::Î£®ÎØ∏:
+					KeybdEvent('D', 1000);
+					break;
+				}
 				break;
-			case USERCONF::CODE_PROPRE::∆“≈“:
-			case USERCONF::CODE_PROPRE::¡¶≥Ì:
-			case USERCONF::CODE_PROPRE::∫∏∏∂:
-			case USERCONF::CODE_PROPRE::∏ﬁºº:
-			case USERCONF::CODE_PROPRE::∏ﬁƒ´¥–:
+
+			case USERCONF::CODE_PROPRE::Î©îÏπ¥Îãâ:
+			case USERCONF::CODE_PROPRE::Î©îÏÑ∏:
+			case USERCONF::CODE_PROPRE::Î≥¥Îßà:
+				Marcher('Q', seconds(MillisecondeDeInitialisation / 1000), false);
+				Sleep(400);
 				break;
 			}
 
-			switch (CharacterInfo->Code)
+			switch (CharacterInfo.Code)
 			{
-			default:
+			case USERCONF::CODE_PROPRE::ÎãºÎÇò:
+				Marcher({ 'C' }, seconds(16));
 				break;
 
-			case USERCONF::CODE_PROPRE::∫“µ∂:
-			case USERCONF::CODE_PROPRE::Ω„ƒ›:
-				KeybdEvent('3', 1000);
+			case USERCONF::CODE_PROPRE::Î∂àÎèÖ:
+			case USERCONF::CODE_PROPRE::Ïç¨ÏΩú:
+				Marcher({ 'Q' }, seconds(32), 1450);
+				break;
+			case USERCONF::CODE_PROPRE::ÎπÑÏàç:
+				Marcher({ 'Q' }, seconds(35), 1800);
 				break;
 
-			case USERCONF::CODE_PROPRE::Ω≈±√:
-				KeybdEvent('S', 1000);
+			case USERCONF::CODE_PROPRE::Ïã†Í∂Å:
+				Marcher({ 'W' }, seconds(16), 2100);
+				KeybdEvent('E');
+				KeybdEventContinued(VK_RIGHT, 4000);
 				break;
 
-			case USERCONF::CODE_PROPRE::πË∏ﬁ:
-				KeybdEvent('E', 1000);
-				break;
-			}
-
-			switch (CharacterInfo->Code)
-			{
-			case USERCONF::CODE_PROPRE::à™≥™:
-				for (int q = 0; q < 13; q++)
-				{
-					KeybdEvent('C', 960);
-				}
+			case USERCONF::CODE_PROPRE::Ìå®Ìåå:
+				Marcher({ 'W' }, seconds(30), 1600);
 				break;
 
-			case USERCONF::CODE_PROPRE::∫“µ∂:
-			case USERCONF::CODE_PROPRE::Ω„ƒ›:
-				for (int q = 0; q < 17; q++)
-				{
-					KeybdEvent('S', 800);
-					KeybdEventContinued(VK_RIGHT, 1000);
-				}
+			case USERCONF::CODE_PROPRE::ÏÑÄÎèÑÏñ¥:
+				Marcher({ 'C' }, seconds(20));
 				break;
 
-			case USERCONF::CODE_PROPRE::∫ÒºÛ:
-				for (int q = 0; q < 15; q++)
-				{
-					KeybdEvent('Q', 800);
-					KeybdEventContinued(VK_RIGHT, 1000);
-				}
+			case USERCONF::CODE_PROPRE::ÎÇòÎ°ú:
+				Marcher({ 'W' }, seconds(30), 1800);
 				break;
 
-			case USERCONF::CODE_PROPRE::Ω≈±√:
-				for (int q = 0; q < 16; q++)
-				{
-					KeybdEvent('W', 800);
-					KeybdEventContinued(VK_RIGHT, 900);
-				}
+			case USERCONF::CODE_PROPRE::Î∞îÏù¥Ìçº:
+				Marcher({ 'C' }, seconds(14));
 				break;
 
-			case USERCONF::CODE_PROPRE::≥™∑Œ:
-				for (int q = 0; q < 17; q++)
-				{
-					KeybdEvent('W', 800);
-					KeybdEventContinued(VK_RIGHT, 1000);
-				}
+			case USERCONF::CODE_PROPRE::ÏÜåÎßà:
+				Marcher({ 'C' }, seconds(12));
 				break;
 
-			case USERCONF::CODE_PROPRE::πŸ¿Ã∆€:
-				KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
+			case USERCONF::CODE_PROPRE::Ïä§Ïª§:
+				Marcher({ 'W' }, seconds(30), 1900);
 				break;
 
-			case USERCONF::CODE_PROPRE::º“∏∂:
-				KeybdEvent('3');
-				KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'W' }, 1000);
+			case USERCONF::CODE_PROPRE::Ìå¨ÌÖÄ:
+				Marcher({ 'C' }, seconds(10), false);
 				break;
 
-			case USERCONF::CODE_PROPRE::Ω∫ƒø:
-				for (int q = 0; q < 13; q++)
-				{
-					KeybdEvent({ 'X', 'C' }, 400);
-				}
+			case USERCONF::CODE_PROPRE::Î£®ÎØ∏:
+				Marcher({ 'A' }, seconds(30), 1800);
 				break;
 
-			case USERCONF::CODE_PROPRE::∆“≈“:
-				KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
+			case USERCONF::CODE_PROPRE::ÏùÄÏõî:
+			case USERCONF::CODE_PROPRE::Îç∞Ïä¨:
+				Marcher({ 'W' }, seconds(30), 1800);
 				break;
 
-			case USERCONF::CODE_PROPRE::¿∫ø˘:
-				for (int q = 0; q < 18; q++)
-				{
-					KeybdEvent('W', 800);
-					KeybdEventContinued(VK_RIGHT, 900);
-				}
+			case USERCONF::CODE_PROPRE::Îç∞Î≤§:
+			case USERCONF::CODE_PROPRE::Îç∞Î≤§2:
+				Marcher({ 'C' }, seconds(10));
 				break;
 
-			case USERCONF::CODE_PROPRE::µ•ΩΩ:
-				for (int q = 0; q < 17; q++)
-				{
-					KeybdEvent('W', 800);
-					KeybdEventContinued(VK_RIGHT, 1000);
-				}
+			case USERCONF::CODE_PROPRE::Î∞∞Î©î:
+				Marcher({ 'V' }, seconds(18));
+				Sleep(1000);
 				break;
 
-			case USERCONF::CODE_PROPRE::µ•∫•:
-				KeybdEvent({ 'W', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'W' }, 920);
+			case USERCONF::CODE_PROPRE::ÏïÑÎûÄ:
+				Marcher({ 'A' }, seconds(30), 1600);
 				break;
 
-			case USERCONF::CODE_PROPRE::πË∏ﬁ:
-				for (int q = 0; q < 9; q++)
-				{
-					KeybdEvent({ 'X', 'Z' }, 900);
-				}
+			case USERCONF::CODE_PROPRE::Ï†úÎÖº:
+				Marcher('W', seconds(20));
 				break;
 
-			case USERCONF::CODE_PROPRE::æ∆∂ı:
-				for (int q = 0; q < 16; q++)
-				{
-					KeybdEvent('A', 800);
-					KeybdEventContinued(VK_RIGHT, 900);
-				}
+			case USERCONF::CODE_PROPRE::ÏïÑÎç∏:
+				Marcher({ 'Q' }, seconds(25), 1800);
+				break;
+			case USERCONF::CODE_PROPRE::Î∏îÎûò:
+				Marcher({ 'Q' }, seconds(30), 1500);
 				break;
 
-			case USERCONF::CODE_PROPRE::¡¶≥Ì:
-				KeybdEventDown(VK_RIGHT);
-				KeybdEventDown('W');
-				Sleep(20000);
-				KeybdEventUp('W');
-				KeybdEventUp(VK_RIGHT);
+			case USERCONF::CODE_PROPRE::ÏóîÎ≤Ñ:
+				Marcher({ 'W' }, seconds(24), 1800);
 				break;
 
-			case USERCONF::CODE_PROPRE::∫∏∏∂:
-			case USERCONF::CODE_PROPRE::∏ﬁºº:
-			case USERCONF::CODE_PROPRE::∏ﬁƒ´¥–:
-				KeybdEventDown(VK_RIGHT);
-				KeybdEventDown('Q');
-				Sleep(20000);
-				KeybdEventUp('Q');
-				KeybdEventUp(VK_RIGHT);
+			case USERCONF::CODE_PROPRE::ÏïÑÌÅ¨:
+				Marcher({ 'A' }, seconds(29), 1200);
 				break;
 
-			case USERCONF::CODE_PROPRE::æ∆µ®:
-			case USERCONF::CODE_PROPRE::∫Ì∑°:
-				for (int q = 0; q < 20; q++)
-				{
-					KeybdEvent('Q', 800);
-					KeybdEventContinued(VK_RIGHT, 800);
-				}
+			case USERCONF::CODE_PROPRE::Ìò∏ÏòÅ:
+				Marcher({ 'Q' }, seconds(30), 1350);
 				break;
 
-			case USERCONF::CODE_PROPRE::ø£πˆ:
-				for (int q = 0; q < 13; q++)
-				{
-					KeybdEvent('W', 800);
-					KeybdEventContinued(VK_RIGHT, 1200);
-				}
-				break;
-
-			case USERCONF::CODE_PROPRE::æ∆≈©:
-				for (int q = 0; q < 20; q++)
-				{
-					KeybdEvent('A', 600);
-					KeybdEventContinued(VK_RIGHT, 900);
-				}
-				break;
-
-			case USERCONF::CODE_PROPRE::¡¶∑Œ:
-				KeybdEvent({ 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'E', 'W', 'W', 'Z' }, 1400);
+			case USERCONF::CODE_PROPRE::Ï†úÎ°ú:
+				KeybdEventContinued(VK_RIGHT, 100);
+				KeybdEvent({ 'W', 'W', 'E', 'E', 'W', 'W', 'E', 'E', 'W', 'W' }, 1400);
 				KeybdEventContinued(VK_RIGHT, 1000);
 				break;
 
-			case USERCONF::CODE_PROPRE::≈∞≥◊:
-				for (int q = 0; q < 20; q++)
-				{
-					KeybdEvent('C', 800);
-					KeybdEventContinued(VK_RIGHT, 800);
-				}
+			case USERCONF::CODE_PROPRE::ÌÇ§ÎÑ§:
+				Marcher({ 'Q' }, seconds(28), 1000);
 				break;
 
-			case USERCONF::CODE_PROPRE::«√¿ß:
-				for (int q = 0; q < 16; q++)
-				{
-					KeybdEvent('Q', 720);
-					KeybdEventContinued(VK_RIGHT, 1000);
-				}
+			case USERCONF::CODE_PROPRE::Ïπ¥Îç∞ÎÇò:
+				Marcher({ 'Q' }, seconds(32), 1800);
 				break;
 
-			case USERCONF::CODE_PROPRE::≥™øˆ:
-				for (int q = 0; q < 20; q++)
-				{
-					KeybdEvent('A', 800);
-					KeybdEventContinued(VK_RIGHT, 800);
-				}
+			case USERCONF::CODE_PROPRE::ÌîåÏúÑ:
+				KeybdEvent('W', 1000);
+				Marcher({ 'Q' }, seconds(28), 1400);
 				break;
 
-			case USERCONF::CODE_PROPRE::µ‡∫Ì:
-				for (int q = 0; q < 13; q++)
-				{
-					KeybdEvent({ 'F', 'W' }, 1000);
-				}
+			case USERCONF::CODE_PROPRE::ÎÇòÏõå:
+				Marcher({ 'A' }, seconds(30), 1800);
 				break;
 
-			case USERCONF::CODE_PROPRE::πÃ«œ¿œ:
-				KeybdEvent({ 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C', 'C' }, 1000);
+			case USERCONF::CODE_PROPRE::ÎìÄÎ∏î:
+				Marcher({ 'A' }, seconds(29), 1400);
 				break;
 
-			case USERCONF::CODE_PROPRE::¿©∫Í:
-				for (int q = 0; q < 13; q++)
-				{
-					KeybdEvent({ 'W', 'C' }, 1000);
-				}
+			case USERCONF::CODE_PROPRE::ÎØ∏ÌïòÏùº:
+				Marcher({ 'C' }, seconds(16));
 				break;
 
-			default:
-				throw BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE;
+			case USERCONF::CODE_PROPRE::ÏúàÎ∏å:
+				Marcher({ 'W' }, seconds(26), 1500);
+				break;
+
+			case USERCONF::CODE_PROPRE::Î≥¥Îßà:
+			case USERCONF::CODE_PROPRE::Î©îÏÑ∏:
+			case USERCONF::CODE_PROPRE::Î©îÏπ¥Îãâ:
+				Marcher('Q', seconds(22));
+				break;
 			}
 		};
-#endif
+		auto ConfirmerExceptionDeRootAbyss = []()
+		{
+			if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//r_deja_accompli.png")))
+				if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//r_deja_accompli.png")))
+				{
+					KeybdEvent(VK_RETURN);
+					throw PONT_EXCEPTION_CODE::B_INACCESSIBLE;
+				}
+				else if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//r_non_cle.png")))
+				{
+					KeybdEvent(VK_RETURN);
+					throw PONT_EXCEPTION_CODE::B_INACCESSIBLE;
+				}
+				else if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//r_limite30.png")))
+				{
+					KeybdEvent(VK_RETURN, VK_RETURN);
+					throw PONT_EXCEPTION_CODE::B_INACCESSIBLE;
+				}
+		};
+		auto ObtenirCle = []()
+		{
+			MouseEvent({ 33, 318 }, CLIC_GAUCHE, 1000);
 
+			static const Mat TargetImage1(Read(TARGET_DIR "text//quest_rootabyss.jpg"));
+			if (VALLOC MatchInfo;
+				MatchTemplate(SourceImageClient4, TargetImage1, &MatchInfo))
+			{
+				MouseEvent(MatchInfo.Location + Point{ 10, 3 }, CLIC_GAUCHE);
+				KeybdEvent({ VK_RETURN, VK_RIGHT, VK_RETURN, VK_RETURN });
+			}
+			else
+			{
+				KeybdEvent(VK_ESCAPE);
+			}
+		};
+
+		int Temps√ÄAttendre;
+		switch (B)
+		{
+		case Zacum1:
+		case Papulatus1:
+			Temps√ÄAttendre = 3000; break;
+		default: 
+			Temps√ÄAttendre = 0x300; break;
+		}
+
+		if (A == Unknown)
+		{
+			throw PONT_EXCEPTION_CODE::A_INVALID;
+		}
+
+		try
+		{
 		switch (A)
 		{
-#if defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 		case Urus:
 			switch (B)
 			{
 			case Elnas:
-				Cross(
-					[](){
-						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 4000);
-					});
-				return;
-
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
+			{
+				KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 2800);
 			}
-#endif
+			break;
+
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
 
 		case Elnas:
 			switch (B)
 			{
-#if defined(BUILD_DAILYBOSS)
-			case Zacum1:
-				CrossToZacum();
-				return;
-#endif
-#if defined(BUILD_URUS)
-			case Urus:
-#endif
-#if defined(BUILD_DAILYBOSS)
-			case RootAbyss1:
-#endif
-				Cross([&CrossWithMirror, B]()
-					{
-						CrossWithMirror();
-					});
-				return;
-
-#if defined(BUILD_CALC)
 			case FreeMarket:
-				Cross([]()
-					{
-						MouseEvent({ 58, 194, }, LEFT_CLICK);
-						MouseEvent({ 634, 404 }, LEFT_CLICK);
-						MouseEvent({ 840, 488 }, LEFT_CLICK);
-					});
-				return;
-#endif
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
-			}
-
-		case Zacum1:
-			switch (B)
 			{
-#if defined(BUILD_DAILYBOSS)
-			case Zacum2_2:
-				Cross([Level = Zacum2_2 == B ? 1 : 2]()
-				{
-					try
-					{
-						ClientApi::MinimapRecognizer Recognizer({ 10, 80, 190, 146 });
-						if (Recognizer.WhereAmI() < 100)
-						{
-							Recognizer.MoveToRelativeCriteria(143);
-						}
-					}
-					catch (ClientApi::MinimapRecognizer::CharacterNotFoundException&)
-					{
-						throw BRIDGE_EXCEPTION_CODE::B_FAIL;
-					}
-
-					KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 1200);
-					for (int i = 0; i < (int)Level; i++)
-					{
-						KeybdEvent(VK_DOWN);
-					}
-					KeybdEvent(VK_RETURN);
-				});
-				return;
-#endif
-			case Elnas:
-				Cross([]()
-					{
-						ClientApi::MinimapRecognizer Recognizer({ 10, 80, 190, 146 });
-						if (Recognizer.WhereAmI() < 100)
-						{
-							Recognizer.MoveToRelativeCriteria(143);
-						}
-
-						MouseEvent({ 820, 589 }, CLIC_GAUCHE);
-						KeybdEvent({ VK_DOWN, VK_DOWN, VK_DOWN, VK_RETURN, VK_RETURN, VK_RETURN }, 400);
-					});
-				return;
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
+				MouseEvent({ 58, 194, }, CLIC_GAUCHE);
+				MouseEvent({ 634, 404 }, CLIC_GAUCHE);
+				MouseEvent({ 840, 488 }, CLIC_GAUCHE);
 			}
+			break;
 
-		case Zacum2_2:
-			switch (B)
-			{
 			case Zacum1:
-				Cross([]()
-					{
-						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
-					});
-				return;
-
-#if defined(BUILD_DAILYBOSS)
-			case Zacum3_2:
-				Cross(
-					[]() {
-						ClientApi::OpererParty(1);
-
-						MouseEvent({ 1000, 570 }, CLIC_GAUCHE, 600);
-						KeybdEvent({ VK_RETURN, VK_RETURN, VK_RETURN }, 600);
-					});
-				return;
-#endif
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
+			{
+				Traverser√ÄBoss(ZACUM);
+				ClientApi::OpererParty(CASSER);
 			}
+			break;
 
-#if defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
-		case Zacum3_2:
+			case Urus:
+			case RootAbyss1:
+			{
+				CrossWithMirror();
+			}
+			break;
+
+			case VonLeon2:
+			{
+				Traverser√ÄBoss(VON_LEON);
+				ClientApi::OpererParty(REFAIRE);
+			}
+			break;
+
+			case Kaung1:
+			{
+				Temps√ÄAttendre = 0;
+				Traverser√ÄBoss(KAUNG);
+				ClientApi::OpererParty(REFAIRE);
+			}
+			break;
+
+			case Papulatus1:
+			{
+				Traverser√ÄBoss(PAPULATUS);
+				ClientApi::OpererParty(REFAIRE);
+			}
+			break;
+
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
+		case ElnasMarket:
 			switch (B)
 			{
-			case Zacum2_2:
-				Cross(
-					[](){
-						ClientApi::OpererParty(2);
-					});
-				return;
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
+			case Elnas:
+			{
+				MinimapRecognizer Recognizer({ 10, 80, 260, 150 });
+
+				Recognizer.Bouger√ÄCrit√®reRelatif(20);
+				KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
 			}
-#endif
+			break;
+
+			case Zacum1:
+			{
+				Traverser√ÄBoss(ZACUM);
+				ClientApi::OpererParty(CASSER);
+			}
+			break;
+
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
 
 		case FreeMarket:
 			switch (B)
 			{
 			case ElnasMarket:
-				if (AmIIn(A))
+			{
+				KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1000);
+				if (!WaitUntilMatchingTemplate(
+					RECT_MAP,
+					GetMapMat(B),
+					seconds(10)))
 				{
-					KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1000);
-
-					if (WaitUntilMatchingTemplate(
-						RECT_MAP,
-						GetMapMat(B),
-						seconds(32)))
-					{
-						Sleep(0x400);
-					}
-					else
-					{
-						KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 3000);
-
-						if (WaitUntilMatchingTemplate(
-							RECT_MAP,
-							GetMapMat(B),
-							seconds(32)))
-						{
-							Sleep(0x400);
-						}
-						else
-						{
-							throw BRIDGE_EXCEPTION_CODE::B_FAIL;
-						}
-					}
+					KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 3000);
 				}
-				else
-				{
-					throw BRIDGE_EXCEPTION_CODE::A_FAIL;
-				}
-				return;
-
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
 			}
+			break;
 
-		case ElnasMarket:
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
+		case Zacum1:
 			switch (B)
 			{
-#if defined(BUILD_URUS) || defined(BUILD_DAILYBOSS)
-			case Elnas:
-				Cross(
-					[](){
-						ClientApi::MinimapRecognizer Recognizer({ 10, 80, 260, 150 });
-						Recognizer.MoveToRelativeCriteria(20);
+			case Zacum2_2:
+			{
+				MinimapRecognizer Recognizer({ 10, 80, 190, 146 });
+				if (Recognizer.O√πSuisJe() < 100)
+				{
+					Recognizer.Bouger√ÄCrit√®reRelatif(143);
+				}
 
-						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
-					});
-				return;
-#endif
-#if defined(BUILD_DAILYBOSS)
-			case Zacum1:
-				CrossToZacum();
-				return;
-#endif
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
+				KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 1200);
+				KeybdEvent(VK_DOWN);
+				KeybdEvent(VK_RETURN);
 			}
+			break;
+
+			case Elnas:
+			{
+				MinimapRecognizer Recognizer({ 10, 80, 190, 146 });
+				if (Recognizer.O√πSuisJe() < 100)
+				{
+					Recognizer.Bouger√ÄCrit√®reRelatif(143);
+				}
+
+				MouseEvent({ 820, 589 }, CLIC_GAUCHE);
+				KeybdEvent({ VK_DOWN, VK_DOWN, VK_DOWN, VK_RETURN, VK_RETURN, VK_RETURN });
+			}
+			break;
+
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
+		case Zacum2_2:
+			switch (B)
+			{
+			case Zacum1:
+			{
+				Temps√ÄAttendre = 2000;
+				KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 900);
+			}
+			break;
+
+			case Zacum3_2:
+			{
+				int CountDeEssai = 0;
+				int CodeOperation = FAIRE;
+
+			__REESSAYER1_Z__:
+				ClientApi::OpererParty(CodeOperation);
+			__REESSAYER2_Z__:
+				if (CountDeEssai++ > 8)
+				{
+					throw PONT_EXCEPTION_CODE::B_INVALID;
+				}
+
+				MouseEvent({ 1000, 570 }, CLIC_GAUCHE);
+				if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//exception_z1.png")))
+				{
+					// ÌååÌã∞Ïû•Îßå ÏûÖÏû• Ïã†Ï≤≠ÏùÑ Ìï† Ïàò ÏûàÏäµÎãàÎã§
+					KeybdEvent(VK_ESCAPE);
+					CodeOperation = REFAIRE;
+
+					goto __REESSAYER1_Z__;
+				}
+
+				for (int p = 1; p <= 2; p++)
+				{
+					for (int q = 1; q <= p; q++)
+					{
+						KeybdEvent(VK_RETURN);
+						MouseEvent({ 500, 400 }, CLIC_GAUCHE, 100);
+					}
+
+					if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//exception_z2.png")))
+					{
+						// ÌååÌã∞Ïõê Ï§ë XÎãòÏù¥ Ïò§Îäò ÏûêÏø∞Ïùò Ï†úÎã®Ïóê ÏûÖÏû•ÌïòÏÖîÏÑú Îì§Ïñ¥Í∞à Ïàò ÏóÜÏäµÎãàÎã§
+						throw PONT_EXCEPTION_CODE::B_INACCESSIBLE;
+					}
+					else if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//r_non_cle.png")))
+					{
+						// ÌååÌã∞Ïõê Ï§ë ÏùºÎ∂ÄÍ∞Ä Í∞ôÏùÄ ÎßµÏóê ÏûàÏßÄ ÏïäÏäµÎãàÎã§
+						KeybdEvent(VK_ESCAPE);
+						CodeOperation = REFAIRE;
+
+						goto __REESSAYER1_Z__;
+					}
+					else if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//exception_plein.png")))
+					{
+						KeybdEvent(VK_ESCAPE);
+						ClientApi::ChangerCha√Æne(false);
+
+						goto __REESSAYER2_Z__;
+					}
+				}
+			}
+			break;
+
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
+		case Zacum3_2:
+			switch (B)
+			{
+			case Zacum2_2:
+			{
+				ClientApi::OpererParty(CASSER);
+			}
+			break;
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
 
 		case RootAbyss1:
 			switch (B)
 			{
-#if defined(BUILD_DAILYBOSS)
 			case RootAbyss2_1:
-				if (nullptr == CharacterInfo)
-				{
-					throw BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE;
-				}
-				Cross([CharacterInfo]()
-					{
-						ClientApi::OpererParty(1);
-
-						KeybdEvent(VK_CONTROL);
-						switch (CharacterInfo->Code)
-						{
-						default:
-							break;
-						case USERCONF::CODE_PROPRE::∏ﬁƒ´¥–:
-						case USERCONF::CODE_PROPRE::ø£πˆ:
-							KeybdEvent('W', 1000);
-						}
-
-						// ∞Ì∏Ò≥™π´ ø≠ºË πﬁ±‚
-						MouseEvent({ 33, 318 }, CLIC_GAUCHE, 1000);
-
-						static const Mat TargetImage1(Read(TARGET_DIR "text//quest_rootabyss.jpg"));
-						if (VALLOC MatchInfo; 
-							MatchTemplate(SourceImageClient4, TargetImage1, &MatchInfo))
-						{
-							MouseEvent(MatchInfo.Location + Point{ 10, 3 }, CLIC_GAUCHE);
-							KeybdEvent({ VK_RETURN, VK_RIGHT, VK_RETURN, VK_RETURN });
-						}
-						else
-						{
-							KeybdEvent(VK_ESCAPE);
-						}
-
-						try
-						{
-							ClientApi::MinimapRecognizer Recognizer({ 10, 126, 200, 146 });
-							Recognizer.MoveToRelativeCriteria(62);
-						}
-						catch (ClientApi::MinimapRecognizer::CharacterNotFoundException&)
-						{
-							throw BRIDGE_EXCEPTION_CODE::B_FAIL;
-						}
-
-						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1500);
-						KeybdEvent(VK_RETURN);
-					});
-				return;
-
 			case RootAbyss2_3:
-				if (nullptr == CharacterInfo)
-				{
-					throw BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE;
-				}
-				Cross([CharacterInfo]()
-					{
-						KeybdEvent(VK_ESCAPE);
-						MouseEvent(POS_VOID, CLIC_GAUCHE);
-						ClientApi::OpererParty(1);
-
-						switch (CharacterInfo->Code)
-						{
-						default:
-							break;
-						case USERCONF::CODE_PROPRE::∏ﬁƒ´¥–:
-						case USERCONF::CODE_PROPRE::ø£πˆ:
-							KeybdEvent('W', 1000);
-						}
-
-						KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 1600);
-						KeybdEvent(VK_RETURN);
-						MouseEvent({ 700, 400 }, CLIC_GAUCHE);
-					});
-				return;
-
-			case Zacum1:
+			case RootAbyss2_4:
+			{
 				KeybdEvent(VK_ESCAPE);
 				MouseEvent(POS_VOID, CLIC_GAUCHE);
-				CrossToZacum();
-				return;
-#endif
-#if defined(BUILD_URUS) || defined(BUILD_CALC)
-			case Elnas:
-				Cross([]()
-					{
-						ClientApi::MinimapRecognizer Recognizer({ 10, 126, 200, 146 });
-						Recognizer.MoveToRelativeCriteria(43);
-						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1000);
-					});
-				return;
-#endif
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
-			}
+				ClientApi::OpererParty(FAIRE);
+				KeybdEvent(VK_CONTROL);
 
-#if defined(BUILD_DAILYBOSS)
+				ObtenirCle();
+
+				switch (CharacterInfo.Code)
+				{
+				case USERCONF::CODE_PROPRE::Î©îÏπ¥Îãâ:
+				case USERCONF::CODE_PROPRE::ÏóîÎ≤Ñ:
+					KeybdEvent('W', 1000);
+					break;
+				case USERCONF::CODE_PROPRE::Ï†úÎ°ú:
+					KeybdEvent('X', 1000);
+					break;
+				}
+
+				switch (B)
+				{
+				case RootAbyss2_1:
+					KeybdEventContinued(VK_LEFT, GET_DURATION(450000, CharacterInfo.Vitesse));
+					KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 800);
+					break;
+
+				case RootAbyss2_3:
+					KeybdEventContinued(VK_RIGHT, GET_DURATION(100000, CharacterInfo.Vitesse));
+					KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 800);
+					break;
+
+				case RootAbyss2_4:
+					KeybdEventContinued(VK_RIGHT, GET_DURATION(450000, CharacterInfo.Vitesse));
+					KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 800);
+					break;
+				}
+				KeybdEvent(VK_RETURN, 800);
+
+				ConfirmerExceptionDeRootAbyss();
+			}
+			break;
+
+			case Zacum1:
+			{
+				KeybdEvent(VK_ESCAPE);
+				MouseEvent(POS_VOID, CLIC_GAUCHE);
+				Traverser√ÄBoss(ZACUM);
+				ClientApi::OpererParty(CASSER);
+			}
+			break;
+
+			case Elnas:
+			{
+				KeybdEventContinued(VK_RIGHT, GET_DURATION(640000, CharacterInfo.Vitesse));
+				KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 800);
+			}
+			break;
+
+			default:
+				throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
 		case RootAbyss2_1:
+		case RootAbyss2_4:
 			switch (B)
 			{
 			case RootAbyss3_1:
-				Cross([&CrossToR3]()
-					{
-						CrossToR3(2000);
-
-						KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 3600);
-						KeybdEvent({ VK_RIGHT, VK_RETURN });
-					});
-				return;
-
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
-			}
-#endif
-#if defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
-		case RootAbyss3_1:
-		case RootAbyss3_3:
-			switch (B)
+			case RootAbyss3_4:
 			{
-			case RootAbyss1:
-				Cross(
-					[](){
-						ClientApi::OpererParty(2);
-					});
-				return;
+				Traverser√ÄR3(1800);
 
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
+				KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 3600);
+				KeybdEvent({ VK_RIGHT, VK_RETURN });
 			}
-#endif
+			break;
 
-#if defined(BUILD_DAILYBOSS)
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
 		case RootAbyss2_3:
 			switch (B)
 			{
 			case RootAbyss3_3:
-				if (nullptr == CharacterInfo)
-				{
-					throw BRIDGE_EXCEPTION_CODE::NULL_PARAMETRE;
-				}
-				Cross([&CrossToR3, &CharacterInfo]()
-					{
-						CrossToR3(3800);
+			{
+				Traverser√ÄR3(3800);
 
-						Sleep(800);
+				Sleep(800);
 #define GET_DURATION(_d, _ms) (_d / _ms)
-						KeybdEventContinued(VK_LEFT, GET_DURATION(92000, CharacterInfo->Speed));
-						Sleep(800);
-						switch (CharacterInfo->Code)
-						{
-						case USERCONF::CODE_PROPRE::à™≥™:
-						case USERCONF::CODE_PROPRE::∫∏∏∂:
-						case USERCONF::CODE_PROPRE::∆–∆ƒ:
-						case USERCONF::CODE_PROPRE::º®µµæÓ:
-						case USERCONF::CODE_PROPRE::º“∏∂:
-						case USERCONF::CODE_PROPRE::≥™øˆ:
-						case USERCONF::CODE_PROPRE::µ•∫•:
-							KeybdEvent('W', 1200);
-							break;
-						case USERCONF::CODE_PROPRE::∫“µ∂:
-						case USERCONF::CODE_PROPRE::Ω„ƒ›:
+				KeybdEventContinued(VK_LEFT, GET_DURATION(90000, CharacterInfo.Vitesse));
+				Sleep(800);
+				switch (CharacterInfo.Code)
+				{
+				case USERCONF::CODE_PROPRE::ÎãºÎÇò:
+				case USERCONF::CODE_PROPRE::ÏÑÄÎèÑÏñ¥:
+				case USERCONF::CODE_PROPRE::ÏÜåÎßà:
+				case USERCONF::CODE_PROPRE::ÎÇòÏõå:
+				case USERCONF::CODE_PROPRE::Îç∞Î≤§:
+				case USERCONF::CODE_PROPRE::Îç∞Î≤§2:
+					KeybdEvent('W', 1200);
+					break;
 
-						case USERCONF::CODE_PROPRE::πŸ¿Ã∆€:
-						case USERCONF::CODE_PROPRE::ƒ≥Ω¥:
-						case USERCONF::CODE_PROPRE::«√¿ß:
-						case USERCONF::CODE_PROPRE::¿©∫Í:
-							KeybdEvent('Z', 1200);
-							break;
-						case USERCONF::CODE_PROPRE::Ω≈±√:
-							KeybdEvent('A', 1200);
-							break;
-						case USERCONF::CODE_PROPRE::∏ﬁºº:
-							KeybdEvent('F', 1200);
-							break;
-						
-						default:
-							break;
-						}
-						KeybdEvent(VK_MENU, 1000);
-						KeybdEvent({VK_UP, VK_RIGHT, VK_RETURN });
-					});
-				return;
+				case USERCONF::CODE_PROPRE::Ìå®Ìåå:
+					KeybdEvent('Q', 1000);
+					break;
 
-			default: throw BRIDGE_EXCEPTION_CODE::B_ERRORINPUT;
+				case USERCONF::CODE_PROPRE::Ïç¨ÏΩú:
+					KeybdEvent('S', 1000);
+					break;
+
+				case USERCONF::CODE_PROPRE::Î∂àÎèÖ:
+				case USERCONF::CODE_PROPRE::Î∞îÏù¥Ìçº:
+				case USERCONF::CODE_PROPRE::Ï∫êÏäà:
+				case USERCONF::CODE_PROPRE::ÌîåÏúÑ:
+				case USERCONF::CODE_PROPRE::ÏúàÎ∏å:
+					KeybdEvent('Z', 1200);
+					break;
+
+				default:
+					break;
+				}
+				KeybdEvent(VK_MENU, 1000);
+				KeybdEvent({ VK_UP, VK_RIGHT, VK_RETURN });
 			}
-#endif
-		default: throw BRIDGE_EXCEPTION_CODE::A_ERRORINPUT;
+			break;
+
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
+		case RootAbyss3_1:
+		case RootAbyss3_3:
+		case RootAbyss3_4:
+			switch (B)
+			{
+			case RootAbyss1:
+			{
+				ClientApi::OpererParty(CASSER);
+			}
+			break;
+
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
+		case VonLeon1:
+			switch (B)
+			{
+			case Elnas:
+			{
+				MinimapRecognizer Recognizer({ 10, 100, 200, 146 });
+				Recognizer.Bouger√ÄCrit√®reRelatif(15);
+				KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1000);
+			}
+			break;
+			}
+			break;
+
+		case VonLeon2:
+			switch (B)
+			{
+			case VonLeon1:
+			{
+				KeybdEventContinued(VK_LEFT, GET_DURATION(500000, CharacterInfo.Vitesse));
+				KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1000);
+			}
+			break;
+
+			case VonLeon3_1:
+			case VonLeon3_2:
+			case VonLeon3_3:
+			{
+				if (B == VonLeon3_3)
+				{
+					ClientApi::ChangerCha√Æne(false);
+				}
+
+				int t = 0;
+				int CodeOperation = NULL;
+			__REESSAYER1_V__:
+				ClientApi::OpererParty(CodeOperation);
+
+				if (t > 0)
+				{
+					KeybdEvent(VK_UP);
+				}
+				else
+				{
+				__REESSAYER2_V__:
+					KeybdEventContinued(VK_RIGHT, GET_DURATION(625000, CharacterInfo.Vitesse));
+					KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 1000);
+				}
+
+				if (t++ > 8)
+				{
+					throw PONT_EXCEPTION_CODE::B_MANQU√â;
+				}
+
+				if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//non_party_v.png")))
+				{
+					KeybdEvent(VK_ESCAPE);
+					CodeOperation = REFAIRE;
+
+					goto __REESSAYER1_V__;
+				}
+
+				KeybdEvent(VK_RETURN);
+				for (int p = 0; p < B - VonLeon3_1; p++)
+				{
+					KeybdEvent(VK_DOWN);
+				}
+
+				KeybdEvent(VK_RETURN);
+				MouseEvent({ 500, 400 }, CLIC_GAUCHE, 100);
+				if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//exception_plein.png")))
+				{
+					KeybdEvent(VK_RETURN);
+					ClientApi::ChangerCha√Æne(false);
+
+					goto __REESSAYER2_V__;
+				}
+			}
+			break;
+			}
+			break;
+
+		case VonLeon3_1:
+		case VonLeon3_2:
+		case VonLeon3_3:
+			switch (B)
+			{
+			case VonLeon1:
+			{
+				ClientApi::OpererParty(CASSER);
+			}
+			break;
+			}
+			break;
+
+		case Kaung1:
+			switch (B)
+			{
+			case Elnas:
+			{
+				KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, GET_DURATION(180000, 140));
+			}
+			break;
+
+			case Kaung2:
+			{
+				int CountDeEssai = 0;
+				int CodeOperation = NULL;
+
+			__REESSAYER1_K__:
+				ClientApi::OpererParty(CodeOperation);
+				KeybdEvent(USERCONF::GetInstance()->VirtualKeyset.Potion);
+			__REESSAYER2_K__:
+				if (CountDeEssai++ > 8)
+				{
+					throw PONT_EXCEPTION_CODE::B_INVALID;
+				}
+
+				Sleep(600);
+				MouseEvent({ 870, 590 }, CLIC_GAUCHE);
+				if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//exception_z1.png")))
+				{
+					// ÌååÌã∞Ïû•Îßå ÏûÖÏû• Ïã†Ï≤≠ÏùÑ Ìï† Ïàò ÏûàÏäµÎãàÎã§
+					KeybdEvent(VK_ESCAPE);
+					CodeOperation = REFAIRE;
+
+					goto __REESSAYER1_K__;
+				}
+
+				KeybdEvent(VK_RETURN, 200);
+				MouseEvent({ 500, 400 }, CLIC_GAUCHE, 100);
+				if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//r_non_cle.png")))
+				{
+					// ÌååÌã∞Ïõê Ï§ë Ïù¥ÎØ∏ ÏûÖÏû•Ìïú ÏÇ¨ÎûåÏù¥ ÏûàÏñ¥
+					throw PONT_EXCEPTION_CODE::B_INACCESSIBLE;
+				}
+				else if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//exception_plein.png")))
+				{
+					KeybdEvent(VK_ESCAPE);
+					ClientApi::ChangerCha√Æne(false);
+
+					goto __REESSAYER2_K__;
+				}
+
+				return;
+			}
+			break;
+			}
+			break;
+
+		case Kaung2:
+			switch (B)
+			{
+			case Kaung1:
+			{
+				ClientApi::OpererParty(CASSER);
+			}
+			break;
+			}
+			break;
+
+		case Papulatus1:
+			switch (B)
+			{
+			case Elnas:
+			{
+				MinimapRecognizer Recognizer({ 10, 80, 260, 150 });
+				Recognizer.Bouger√ÄCrit√®reRelatif(20);
+
+				KeybdEventContinuedWithSubKey(VK_LEFT, VK_UP, 1000);
+			}
+			break;
+
+			case Papulatus2_1:
+			case Papulatus2_2:
+			{
+				int CountDeEssai = 0;
+				int CodeOperation = NULL;
+
+			__REESSAYER1_P__:
+				ClientApi::OpererParty(CodeOperation);
+			__REESSAYER2_P__:
+				if (CountDeEssai++ > 8)
+				{
+					throw PONT_EXCEPTION_CODE::B_INVALID;
+				}
+
+				MinimapRecognizer Recognizer({ 10, 80, 260, 150 });
+				Recognizer.Bouger√ÄCrit√®reRelatif(121);
+				Sleep(800);
+
+				KeybdEvent({ VK_MENU, VK_MENU, VK_MENU, VK_MENU }, 800);
+				KeybdEventContinuedWithSubKey(VK_RIGHT, VK_UP, 900);
+
+				for (int i = 0; i < B - Papulatus2_1; i++)
+				{
+					KeybdEvent(VK_DOWN);
+				}
+				for (int p = 1; p <= 2; p++)
+				{
+					for (int q = 1; q <= p; q++)
+					{
+						KeybdEvent(VK_RETURN);
+						MouseEvent({ 500, 400 }, CLIC_GAUCHE, 100);
+					}
+
+					if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//exception_z1.png")))
+					{
+						// ÌååÌã∞Ïû•Îßå ÏûÖÏû• Ïã†Ï≤≠ÏùÑ Ìï† Ïàò ÏûàÏäµÎãàÎã§
+						KeybdEvent(VK_ESCAPE);
+						CodeOperation = REFAIRE;
+
+						goto __REESSAYER1_P__;
+					}
+					else if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//r_non_cle.png")))
+					{
+						// ÌååÌã∞Ïõê Ï§ë xÎãòÏù¥ Ïò§Îäò ÏãúÍ≥ÑÌÉëÏùò Í∑ºÏõêÏóê ÏûÖÏû•ÌñàÏäµÎãàÎã§.
+						KeybdEvent(VK_ESCAPE);
+						CodeOperation = REFAIRE;
+
+						throw PONT_EXCEPTION_CODE::B_INACCESSIBLE;
+					}
+					else if (MatchTemplate(SourceImageClient4, Read(TARGET_DIR "text//exception_plein.png")))
+					{
+						KeybdEvent(VK_ESCAPE);
+						ClientApi::ChangerCha√Æne(false);
+
+						goto __REESSAYER2_P__;
+					}
+				}
+			}
+			break;
+
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
+		case Papulatus2_1:
+		case Papulatus2_2:
+			switch (B)
+			{
+			case Papulatus1:
+			{
+				Temps√ÄAttendre = 2000;
+				ClientApi::OpererParty(CASSER);
+			}
+			break;
+
+			default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+			}
+			break;
+
+		default: throw PONT_EXCEPTION_CODE::INPUT_ERRON√â;
+		}
+
+		if (!WaitUntilMatchingTemplate(
+			RECT_MAP,
+			GetMapMat(B),
+			seconds(10),
+			64,
+			0.96))
+		{
+			throw MatchTemplate(Capture(RECT_MAP), GetMapMat(A)) ?
+				PONT_EXCEPTION_CODE::B_MANQU√â : PONT_EXCEPTION_CODE::B_INVALID;
+		}
+
+		Sleep(Temps√ÄAttendre);
+		}
+		catch (MinimapRecognizer::CharacterNotFoundException&)
+		{
+			throw PONT_EXCEPTION_CODE::B_INVALID;
+		}
+		catch (MinimapRecognizer::FinDeTimeException&)
+		{
+			throw PONT_EXCEPTION_CODE::B_INVALID;
 		}
 	}
 };

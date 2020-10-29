@@ -13,76 +13,68 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\api">
-      <UniqueIdentifier>{cddce19a-c6ff-4cf7-ba38-cbb76c82f82c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\conf">
-      <UniqueIdentifier>{ec999aab-3092-49c7-a136-03fa2a3e1386}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\util%28wrap%29">
+    <Filter Include="Header Files\wrap">
       <UniqueIdentifier>{39620a75-ea97-4281-80c4-53bbf5268ae7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\api\application">
-      <UniqueIdentifier>{49c7eb76-f74a-43b6-9a69-14f2ee540a9f}</UniqueIdentifier>
+    <Filter Include="Header Files\l%27utilité">
+      <UniqueIdentifier>{cddce19a-c6ff-4cf7-ba38-cbb76c82f82c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\api\application\client">
+    <Filter Include="Header Files\l%27utilité\client">
       <UniqueIdentifier>{ff75f9d6-f3c7-4802-a675-3cbc60ffbe3a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\api\application\external">
+    <Filter Include="Header Files\l%27utilité\externe">
       <UniqueIdentifier>{aced61f3-37a3-42fa-9a69-a31149f8ff5a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\api\application\log">
+    <Filter Include="Header Files\l%27utilité\log">
       <UniqueIdentifier>{6490278e-f3d0-4c09-bfee-cac06b72f709}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\la racine">
+      <UniqueIdentifier>{e5b3bcd7-49bb-40ba-8eb8-441ba7afe632}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\l%27application">
+      <UniqueIdentifier>{f301e2fe-28d0-4f14-a44e-d756bea5db98}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\la configuration">
+      <UniqueIdentifier>{ec999aab-3092-49c7-a136-03fa2a3e1386}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cvwrap.h">
-      <Filter>Header Files\util%28wrap%29</Filter>
-    </ClInclude>
-    <ClInclude Include="tesseract-binary-wrap.h">
-      <Filter>Header Files\util%28wrap%29</Filter>
+      <Filter>Header Files\wrap</Filter>
     </ClInclude>
     <ClInclude Include="user.h">
-      <Filter>Header Files\conf</Filter>
+      <Filter>Header Files\la configuration</Filter>
     </ClInclude>
     <ClInclude Include="winevent.h">
-      <Filter>Header Files\util%28wrap%29</Filter>
-    </ClInclude>
-    <ClInclude Include="client.h">
-      <Filter>Header Files\api</Filter>
-    </ClInclude>
-    <ClInclude Include="report.h">
-      <Filter>Header Files\api\application\external</Filter>
-    </ClInclude>
-    <ClInclude Include="ipmanage.h">
-      <Filter>Header Files\api\application\external</Filter>
-    </ClInclude>
-    <ClInclude Include="malrangi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="calc.h">
-      <Filter>Header Files\api\application\client</Filter>
-    </ClInclude>
-    <ClInclude Include="circular_play.h">
-      <Filter>Header Files\api\application\client</Filter>
+      <Filter>Header Files\wrap</Filter>
     </ClInclude>
     <ClInclude Include="map.h">
-      <Filter>Header Files\api\application\client</Filter>
+      <Filter>Header Files\l%27utilité\client</Filter>
     </ClInclude>
     <ClInclude Include="log.h">
-      <Filter>Header Files\api\application\log</Filter>
+      <Filter>Header Files\l%27utilité\log</Filter>
+    </ClInclude>
+    <ClInclude Include="contrôler_ip.h">
+      <Filter>Header Files\l%27utilité\externe</Filter>
+    </ClInclude>
+    <ClInclude Include="client_api.h">
+      <Filter>Header Files\l%27utilité\client</Filter>
+    </ClInclude>
+    <ClInclude Include="operation_circulaire.h">
+      <Filter>Header Files\l%27application</Filter>
+    </ClInclude>
+    <ClInclude Include="malrangi.h">
+      <Filter>Header Files\la racine</Filter>
+    </ClInclude>
+    <ClInclude Include="boss.h">
+      <Filter>Header Files\l%27utilité\client</Filter>
+    </ClInclude>
+    <ClInclude Include="compte.h">
+      <Filter>Header Files\l%27utilité\client</Filter>
     </ClInclude>
     <ClInclude Include="urus.h">
-      <Filter>Header Files\api\application\client</Filter>
+      <Filter>Header Files\l%27utilité\client</Filter>
     </ClInclude>
-    <ClInclude Include="dailyboss.h">
-      <Filter>Header Files\api\application\client</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="entry.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\conf\user.conf">
@@ -90,7 +82,18 @@
     </None>
     <None Include="packages.config" />
     <None Include="..\renouveler_ip.py">
-      <Filter>Header Files\api\application\external</Filter>
+      <Filter>Header Files\l%27application</Filter>
     </None>
+    <None Include="..\contrôleur.py">
+      <Filter>Header Files\l%27application</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="entry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

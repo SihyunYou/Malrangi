@@ -1,5 +1,5 @@
 #pragma once
-#include "client.h"
+#include "client_api.h"
 
 class UrusRaid
 {
@@ -20,8 +20,8 @@ protected:
 		NPC_MASHUR_NOT_FOUND
 	};
 	void Play(
-		const bool IsQuickCompletionMode,
-		bool EstGauche = false)
+		const USERCONF::CHARACTER_INFO& CharacterInfo,
+		const bool IsQuickCompletionMode)
 	{
 		static const Mat TargetImageButtonReady(Read(TARGET_DIR "button//ready.jpg"));
 		static const Mat TargetImageButtonEnter(Read(TARGET_DIR "button//enter.jpg"));
@@ -84,8 +84,8 @@ protected:
 			}
 		}
 
-#define Operate(d)		KeybdEventContinued(d, 0x40);	\
-							KeybdEvent('E', 0x20);
+#define Operate(d)		KeybdEventContinued(d, 80);	\
+						KeybdEvent('E', 20);
 		RECT NewRectClient = ClientApi::RECT_CLIENT4;
 		NewRectClient.left += 100;
 		NewRectClient.right -= 700;
@@ -118,7 +118,7 @@ protected:
 			NewRectClient.left += 900;
 			NewRectClient.top += 530;
 
-			MouseEvent({ 897, 159 }, LEFT_CLICK, 0);
+			MouseEvent({ 897, 159 }, CLIC_GAUCHE, 0);
 			if (DoUntilMatchingTemplate(
 				NewRectClient,
 				TargetImageButtonEnter,
@@ -136,7 +136,7 @@ protected:
 					NewRect.top += 156;
 					NewRect.bottom -= 100;
 
-					InRange(Capture(NewRect, 1), Scalar(242, 30, 195), Scalar(255, 60, 205), MaskImage);
+					InRange(Capture(NewRect, 1), Scalar(235, 30, 195), Scalar(255, 60, 205), MaskImage);
 
 					for (int y = 0; y < MaskImage.rows; ++y)
 					{
@@ -198,10 +198,9 @@ protected:
 			/*** ÀüÅõ ÈÄ ***/
 			if (!IsQuickCompletionMode || (3 != SeqPlay))
 			{
-				EstGauche = true;
 				static int SeqSuccess = 0;
-				Write(SNAP_DIR "urus-raid//" + to_string(++SeqSuccess) + ".jpg", SourceImageClient4Colored);
-				MouseEvent({ 1259, 694 }, LEFT_CLICK);
+				Write(SNAP_DIR "urus//" + to_string(++SeqSuccess) + ".jpg", SourceImageClient4Colored);
+				MouseEvent({ 1259, 694 }, CLIC_GAUCHE);
 
 				if (WaitUntilMatchingTemplate(
 					ClientApi::RECT_CLIENT4,

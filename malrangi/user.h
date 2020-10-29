@@ -1,5 +1,5 @@
-#pragma once
-#include <map>
+ï»¿#pragma once
+#include "malrangi.h"
 
 /****************************************************************************
 * Configuration Reader
@@ -16,86 +16,114 @@ public:
 			string Id;
 			string SecondPassword;
 			unsigned int Adresse;
-			bool EstAdressePremier;
-			bool EstAdresseDernier;
+			bool EstAdressePremiÃ¨re;
+			bool EstAdresseDerniÃ¨re;
+#ifdef BUILD_URUS
+			string ServeurPourUrus;
+#endif
 			struct _SERVER_INFO
 			{
-				string ServerName;
-#if defined(BUILD_URUS)
-				bool IsCompleted;
+				string NomDeServeur;
+#ifdef BUILD_URUS
+				bool EstAccompli;
+#endif
 				unsigned int NombreDeCharacter;
 
-				_SERVER_INFO() : IsCompleted(false), NombreDeCharacter(0) {}
-#elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
+				_SERVER_INFO() : 
+#ifdef BUILD_URUS
+					EstAccompli(false), 
+#endif
+					NombreDeCharacter(0) {}
+
+#ifndef BUILD_URUS
+				int IndexDeCaractÃ¨reDisponible;
+#endif
 				struct _CHARACTER_INFO
 				{
-					enum class _CODE_PROPRE
+					enum _CODE_PROPRE
 					{
-						È÷¾î·Î,
-						ÆÈ¶ó,
-						ˆª³ª,
-						ºÒµ¶,
-						½ãÄİ,
-						ºñ¼ó,
-						º¸¸¶,
-						½Å±Ã,
-						ÆĞÆÄ,
-						³ª·Î,
-						¼¨µµ¾î,
-						µàºí,
-						¹ÙÀÌÆÛ,
-						Ä¸Æ¾,
-						Ä³½´,
-						¼Ò¸¶,
-						¹ÌÇÏÀÏ,
-						ÇÃÀ§,
-						À©ºê,
-						³ª¿ö,
-						½ºÄ¿,
-						¾Æ¶õ,
-						¿¡¹İ,
-						·ç¹Ì,
-						¸Ş¼¼,
-						ÆÒÅÒ,
-						Àº¿ù,
-						µ¥½½,
-						µ¥º¥,
-						ºí·¡,
-						¹è¸Ş,
-						¿ÍÇå,
-						Á¦³í,
-						¸ŞÄ«´Ğ,
-						Ä«ÀÌÀú,
-						¿£¹ö,
-						Ä«µ¥³ª,
-						¾Æµ¨,
-						ÀÏ¸®¿ò,
-						¾ÆÅ©,
-						È£¿µ,
-						Á¦·Î,
-						Å°³×
+						íˆì–´ë¡œ,
+						íŒ”ë¼,
+						ë‹¼ë‚˜,
+						ë¶ˆë…,
+						ì¬ì½œ,
+						ë¹„ìˆ,
+						ë³´ë§ˆ,
+						ì‹ ê¶,
+						íŒ¨íŒŒ,
+						ë‚˜ë¡œ,
+						ì„€ë„ì–´,
+						ë“€ë¸”,
+						ë°”ì´í¼,
+						ìº¡í‹´,
+						ìºìŠˆ,
+						ì†Œë§ˆ,
+						ë¯¸í•˜ì¼,
+						í”Œìœ„,
+						ìœˆë¸Œ,
+						ë‚˜ì›Œ,
+						ìŠ¤ì»¤,
+						ì•„ë€,
+						ì—ë°˜,
+						ë£¨ë¯¸,
+						ë©”ì„¸,
+						íŒ¬í…€,
+						ì€ì›”,
+						ë°ìŠ¬,
+						ë°ë²¤,
+						ë°ë²¤2,
+						ë¸”ë˜,
+						ë°°ë©”,
+						ì™€í—Œ,
+						ì œë…¼,
+						ë©”ì¹´ë‹‰,
+						ì¹´ì´ì €,
+						ì—”ë²„,
+						ì¹´ë°ë‚˜,
+						ì•„ë¸,
+						ì¼ë¦¬ì›€,
+						ì•„í¬,
+						í˜¸ì˜,
+						ì œë¡œ,
+						í‚¤ë„¤,
+						MAXIMUM
 					};
-					string ClassName;
+					string NomDeClasse;
 					_CODE_PROPRE Code;
-					unsigned int Speed;
+					unsigned int Vitesse;
+					bool Stance;
 
 					enum
 					{
-						ZACUM = 0b001,
-						ROOTABYSS_BLOODYQUEEN = 0b010,
-						ROOTABYSS_VONBAN = 0b100
+						ZACUM = 0b0001,
+						BELLUM = 0b0010,
+						VONBAN = 0b0100,
+						BLOODYQUEEN = 0b1000,
+						VONLEON_EASY = 0b00010000,
+						VONLEON_NORMAL = 0b00100000,
+						VONLEON_HARD = 0b01000000,
+						PAPULATUS_EASY = 0b10000000,
+						PAPULATUS_NORMAL = 0b000100000000,
+						KAUNG = 0b001000000000,
+						COMPTE = 0b100000000000,
+						FLAG_MAXIMUM = COMPTE,
 					};
+					int FlagInvariable;
 					int Flag;
-					bool IsCompleted;
-
-					_CHARACTER_INFO() : IsCompleted(false) {}
+#ifndef BUILD_URUS
+					bool EstAccompli;
+#endif
+					_CHARACTER_INFO() 
+#ifndef BUILD_URUS
+						: EstAccompli(false) 
+#endif
+					{}
 				};
 				vector<_CHARACTER_INFO> VecCharacter;
-#endif
 			};
 			vector<_SERVER_INFO> VecServer;
 
-			_MAPLEID_INFO() : EstAdressePremier(false), EstAdresseDernier(false) {}
+			_MAPLEID_INFO() : EstAdressePremiÃ¨re(false), EstAdresseDerniÃ¨re(false) {}
 		};
 		vector<_MAPLEID_INFO> VecMapleId;
 	} NEXONAC_INFO;
@@ -111,11 +139,9 @@ public:
 	}KEYSET_INFO;
 	typedef NEXONAC_INFO::_MAPLEID_INFO MAPLEID_INFO;
 	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO SERVER_INFO;
-#if defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO::_CHARACTER_INFO CHARACTER_INFO;
 	typedef NEXONAC_INFO::_MAPLEID_INFO::_SERVER_INFO::_CHARACTER_INFO::_CODE_PROPRE CODE_PROPRE;
-	map<string, pair<CODE_PROPRE, unsigned int>> MapCharacter;
-#endif
+	map<string, tuple<CODE_PROPRE, unsigned int, bool>> MapCharacter;
 	vector<NEXONAC_INFO> VecNexonAccount;
 	KEYSET_INFO VirtualKeyset;
 
@@ -128,6 +154,56 @@ private:
 
 		if (File.is_open())
 		{
+			int ProfitEstimÃ© = 0;
+			MapCharacter =
+			{
+	#define FAIRE_MAP(_n, _v, _s) {#_n, tuple{CODE_PROPRE::_n, _v, _s}}
+				FAIRE_MAP(íˆì–´ë¡œ, 140, true),
+				FAIRE_MAP(íŒ”ë¼, 140, true),
+				FAIRE_MAP(ë‹¼ë‚˜, 150, true),
+				FAIRE_MAP(ë¶ˆë…, 140, false),
+				FAIRE_MAP(ì¬ì½œ, 140, false),
+				FAIRE_MAP(ë¹„ìˆ, 128, false),
+				FAIRE_MAP(ë³´ë§ˆ, 160, false),
+				FAIRE_MAP(ì‹ ê¶, 160, false),
+				FAIRE_MAP(íŒ¨íŒŒ, 160, false),
+				FAIRE_MAP(ë‚˜ë¡œ, 138, false),
+				FAIRE_MAP(ì„€ë„ì–´, 140, false),
+				FAIRE_MAP(ë“€ë¸”, 138, false),
+				FAIRE_MAP(ë°”ì´í¼, 160, false),
+				FAIRE_MAP(ìº¡í‹´, 140, false),
+				FAIRE_MAP(ìºìŠˆ, 140, false),
+				FAIRE_MAP(ì†Œë§ˆ, 160, false),
+				FAIRE_MAP(ë¯¸í•˜ì¼, 140, true),
+				FAIRE_MAP(í”Œìœ„, 140, false),
+				FAIRE_MAP(ìœˆë¸Œ, 160, false),
+				FAIRE_MAP(ë‚˜ì›Œ, 137, false),
+				FAIRE_MAP(ìŠ¤ì»¤, 160, false),
+				FAIRE_MAP(ì•„ë€, 160, true),
+				FAIRE_MAP(ì—ë°˜, 140, false),
+				FAIRE_MAP(ë£¨ë¯¸, 140, false),
+				FAIRE_MAP(ë©”ì„¸, 165, false),
+				FAIRE_MAP(íŒ¬í…€, 160, false),
+				FAIRE_MAP(ì€ì›”, 140, false),
+				FAIRE_MAP(ë°ìŠ¬, 140, true),
+				FAIRE_MAP(ë°ë²¤, 160, true),
+				FAIRE_MAP(ë°ë²¤2, 160, true),
+				FAIRE_MAP(ë¸”ë˜, 160, true),
+				FAIRE_MAP(ë°°ë©”, 170, true),
+				FAIRE_MAP(ì™€í—Œ, 170, false),
+				FAIRE_MAP(ì œë…¼, 160, false),
+				FAIRE_MAP(ë©”ì¹´ë‹‰, 140, false),
+				FAIRE_MAP(ì¹´ì´ì €, 140, false),
+				FAIRE_MAP(ì—”ë²„, 165, false),
+				FAIRE_MAP(ì¹´ë°ë‚˜, 125, false),
+				FAIRE_MAP(ì•„ë¸, 134, false),
+				FAIRE_MAP(ì¼ë¦¬ì›€, 128, false),
+				FAIRE_MAP(ì•„í¬, 165, true),
+				FAIRE_MAP(í˜¸ì˜, 160, false),
+				FAIRE_MAP(ì œë¡œ, 159, true),
+				FAIRE_MAP(í‚¤ë„¤, 160, false)
+	#undef FAIRE_MAP
+			};
 			CHAR Line[0x100];
 			while (File.getline(Line, sizeof(Line)))
 			{
@@ -140,82 +216,71 @@ private:
 
 				if (!strncmp("\t\t\t", Line, 3))
 				{
-#if defined(BUILD_URUS)
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].
 						VecServer[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].VecServer.size() - 1].
 						NombreDeCharacter += 1;
-#elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
 					CHARACTER_INFO CharacterInfo;
+				
+					Stream >> SubLine;
+					CharacterInfo.NomDeClasse = SubLine;
+					CharacterInfo.Code = get<0>(MapCharacter[SubLine]);
+					CharacterInfo.Vitesse = get<1>(MapCharacter[SubLine]);
+					CharacterInfo.Stance = get<2>(MapCharacter[SubLine]);
 
-					MapCharacter =
+					Stream >> SubLine;
+					SubLine.erase(std::remove(SubLine.begin(), SubLine.end(), '-'), SubLine.end());
+					CharacterInfo.FlagInvariable = CharacterInfo.Flag = stoi(SubLine, nullptr, 2);
+
+#ifdef BUILD_BOSS
+					for (int p = 0; p < log2((long)CHARACTER_INFO::FLAG_MAXIMUM) + 1; p++)
 					{
-			#define FAIRE_MAP(_n, _s) {#_n, pair{CODE_PROPRE::_n, _s}}
-						FAIRE_MAP(È÷¾î·Î, 140),
-						FAIRE_MAP(ÆÈ¶ó, 140),
-						FAIRE_MAP(ˆª³ª, 150),
-						FAIRE_MAP(ºÒµ¶, 140),
-						FAIRE_MAP(½ãÄİ, 140),
-						FAIRE_MAP(ºñ¼ó, 128),
-						FAIRE_MAP(º¸¸¶, 160),
-						FAIRE_MAP(½Å±Ã, 160),
-						FAIRE_MAP(ÆĞÆÄ, 143),
-						FAIRE_MAP(³ª·Î, 138),
-						FAIRE_MAP(¼¨µµ¾î, 140),
-						FAIRE_MAP(µàºí, 139),
-						FAIRE_MAP(¹ÙÀÌÆÛ, 160),
-						FAIRE_MAP(Ä¸Æ¾, 140),
-						FAIRE_MAP(Ä³½´, 140),
-						FAIRE_MAP(¼Ò¸¶, 160),
-						FAIRE_MAP(¹ÌÇÏÀÏ, 140),
-						FAIRE_MAP(ÇÃÀ§, 140),
-						FAIRE_MAP(À©ºê, 160),
-						FAIRE_MAP(³ª¿ö, 137),
-						FAIRE_MAP(½ºÄ¿, 160),
-						FAIRE_MAP(¾Æ¶õ, 160),
-						FAIRE_MAP(¿¡¹İ, 140),
-						FAIRE_MAP(·ç¹Ì, 140),
-						FAIRE_MAP(¸Ş¼¼, 165),
-						FAIRE_MAP(ÆÒÅÒ, 160),
-						FAIRE_MAP(Àº¿ù, 140),
-						FAIRE_MAP(µ¥½½, 140),
-						FAIRE_MAP(µ¥º¥, 160),
-						FAIRE_MAP(ºí·¡, 160),
-						FAIRE_MAP(¹è¸Ş, 170),
-						FAIRE_MAP(¿ÍÇå, 170),
-						FAIRE_MAP(Á¦³í, 160),
-						FAIRE_MAP(¸ŞÄ«´Ğ, 140),
-						FAIRE_MAP(Ä«ÀÌÀú, 140),
-						FAIRE_MAP(¿£¹ö, 165),
-						FAIRE_MAP(Ä«µ¥³ª, 140),
-						FAIRE_MAP(¾Æµ¨, 165),
-						FAIRE_MAP(ÀÏ¸®¿ò, 128),
-						FAIRE_MAP(¾ÆÅ©, 165),
-						FAIRE_MAP(È£¿µ, 160),
-						FAIRE_MAP(Á¦·Î, 129),
-						FAIRE_MAP(Å°³×, 160)
-			#undef FAIRE_MAP
-					};
-
-					Stream >> SubLine;
-					CharacterInfo.ClassName = SubLine;
-					CharacterInfo.Code = MapCharacter[SubLine].first;
-					CharacterInfo.Speed = MapCharacter[SubLine].second;
-
-					Stream >> SubLine;
-					CharacterInfo.Flag = stoi(SubLine);
-
+						switch (CharacterInfo.Flag & (1 << p))
+						{
+						case CHARACTER_INFO::ZACUM:
+							ProfitEstimÃ© += 100;
+							break;
+						case CHARACTER_INFO::BLOODYQUEEN:
+						case CHARACTER_INFO::VONBAN:
+						case CHARACTER_INFO::BELLUM:
+							ProfitEstimÃ© += 120;
+							break;
+						case CHARACTER_INFO::VONLEON_EASY:
+							ProfitEstimÃ© += 115;
+							break;
+						case CHARACTER_INFO::VONLEON_NORMAL:
+							ProfitEstimÃ© += 160;
+							break;
+						case CHARACTER_INFO::VONLEON_HARD:
+							ProfitEstimÃ© += 260;
+							break;
+						case CHARACTER_INFO::KAUNG:
+							ProfitEstimÃ© += 170;
+							break;
+						case CHARACTER_INFO::PAPULATUS_EASY:
+							ProfitEstimÃ© += 70;
+							break;
+						case CHARACTER_INFO::PAPULATUS_NORMAL:
+							ProfitEstimÃ© += 270;
+							break;
+						default:
+							break;
+						}
+					}
+#endif
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].
 						VecServer[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].VecServer.size() - 1].
 						VecCharacter.push_back(CharacterInfo);
-#endif
 				}
 				else if (!strncmp("\t\t", Line, 2))
 				{
 					SERVER_INFO ServerInfo;
 
 					Stream >> SubLine;
-					ServerInfo.ServerName = SubLine;
-
+					ServerInfo.NomDeServeur = SubLine;
+#ifndef BUILD_URUS
+					Stream >> SubLine;
+					ServerInfo.IndexDeCaractÃ¨reDisponible = stoi(SubLine);
+#endif
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId[VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.size() - 1].
 						VecServer.push_back(ServerInfo);
 				}
@@ -229,7 +294,10 @@ private:
 					MapleIdInfo.SecondPassword = SubLine;
 					Stream >> SubLine;
 					MapleIdInfo.Adresse = atoi(SubLine.c_str());
-	
+#ifdef BUILD_URUS
+					Stream >> SubLine;
+					MapleIdInfo.ServeurPourUrus = SubLine;
+#endif
 					VecNexonAccount[VecNexonAccount.size() - 1].VecMapleId.push_back(MapleIdInfo);
 				}
 				else
@@ -255,13 +323,13 @@ private:
 				{
 					if (EstUnieme)
 					{
-						MapleIdInfo.EstAdressePremier = true;
+						MapleIdInfo.EstAdressePremiÃ¨re = true;
 						EstUnieme = false;
 					}
 					else if (MapleIdInfo.Adresse != MapleIdAvant->Adresse)
 					{
-						MapleIdInfo.EstAdressePremier = true;
-						MapleIdAvant->EstAdresseDernier = true;
+						MapleIdInfo.EstAdressePremiÃ¨re = true;
+						MapleIdAvant->EstAdresseDerniÃ¨re = true;
 					}
 
 					MapleIdAvant = &MapleIdInfo;
@@ -275,6 +343,26 @@ private:
 			VirtualKeyset.SpecialTechnology = 'Y';
 			VirtualKeyset.Attack = VK_OEM_PERIOD;
 			VirtualKeyset.Talk = VK_OEM_COMMA;
+
+#ifdef BUILD_BOSS
+			cout << "ì˜ˆìƒìˆ˜ìµ : " << (double)ProfitEstimÃ© / 10000 << endl;
+#endif
+
+#ifndef BUILD_URUS
+			for (auto& NexonAccountInfo : VecNexonAccount)
+			{
+				for (auto& MapleIdInfo : NexonAccountInfo.VecMapleId)
+				{
+					for (auto& ServerInfo : MapleIdInfo.VecServer)
+					{
+						for (int p = 0; p < ServerInfo.IndexDeCaractÃ¨reDisponible - 1; p++)
+						{
+							ServerInfo.VecCharacter[p].EstAccompli = true;
+						}
+					}
+				}
+			}
+#endif
 		}
 	}
 	~USERCONF()

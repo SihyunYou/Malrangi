@@ -1,7 +1,6 @@
-#include "circular_play.h"
+﻿#include "operation_circulaire.h"
 #include "log.h"
-#include "ipmanage.h"
-#include "report.h"
+#include "contrôler_ip.h"
 
 int
 main(
@@ -11,13 +10,28 @@ main(
 	ClientApi::SET_CLIENT_STDPOS();
 	Sleep(0x800);
 
+	USERCONF& UserInfo = *(USERCONF::GetInstance());
 	try
 	{
-		USERCONF& UserInfo = *(USERCONF::GetInstance());
+#ifdef INGAME_DIRECT
+#ifdef BUILD_URUS
+		UrusPlay Ouvrier;
+		Ouvrier.Play(UserInfo.VecNexonAccount[0].VecMapleId[0].VecServer[0].VecCharacter[0], false);
+#else
+#ifdef BUILD_BOSS
+		OperationBossJournal Ouvrier;
+#else
+		OperationCompte Ouvrier;
+#endif
+		Ouvrier.Play(UserInfo.VecNexonAccount[0].VecMapleId[0], 
+			UserInfo.VecNexonAccount[0].VecMapleId[0].VecServer[0].VecCharacter[0]);
+#endif
+#else
+		ClientApi::ÉTAT_DE_LOGOUT ÉtatDeLogout = ClientApi::ÉTAT_DE_LOGOUT::NORMAL;
 		IpManage IpManager;
 		string Uri;
 		int CountIndisponible = 0;
-		bool EstForceARenoveller = false;
+
 		auto LEAVE_LOG = [&Uri](std::exception* ce)
 		{
 			if (nullptr != ce)
@@ -28,17 +42,40 @@ main(
 			WriteLog(((nullptr != ce) ? NIVEAU_DE_LOG::FAILURE : NIVEAU_DE_LOG::SUCCESS),
 				(Uri + ((nullptr != ce) ? "? " : "") + ((nullptr != ce) ? ce->what() : "") + "\n").c_str());
 		};
-
-		enum
+		auto EstMapleIdAccompli = [](const vector<USERCONF::SERVER_INFO>& VecServers)
 		{
-			NORMAL,
-			SERVEUR_DECONNECTE,
-			CLIENT_ANORMALEMENT_TERMINE,
-			FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU,
-			INDISPONIBLE,
-			INCOMPATIBLE,
+			for (const auto& Server : VecServers)
+			{
+#ifdef BUILD_URUS
+				if (!Server.EstAccompli)
+				{
+					return false;
+				}
+#else
+				for (const auto& Character : Server.VecCharacter)
+				{
+					if (!Character.EstAccompli)
+					{
+						return false;
+					}
+				}
+#endif
+			}
+			return true;
 		};
-		int EtatDeLogout = NORMAL;
+#ifndef BUILD_URUS
+		auto EstServeurAccompli = [](const vector<USERCONF::CHARACTER_INFO>& VecCharacters)
+		{
+			for (const auto& Character : VecCharacters)
+			{
+				if (!Character.EstAccompli)
+				{
+					return false;
+				}
+			}
+			return true;
+		};
+#endif
 
 		for (auto& NexonAccountInfo : UserInfo.VecNexonAccount)
 		{
@@ -49,15 +86,15 @@ main(
 				{
 					for (const auto& Server : VecServers)
 					{
-#if defined(BUILD_URUS)
-						if (!Server.IsCompleted)
+#ifdef BUILD_URUS
+						if (!Server.EstAccompli)
 						{
 							return false;
 						}
-#elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
+#else
 						for (const auto& Character : Server.VecCharacter)
 						{
-							if (!Character.IsCompleted)
+							if (!Character.EstAccompli)
 							{
 								return false;
 							}
@@ -72,45 +109,38 @@ main(
 				{
 					continue;
 				}
-				
+
 				do
 				{
 					IpManager.ConnectNetwork();
 				} while (!IpManager.IsNetworkConnected());
 
-				if (MapleIdInfo.EstAdressePremier || EstForceARenoveller)
+				if (MapleIdInfo.EstAdressePremière ||
+					ClientApi::ÉTAT_DE_LOGOUT::FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU == ÉtatDeLogout)
 				{
 					while (!IpManager.Renouveler(MapleIdInfo.Adresse));
 				}
-				EstForceARenoveller = false;
 
-				switch (EtatDeLogout)
+				switch (ÉtatDeLogout)
 				{
-				case NORMAL:
-					if (!MapleIdInfo.EstAdressePremier)
+				case ClientApi::ÉTAT_DE_LOGOUT::NORMAL:
+					if (!MapleIdInfo.EstAdressePremière)
 					{
 						break;
 					}
-				case SERVEUR_DECONNECTE:
-				case CLIENT_ANORMALEMENT_TERMINE:
-				case FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU:
-				case INDISPONIBLE:
+				case ClientApi::ÉTAT_DE_LOGOUT::SERVEUR_DECONNECTE:
+				case ClientApi::ÉTAT_DE_LOGOUT::CLIENT_ANORMALEMENT_TERMINE:
+				case ClientApi::ÉTAT_DE_LOGOUT::FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU:
+				case ClientApi::ÉTAT_DE_LOGOUT::INDISPONIBLE:
 					try
 					{
 						ClientApi::BootClient();
 					}
-					catch (ClientApi::NetworkDisconnectedException & e)
+					catch (ClientApi::Exception& e)
 					{
 						LEAVE_LOG(&e);
 
-						EtatDeLogout = FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU;
-						goto __LOGOUT__;
-					}
-					catch (ClientApi::Exception & e)
-					{
-						LEAVE_LOG(&e);
-
-						EtatDeLogout = INDISPONIBLE;
+						ÉtatDeLogout = ClientApi::ÉTAT_DE_LOGOUT::INDISPONIBLE;
 						goto __LOGOUT__;
 					}
 					break;
@@ -120,12 +150,12 @@ main(
 				{
 					ClientApi::Login(NexonAccountInfo, MapleIdInfo);
 
-					EtatDeLogout = NORMAL;
+					ÉtatDeLogout = ClientApi::ÉTAT_DE_LOGOUT::NORMAL;
 				}
-				catch (ClientApi::Exception & e)
+				catch (ClientApi::Exception& e)
 				{
 					LEAVE_LOG(&e);
-					EtatDeLogout = INDISPONIBLE;
+					ÉtatDeLogout = ClientApi::ÉTAT_DE_LOGOUT::INDISPONIBLE;
 
 					goto __LOGOUT__;
 				}
@@ -134,17 +164,23 @@ main(
 				{
 					for (auto& ServerInfo : MapleIdInfo.VecServer)
 					{
-#if defined(BUILD_URUS)
-						if (0 == ServerInfo.NombreDeCharacter || ServerInfo.IsCompleted)
+#ifdef BUILD_URUS
+						if (0 == ServerInfo.NombreDeCharacter || ServerInfo.EstAccompli)
 						{
 							continue;
 						}
-#elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
+
+						if (MapleIdInfo.ServeurPourUrus != ServerInfo.NomDeServeur)
+						{
+							ServerInfo.EstAccompli = true;
+							continue;
+						}
+#else
 						auto IsServerCompleted = [](const vector<USERCONF::CHARACTER_INFO>& VecCharacters)
 						{
 							for each (const auto & Character in VecCharacters)
 							{
-								if (!Character.IsCompleted)
+								if (!Character.EstAccompli)
 								{
 									return false;
 								}
@@ -157,23 +193,23 @@ main(
 							continue;
 						}
 #endif
-						Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName;
-						auto EnterGame = [&]() -> decltype(EtatDeLogout)
+						Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.NomDeServeur;
+						auto EnterGame = [&]() -> decltype(ÉtatDeLogout)
 						{
 							try
 							{
 								ClientApi::EntrerDansGame(MapleIdInfo);
-								return NORMAL;
+								return ClientApi::ÉTAT_DE_LOGOUT::NORMAL;
 							}
-							catch (ClientApi::SecondPasswordNotLiftException & ec)
+							catch (ClientApi::SecondPasswordNotLiftException& ec)
 							{
 								LEAVE_LOG(&ec);
-								return INDISPONIBLE;
+								return ClientApi::ÉTAT_DE_LOGOUT::INDISPONIBLE;
 							}
-							catch (ClientApi::BlockFromCapchaException & ec)
+							catch (ClientApi::BlockFromCapchaException& ec)
 							{
 								LEAVE_LOG(&ec);
-								return FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU;
+								return ClientApi::ÉTAT_DE_LOGOUT::FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU;
 							}
 						};
 
@@ -181,19 +217,19 @@ main(
 						{
 							ClientApi::EntrerDansServeur(ServerInfo, 27);
 						}
-						catch (ClientApi::ServerDelayException & e)
+						catch (ClientApi::ServerDelayException& e)
 						{
 							LEAVE_LOG(&e);
-							EtatDeLogout = NORMAL;
+							ÉtatDeLogout = ClientApi::ÉTAT_DE_LOGOUT::NORMAL;
 							KeybdEvent({ VK_RETURN, VK_ESCAPE });
 
 							goto __LOGOUT__;
 						}
 
 						ClientApi::SelecterCaractere(ServerInfo);
-#if defined(BUILD_URUS)
+#ifdef BUILD_URUS
 						__REPLAY_APPLICATION__:
-						if (NORMAL != (EtatDeLogout = EnterGame()))
+						if (ClientApi::ÉTAT_DE_LOGOUT::NORMAL != (ÉtatDeLogout = EnterGame()))
 						{
 							goto __LOGOUT__;
 						}
@@ -203,67 +239,81 @@ main(
 							int IndexServeur = 0;
 							for (const auto& ServerInfo : MapleIdInfo.VecServer)
 							{
-								if (ServerInfo.IsCompleted && IndexServeur < MapleIdInfo.VecServer.size() - 1)
+								if (ServerInfo.EstAccompli && IndexServeur < MapleIdInfo.VecServer.size() - 1)
 								{
 									++IndexServeur;
 								}
 							}
 							return IndexServeur == MapleIdInfo.VecServer.size() - 1;
 						};
-						bool IsAppExceptional = false;
 
+						int OptionDeSortir = AppException::SORTIR_GAME;
+						bool EstAppExceptionnel = false;
 						try
 						{
 							UrusPlay OuvrierA;
-							OuvrierA.Play(EstIndexDerinierDeServeur() && MapleIdInfo.EstAdresseDernier);
 
-							ServerInfo.IsCompleted = true;
+							OuvrierA.Play(ServerInfo.VecCharacter[0],
+								EstIndexDerinierDeServeur() && MapleIdInfo.EstAdresseDernière);
+							ServerInfo.EstAccompli = true;
 							LEAVE_LOG(nullptr);
 						}
-						catch (AppException & ae)
+						catch (AppException& ae)
 						{
 							LEAVE_LOG(&ae);
 
-							IsAppExceptional = true;
+							EstAppExceptionnel = true;
 							if (!ae.IsRetryAvailable)
 							{
-								ServerInfo.IsCompleted = true;
+								ServerInfo.EstAccompli = true;
 							}
 						}
 
-						if (MapleIdInfo.VecServer[MapleIdInfo.VecServer.size() - 1].IsCompleted &&
-							EstIndexDerinierDeServeur() && 
-							MapleIdInfo.EstAdresseDernier)
+						if (MapleIdInfo.VecServer[MapleIdInfo.VecServer.size() - 1].EstAccompli &&
+							EstIndexDerinierDeServeur() &&
+							MapleIdInfo.EstAdresseDernière)
 						{
 							goto __LOGOUT__;
 						}
 						else
 						{
-							if ((ServerInfo.IsCompleted && IsAppExceptional) || !ServerInfo.IsCompleted)
+							if ((ServerInfo.EstAccompli && EstAppExceptionnel) || !ServerInfo.EstAccompli)
 							{
 								ClientApi::RemoveAllIngameWindows();
 							}
-							ClientApi::ExitGame();
+							
+							if (EstAppExceptionnel && OptionDeSortir == AppException::CHANGER_SERVEUR)
+							{
+								ClientApi::ChangerChaîne(true);
+							}
+							else
+							{
+								ClientApi::ExitGame();
+							}
 
-							if (!ServerInfo.IsCompleted)
+							if (!ServerInfo.EstAccompli)
 							{
 								goto __REPLAY_APPLICATION__;
 							}
 						}
-#elif defined(BUILD_DAILYBOSS) || defined(BUILD_CALC)
+#else
 						for (auto& CharacterInfo : ServerInfo.VecCharacter)
 						{
-							if (CharacterInfo.IsCompleted)
+							if (CharacterInfo.EstAccompli)
 							{
 								continue;
 							}
-							Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.ServerName + "/" + CharacterInfo.ClassName;
-
+							Uri = NexonAccountInfo.Id + "/" + MapleIdInfo.Id + "/" + ServerInfo.NomDeServeur + "/" + CharacterInfo.NomDeClasse;
+#ifdef BUILD_BOSS
+							OperationBossJournal Ouvrier;
+#else
+							OperationCompte Ouvrier;
+#endif
 						__REPLAY_APPLICATION__:
-#ifdef BUILD_DAILYBOSS
+#ifdef BUILD_BOSS
 							if (ARE_FLAGS_ON(CharacterInfo.Flag))
 							{
-								if (NORMAL != (EtatDeLogout = EnterGame()))
+								if (ClientApi::ÉTAT_DE_LOGOUT::NORMAL != (ÉtatDeLogout = EnterGame()))
 								{
 									goto __LOGOUT__;
 								}
@@ -271,101 +321,93 @@ main(
 							else
 							{
 								WriteLog(NIVEAU_DE_LOG::WARNING, "All flags are off. Forced to exit game.");
-								CharacterInfo.IsCompleted = true;
+								CharacterInfo.EstAccompli = true;
 								KeybdEvent(VK_RIGHT);
 
 								continue;
 							}
 #else
-							if (NORMAL != (EtatDeLogout = EnterGame()))
+							if (ÉTAT_DE_LOGOUT::NORMAL != (ÉtatDeLogout = EnterGame()))
 							{
 								goto __LOGOUT__;
 							}
 #endif
 
-							bool IsAppExceptional = false;
+							int OptionDeSortir = AppException::SORTIR_GAME;
+							bool EstAppExceptionnel = false;
 							try
 							{
-#ifdef BUILD_DAILYBOSS
-								DailyBossPlay Ouvrier;
-								Ouvrier.Play(CharacterInfo);
-#else
-								CalcPlay Ouvrier;
-								Ouvrier.Play(MapleIdInfo);
-#endif
-								CharacterInfo.IsCompleted = true;
+								Ouvrier.Play(MapleIdInfo, CharacterInfo);
+								CharacterInfo.EstAccompli = true;
 							}
-							catch (AppException & ae)
+							catch (AppException& ae)
 							{
 								LEAVE_LOG(&ae);
 
-								IsAppExceptional = true;
-								if (!ae.IsRetryAvailable)
+								EstAppExceptionnel = true;
+								OptionDeSortir = ae.OptionDeRéparation;
+								if (!ae.IsRetryAvailable || ARE_FLAGS_OFF(CharacterInfo.Flag))
 								{
-									CharacterInfo.IsCompleted = true;
+									CharacterInfo.EstAccompli = true;
 								}
 							}
 
-							if (MapleIdInfo.VecServer[MapleIdInfo.VecServer.size() - 1].VecCharacter[MapleIdInfo.VecServer[MapleIdInfo.VecServer.size() - 1].VecCharacter.size() - 1].IsCompleted &&
-								MapleIdInfo.EstAdresseDernier)
+							if (MapleIdInfo.VecServer[MapleIdInfo.VecServer.size() - 1].VecCharacter[MapleIdInfo.VecServer[MapleIdInfo.VecServer.size() - 1].VecCharacter.size() - 1].EstAccompli &&
+								MapleIdInfo.EstAdresseDernière)
 							{
 								goto __LOGOUT__;
 							}
 							else
 							{
-								if ((CharacterInfo.IsCompleted && IsAppExceptional) || !CharacterInfo.IsCompleted)
+								if ((CharacterInfo.EstAccompli && EstAppExceptionnel) || !CharacterInfo.EstAccompli)
 								{
-									ClientApi::RemoveAllIngameWindows();
+									ClientApi::EffaceTousWindows();
 								}
-								ClientApi::ExitGame();
+								
+								if (EstAppExceptionnel && OptionDeSortir == AppException::CHANGER_SERVEUR)
+								{
+									ClientApi::ChangerChaîne(true);
+								}
+								else
+								{
+									ClientApi::ExitGame();
+								}
 
-								if (!CharacterInfo.IsCompleted)
+								if (!CharacterInfo.EstAccompli)
 								{
 									goto __REPLAY_APPLICATION__;
 								}
 							}
 
-							if (!ServerInfo.VecCharacter[ServerInfo.VecCharacter.size() - 1].IsCompleted)
-							{
-								KeybdEvent(VK_RIGHT);
-							}
+							KeybdEvent(VK_RIGHT, 0x400);
 						}
 #endif
 						ClientApi::ExitCharacterWindow();
 					}
 				}
-				catch (ClientApi::ServerDisconnectedException & e)
+				catch (ClientApi::ExceptionCommun& e)
 				{
+					ÉtatDeLogout = e.CestQuoi();
 					LEAVE_LOG(&e);
-					EtatDeLogout = SERVEUR_DECONNECTE;
 				}
-				catch (ClientApi::NetworkDisconnectedException & e)
+				catch (ClientApi::Exception& e)
 				{
 					LEAVE_LOG(&e);
-					EtatDeLogout = FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU;
-				}
-				catch (ClientApi::ClientAbnormalTerminationException & e)
-				{
-					LEAVE_LOG(&e);
-					EtatDeLogout = CLIENT_ANORMALEMENT_TERMINE;
-				}
-				catch (ClientApi::Exception & e)
-				{
-					LEAVE_LOG(&e);
-					EtatDeLogout = INDISPONIBLE;
+					ÉtatDeLogout = ClientApi::ÉTAT_DE_LOGOUT::INDISPONIBLE;
 				}
 
 			__LOGOUT__:
 				if (CountIndisponible > 2)
 				{
-					EtatDeLogout = INCOMPATIBLE;
+					ÉtatDeLogout = ClientApi::ÉTAT_DE_LOGOUT::INCOMPATIBLE;
 					CountIndisponible = 0;
 				}
 
-				switch (EtatDeLogout)
+				switch (ÉtatDeLogout)
 				{
-				case NORMAL:
-					if (MapleIdInfo.EstAdresseDernier)
+				case ClientApi::ÉTAT_DE_LOGOUT::NORMAL:
+					CountIndisponible = 0;
+					if (MapleIdInfo.EstAdresseDernière)
 					{
 						ClientApi::TerminateClient();
 					}
@@ -375,22 +417,28 @@ main(
 						{
 							ClientApi::Logout();
 						}
-						catch (ClientApi::Exception & e)
+						catch (ClientApi::ExceptionCommun& e)
+						{
+							ÉtatDeLogout = e.CestQuoi();
+							LEAVE_LOG(&e);
+
+							goto __LOGOUT__;
+						}
+						catch (ClientApi::Exception& e)
 						{
 							LEAVE_LOG(&e);
-							EtatDeLogout = INDISPONIBLE;
+							ÉtatDeLogout = ClientApi::ÉTAT_DE_LOGOUT::INDISPONIBLE;
 
 							goto __LOGOUT__;
 						}
 					}
 					goto __CHECK_IF_LOOP_COMPLETED__;
 
-				case FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU:
-					EstForceARenoveller = true;
-				case INDISPONIBLE:
+				case ClientApi::ÉTAT_DE_LOGOUT::FORCER_A_QUITTER_POUR_RAJUSTER_RESEAU:
+				case ClientApi::ÉTAT_DE_LOGOUT::INDISPONIBLE:
 					++CountIndisponible;
-				case SERVEUR_DECONNECTE:
-				case CLIENT_ANORMALEMENT_TERMINE:
+				case ClientApi::ÉTAT_DE_LOGOUT::SERVEUR_DECONNECTE:
+				case ClientApi::ÉTAT_DE_LOGOUT::CLIENT_ANORMALEMENT_TERMINE:
 					ClientApi::TerminateClient();
 				__CHECK_IF_LOOP_COMPLETED__:
 					if (!IsMapleIdCompleted(MapleIdInfo.VecServer))
@@ -401,35 +449,42 @@ main(
 					{
 						break;
 					}
-				
-				case INCOMPATIBLE:
-					EtatDeLogout = INDISPONIBLE;
+
+				case ClientApi::ÉTAT_DE_LOGOUT::INCOMPATIBLE:
+					ÉtatDeLogout = ClientApi::ÉTAT_DE_LOGOUT::INDISPONIBLE;
 					ClientApi::TerminateClient();
 					break;
 
 				default:
-					WriteLog(NIVEAU_DE_LOG::CRITICAL, "L'etat de logout invalide.\n");
+					WriteLog(NIVEAU_DE_LOG::CRITICAL, "로그아웃 상태가 유효하지 않음");
 					goto __EXIT__;
 				}
 			}
 		}
-
-		WriteLog(NIVEAU_DE_LOG::INFO, "Tous les routines ont accompli.");
-
+		WriteLog(NIVEAU_DE_LOG::INFO, "모든 루틴 수행을 완료하였습니다.");
 	__EXIT__:
 		UserInfo.Destroy();
+#endif
 	}
-	catch (MalrangiException & e)
+	catch (...)
 	{
-		WriteLog(NIVEAU_DE_LOG::CRITICAL, e.what());
-		Sleep(300000000);
-	}
-	catch (exception & e)
-	{
-		WriteLog(NIVEAU_DE_LOG::CRITICAL, e.what());
-		Sleep(300000000);
-	}
-	system("shutdown -s -t 60");
+		WriteLog(NIVEAU_DE_LOG::CRITICAL, "처리되지 않은 예외로 인해 상위 루프에서 벗어났습니다.");
+		//Show(SourceImageClient4);
 
+		try
+		{
+			rethrow_exception(current_exception());
+		}
+		catch (const MalrangiException& const e)
+		{
+			WriteLog(NIVEAU_DE_LOG::CRITICAL, e.what());
+		}
+		catch (...)
+		{
+			WriteLog(NIVEAU_DE_LOG::CRITICAL, "MalrangiException 형식이 아닌 처리할 수 없는 예외가 throw되었음");
+		}
+	}
+
+	Sleep(30000);
 	return EXIT_SUCCESS;
 }

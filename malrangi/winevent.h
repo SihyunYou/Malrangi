@@ -1,8 +1,8 @@
 #pragma once
 #include "malrangi.h"
 
-#define STD_MSEVT_INTERVALLE (720)
-#define STD_KBEVT_INTERVALLE (640)
+#define STD_MSEVT_INTERVALLE (600)
+#define STD_KBEVT_INTERVALLE (480)
 
 /****************************************************************************
 * Mouse Event Util
